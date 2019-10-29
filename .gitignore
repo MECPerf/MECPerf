@@ -1,0 +1,31 @@
+# Built application files
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Java files
+*.class
+*.jar
+*.csv
+*.log
+
+# Generated files
+bin/
+gen/
+out/
+build/
+
+
+# hidden folders
+.gradle/
+.idea/
+.settings/
+.navigation/
+.externalNativeBuild
+
+.project
+
+
+
+

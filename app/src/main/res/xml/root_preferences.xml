@@ -1,0 +1,94 @@
+<!--
+  ~ Copyright 2018 The app Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/messages_header">
+
+        <EditTextPreference
+            app:key="observer_address"
+            app:defaultValue="131.114.73.2"
+            app:title="@string/observer_address_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="aggregator_address"
+            app:defaultValue="131.114.73.3"
+            app:title="@string/aggregator_address_title"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/messages_UDP_header">
+
+        <EditTextPreference
+            app:key="pack_size_UDP_RTT"
+            app:defaultValue="1"
+            app:title="@string/pack_size_RTT_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="pack_size_UDP_BANDWIDTH"
+            app:defaultValue="1024"
+            app:title="@string/pack_size_BANDWIDTH_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="num_pack_UDP_RTT"
+            app:defaultValue="100"
+            app:title="@string/num_pack_RTT_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="num_pack_UDP_BANDWIDTH"
+            app:defaultValue="2"
+            app:title="@string/num_pack_BANDWIDTH_title"
+            app:enabled="false"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/messages_TCP_header">
+
+        <EditTextPreference
+            app:key="pack_size_TCP_RTT"
+            app:defaultValue="1"
+            app:title="@string/pack_size_RTT_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="pack_size_TCP_BANDWIDTH"
+            app:defaultValue="1024"
+            app:title="@string/pack_size_BANDWIDTH_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="num_pack_TCP_RTT"
+            app:defaultValue="100"
+            app:title="@string/num_pack_RTT_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="num_pack_TCP_BANDWIDTH"
+            app:defaultValue="1024"
+            app:title="@string/num_pack_BANDWIDTH_title"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+
+
+</androidx.preference.PreferenceScreen>

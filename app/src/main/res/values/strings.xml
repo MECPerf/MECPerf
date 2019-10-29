@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">MECPerf</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">MECPerf</string>
+    <string name="nav_header_subtitle">alessio.vecchio@unipi.it</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Home</string>
+    <string name="menu_results">Results</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_results">Results</string>
+
+
+    <string name="title_activity_rtt">Results-Rtt</string>
+    <string name="title_activity_bandwidth">Results-Bandwidth</string>
+    <string name="title_activity_bandwidth_graph">Results-BandwidthTCPGraph</string>
+
+    <!-- Button next level of detail in Band TCP-->
+    <string name="tcp_bandwidth_graphic">SHOW DIAGRAM</string>
+    <string name="tcp_bandwidth_more">SEE MORE</string>
+    <string name="tcp_bandwidth_less">SEE LESS</string>
+
+
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Addresses</string>
+    <string name="sync_header">Sync</string>
+    <string name="messages_UDP_header">UDP-preferences</string>
+    <string name="messages_TCP_header">TCP-preferences</string>
+
+
+    <!-- Preferences -->
+    <string name="observer_address_title">Observer address</string>
+    <string name="aggregator_address_title">Aggregator</string>
+
+    <string name="pack_size_RTT_title">Package size in RTT</string>
+    <string name="pack_size_BANDWIDTH_title">Package size in BANDWIDTH</string>
+
+    <string name="num_pack_BANDWIDTH_title">Numbers of package in BANDWIDTH</string>
+    <string name="num_pack_RTT_title">Numbers of package in RTT</string>
+
+
+
+    <string name="tcp_bandwidth">TCP Bandwidth</string>
+    <string name="result">Result</string>
+    <string name="functionalities">Direction</string>
+    <string name="udp_bandwidth">UDP Bandwidth</string>
+    <string name="tcp_rtt">TCP RTT</string>
+    <string name="udp_rtt">UDP RTT</string>
+
+    <!-- results string
+    <string name="results_ValuesType">%1$s %2$s</string>
+    <string name= "results_Error">"Error: "%1$s</string>
+    -->
+    <string name="keyword_result">Match Result</string>
+</resources>
