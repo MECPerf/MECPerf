@@ -27,5 +27,10 @@ build/
 .project
 
 
+gradle/
+gradlew
+gradlew.bat
+local.properties
+
 
 
