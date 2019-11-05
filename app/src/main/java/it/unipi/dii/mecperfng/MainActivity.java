@@ -62,11 +62,14 @@ public class MainActivity extends AppCompatActivity
         protected Integer doInBackground(Void... voids) {
             String observerAddress = sp.getString("observer_address", "");
             String aggregatorAddress = sp.getString("aggregator_address", "NA");
+            int numberOfConsecutiveTests = Integer.parseInt(sp.getString(
+                                             "number_of_consecutive_tests", "1"));
 
             Spinner direction_spinner = findViewById(R.id.direction_spinner);
             String direction = direction_spinner.getItemAtPosition(direction_spinner
                                                 .getSelectedItemPosition()).toString();
 
+            int outcome = 0;
             switch (cmd) {
                 case "TCPBANDWIDTHBUTTON":
                     int tcp_bandwidth_pktsize = Integer.parseInt(sp.getString(
@@ -74,19 +77,32 @@ public class MainActivity extends AppCompatActivity
                     int tcp_bandwidth_num_pkt = Integer.parseInt(sp.getString(
                                                          "num_pack_TCP_BANDWIDTH", "1024"));
 
-                    return MainUtils.tcpBandwidthMeasure(direction, keyword, CMDPORT,
-                                                observerAddress, TCPPORT,
-                                                aggregatorAddress, AGGRPORT,
-                                                tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
+                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
+                        outcome = MainUtils.tcpBandwidthMeasure(direction, keyword, CMDPORT,
+                                                    observerAddress, TCPPORT,
+                                                    aggregatorAddress, AGGRPORT,
+                                                    tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
+                        if (outcome != 0)
+                            return -1;
+                    }
+
+                    return outcome;
+
 
                 case "UDPBANDWIDTHBUTTON":
                     int udp_bandwidth_pktsize = Integer.parseInt(sp.getString(
                                                          "pack_size_UDP_BANDWIDTH", "1024"));
 
-                    return MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
-                                                         observerAddress, UDPPORT,
-                                                         aggregatorAddress, AGGRPORT,
-                                                         udp_bandwidth_pktsize);
+                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
+                        outcome = MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
+                                observerAddress, UDPPORT,
+                                aggregatorAddress, AGGRPORT,
+                                udp_bandwidth_pktsize);
+                        if (outcome != 0)
+                            return -1;
+                    }
+
+                return outcome;
 
                 case "TCPRTTBUTTON":
                     int tcp_rtt_pktsize = Integer.parseInt(sp.getString(
@@ -94,20 +110,35 @@ public class MainActivity extends AppCompatActivity
                     int tcp_rtt_num_pack = Integer.parseInt(sp.getString(
                                                                  "num_pack_TCP_RTT", "100"));
 
-                    return MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT,
-                                         observerAddress, TCPPORT,
-                                         aggregatorAddress, AGGRPORT,
-                                         tcp_rtt_pktsize, tcp_rtt_num_pack);
+                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
+                        outcome =  MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT,
+                                observerAddress, TCPPORT,
+                                aggregatorAddress, AGGRPORT,
+                                tcp_rtt_pktsize, tcp_rtt_num_pack);
+                        if (outcome != 0)
+                            return -1;
+                    }
+
+                    return outcome;
 
                 case "UDPRTTBUTTON":
                     int udp_rtt_pktsize = Integer.parseInt(sp.getString(
                                                                   "pack_size_UDP_RTT", "1"));
                     int udp_rtt_num_pack = Integer.parseInt(sp.getString(
                                                                  "num_pack_UDP_RTT", "100"));
-                    return MainUtils.udpRTTMeasure(direction, keyword, CMDPORT,
-                                                   observerAddress, UDPPORT,
-                                                   aggregatorAddress, AGGRPORT,
-                                                   udp_rtt_pktsize, udp_rtt_num_pack);
+                    
+                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
+                        outcome =  MainUtils.udpRTTMeasure(direction, keyword, CMDPORT,
+                                observerAddress, UDPPORT,
+                                aggregatorAddress, AGGRPORT,
+                                udp_rtt_pktsize, udp_rtt_num_pack);
+                        if (outcome != 0)
+                            return -1;
+                    }
+
+                    return outcome;
+
+
                 }
 
             return -1;

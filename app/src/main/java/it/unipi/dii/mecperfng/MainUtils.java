@@ -44,6 +44,7 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD( "TCPBandwidthSender" + "#0#" + keyword + "#" +
                                        tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
+
                 try{
                     //TODO sostituire la sleep con una ACK da parte del Receiver => "Sono pronto a ricevere"
                     Thread.sleep(10000);
@@ -59,8 +60,8 @@ public class MainUtils {
                                    TCPBandwidthReceiver(communicationSocket, tcp_bandwidth_pktsize);
 
                 sendDataToAggregator(aggregatorAddress, aggregatorPort,"TCPBandwidth",
-                              "Observer","Client", -1, longIntegerMap,
-                                     keyword, tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
+                        "Observer","Client", -1, longIntegerMap,
+                        keyword, tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
             }
 
             String measureOutcome = controlSocketObserver.receiveCMD();

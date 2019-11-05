@@ -16,7 +16,12 @@
 
 <androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/messages_header">
+    <PreferenceCategory app:title="@string/settings_environment">
+        <EditTextPreference
+            app:key="number_of_consecutive_tests"
+            app:defaultValue="1"
+            app:title="@string/number_of_consecutive_tests"
+            app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
             app:key="observer_address"
