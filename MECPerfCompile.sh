@@ -63,6 +63,7 @@ echo "      Observer manifest file updated"
 cd $COMMON_PATH
 jar cf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/Measurements.class it/unipi/dii/common/Measurements.java 
 jar uf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/Measure.class it/unipi/dii/common/Measure.java
+jar uf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/ControlMessages.class it/unipi/dii/common/ControlMessages.java
 cd $REMOTESERVER_PATH
 jar uf  $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/remoteserver/Server.class it/unipi/dii/remoteserver/Server.java
 echo "      Server.jar done"

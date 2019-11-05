@@ -1,12 +1,4 @@
 package it.unipi.dii.remoteserver;
-
-/*
-javac Measure/src/measure/Measure.java Measure/src/measure/Measure.java Measurements/src/measurements/Measurements.java Server/src/server/Server.java
-java -cp ".:Measure/src/:Measurements/src:Server/src" server.Server
-
-
-*/
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -14,7 +6,6 @@ java -cp ".:Measure/src/:Measurements/src:Server/src" server.Server
  */
 
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -28,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import it.unipi.dii.common.Measurements;
 import it.unipi.dii.common.Measure;
+import it.unipi.dii.common.ControlMessages;
 
 /**
  *
@@ -36,18 +28,14 @@ import it.unipi.dii.common.Measure;
 
 
 public class Server {
-
     //command listener, tcp data and udp data ports
-
     private static final int CMDPORT = 6789;
     private static final int TCPPORT = 6788;
     private static final int UDPPORT = 6787;
     private static final String AGGREGATORIP = "131.114.73.3";
     private static final int AGGRPORT = 6766;
 
-
     //used in udp measurements
-//    private static final int PKTSIZE = 1024;
     private static int udp_bandwidth_pktsize = 1024;
     private static int tcp_bandwidth_pktsize = 1024;
     private static int tcp_bandwidth_stream = 1024*1024;
@@ -77,30 +65,17 @@ public class Server {
         System.out.println("Server UDP: inizializzato sulla porta " + udpListener.getLocalPort());
 
         while (true) {
+            ControlMessages controlSocketObserver = null;
             //Listening for commands
             Socket cmdSocket = null;
             try {
-                cmdSocket = cmdListener.accept();
+                controlSocketObserver = new ControlMessages(cmdListener.accept());
+                //cmdSocket = cmdListener.accept();
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
 
-            //Creating Data Stream from socket
-            InputStream inputStream = null;
-            try {
-                inputStream = cmdSocket.getInputStream();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            DataInputStream dataInputStream = new DataInputStream(inputStream);
-
-            //Reading and parsing received command. Command message structure is "COMMAND TEST-ID"
-            String cmd = null;
-            try {
-                cmd = dataInputStream.readUTF();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            String cmd = controlSocketObserver.receiveCMD();
             String separator ="#";
             String[] cmdSplitted = cmd.split(separator);
 
@@ -119,7 +94,6 @@ public class Server {
                     Map<Long, Integer> mappa;
                     tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
 
-//                    System.out.println("dim-pack: " + tcp_bandwidth_pktsize);
 
                     try {
                         Socket tcpReceiverConnectionSocket = tcpListener.accept();
@@ -138,8 +112,6 @@ public class Server {
                     tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
                     tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[4]) * tcp_bandwidth_pktsize;
 
- //                   System.out.println("dim-pack: " + tcp_bandwidth_pktsize);
- //                   System.out.println("dim-stream: " + tcp_bandwidth_stream);
                     try {
                         //the remote server sends packet to the observer
 
@@ -266,6 +238,8 @@ public class Server {
                     System.out.println("Server TCP RTT : " + latency + " Ms");
                     break;
             }
+
+            controlSocketObserver.closeConnection();
         }
     }
 
