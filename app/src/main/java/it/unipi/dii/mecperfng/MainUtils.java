@@ -199,20 +199,22 @@ public class MainUtils {
             else {
                 //the observer starts a TCP RTT measure using the mobile application
                 // as receiver
-                controlSocketObserver.sendCMD("TCPRTTMO" + "#0#" + keyword + "#" +
+                controlSocketObserver.sendCMD("TCPRTTReceiver#" + keyword + "#" +
                                        tcp_rtt_pktsize + "#" + tcp_rtt_num_pack);
 
                 Measurements.TCPRTTReceiver(communicationSocket, tcp_rtt_pktsize, tcp_rtt_num_pack);
             }
 
-            String measureOutcome = controlSocketObserver.receiveCMD();
-            controlSocketObserver.closeConnection();
+            if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                                                                    .COMPLETED.toString()) != 0) {
+                System.out.println("measure with Observer FAILED");
 
-            if (measureOutcome.compareTo("DONE") == 0) {
-                return 0;
+                controlSocketObserver.closeConnection();
+                return -1;
             }
 
-            return -1;
+            controlSocketObserver.closeConnection();
+            return 0;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             return -1;

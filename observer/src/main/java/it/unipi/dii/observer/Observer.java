@@ -422,30 +422,45 @@ public class Observer {
                     System.out.println("TCPRTTSender: completed");
                     break;
                 }
-                
-                case "TCPRTTMO": {
+
+                case "TCPRTTReceiver": {
                     double latency = 0.0;
+                    Socket tcpRTT = null;
                     //MO sends metrics client-observer and forwards the command to the server
-                    tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
+                    tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + tcp_rtt_pktsize);
+                    System.out.println("Number of packes : " + tcp_rtt_num_pack);
 
-                    System.out.println("tcp_rtt_pktsize: " + tcp_rtt_pktsize);
-                    System.out.println("tcp_rtt_num_pack: " + tcp_rtt_num_pack);
                     try {
-                        Socket tcpRTT = tcpListener.accept();
-                        latency = Measurements.TCPRTTSender(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
-                        sendAggregator("TCPRTT", Integer.parseInt(cmdSplitted[1]), "Observer", "Client", latency, null, cmdSplitted[2], tcp_rtt_pktsize, tcp_rtt_num_pack);
-                        System.out.println("MO TCP Latency : " + latency + " Ms");
-
-                        controlSocketRemote.sendCMD("TCPRTTMRS" + "#" + cmdSplitted[1] + "#" + cmdSplitted[2] + "#" + tcp_rtt_pktsize + "#" + tcp_rtt_num_pack);
-                        Measurements.TCPRTTReceiver(new Socket(InetAddress.getByName(SERVERIP), TCPPORT), tcp_rtt_pktsize, tcp_rtt_num_pack);
-
+                        tcpRTT = tcpListener.accept();
                     } catch (IOException ex) {
                         //Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
                         ex.printStackTrace();
                     }
+                    latency = Measurements.TCPRTTSender(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
+                    System.out.println("First measure (sender) completed");
 
-                    controlSocketApp.sendCMD("DONE");
+                    controlSocketRemote.sendCMD(cmd);
+                    Measurements.TCPRTTReceiver(new Socket(InetAddress.getByName(SERVERIP), TCPPORT), tcp_rtt_pktsize, tcp_rtt_num_pack);
+                    if (controlSocketRemote.receiveCMD().compareTo(controlSocketRemote.messages
+                            .SUCCEDED.toString()) != 0) {
+                        System.out.println("Measure failed");
+
+                        controlSocketApp.sendCMD(controlSocketApp.messages.FAILED.toString());
+                        break;
+                    }
+                    System.out.println("Second measure (receiver) completed");
+
+                    controlSocketApp.sendCMD(controlSocketApp.messages.COMPLETED.toString());
+
+                    sendAggregator("TCPRTT", 0, "Observer", "Client",
+                            latency, null, cmdSplitted[1], tcp_rtt_pktsize,
+                            tcp_rtt_num_pack);
+                    System.out.println("results sent to aggregator");
+
+                    System.out.println("TCPRTTReceiver: completed");
                     break;
                 }
             }

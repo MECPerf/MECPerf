@@ -189,9 +189,8 @@ public class Server {
 
                     break;
                 }
-
-                //UDP RTT test, MRS has to receive
                 case "UDPRTTSender":{
+                    //UDP RTT test, MRS has to receive
                     udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
                     udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.println("\nReceived command: " + cmdSplitted[0]);
@@ -213,8 +212,9 @@ public class Server {
                     break;
                 }
 
-                //UDP RTT test, MRS has to send
+
                 case "UDPRTTMRS":
+                    //UDP RTT test, MRS has to send
                     udp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
                     udp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
 
@@ -253,8 +253,6 @@ public class Server {
                     System.out.println("Packet size: " + tcp_rtt_pktsize);
                     System.out.println("Number of packes: " + tcp_rtt_num_pack);
 
-
-
                     try {
                         controlSocketObserver.sendCMD(controlSocketObserver.messages.START.toString());
                         Socket tcpRTT = tcpListener.accept();
@@ -273,26 +271,30 @@ public class Server {
                     }
                     break;
                 }
-
-                case "TCPRTTMRS":
+                case "TCPRTTReceiver": {
                     //the observer starts a TCP RTT using the remote server as sender
-                    tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
-                    System.out.println("tcp_rtt_pktsize: " +tcp_rtt_pktsize);
-                    System.out.println("tcp_rtt_num_pack: " +tcp_rtt_num_pack);
+                    tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
+                    System.out.println("\nReceived command: " + cmdSplitted[0]);
+                    System.out.println("Packet size: " + tcp_rtt_pktsize);
+                    System.out.println("Number of packes: " + tcp_rtt_num_pack);
+
                     try {
                         Socket tcpRTT = tcpListener.accept();
                         latency = Measurements.TCPRTTSender(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
+
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
                     //send data to Aggregator
-                    sendDataToAggregator("TCPRTT", Integer.parseInt(cmdSplitted[1]), "Server", "Observer", latency , null, cmdSplitted[2], tcp_rtt_pktsize, tcp_rtt_num_pack);
+                    sendDataToAggregator("TCPRTT", 0, "Server", "Observer", latency, null, cmdSplitted[1], tcp_rtt_pktsize, tcp_rtt_num_pack);
+                    System.out.println("results sent to aggregator");
 
-                    //Log
-                    System.out.println("Server TCP RTT : " + latency + " Ms");
+                    System.out.println("TCPRTTReceiver: completed");
                     break;
+                }
             }
 
             controlSocketObserver.closeConnection();
