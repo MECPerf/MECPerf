@@ -109,7 +109,7 @@ public class Server {
                     System.out.println("TCPBandwidthSender: completed");
                     break;
                 }
-                case "TCPBandwidthReceiver":
+                case "TCPBandwidthReceiver": {
                     tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
                     tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[3]) * tcp_bandwidth_pktsize;
                     System.out.println("\nReceived command : " + cmdSplitted[0]);
@@ -119,9 +119,9 @@ public class Server {
                     try {
                         Socket tcpSenderConnectionSocket = tcpListener.accept();
                         Measurements.TCPBandwidthSender(tcpSenderConnectionSocket,
-                                                       tcp_bandwidth_stream, tcp_bandwidth_pktsize);
+                                tcp_bandwidth_stream, tcp_bandwidth_pktsize);
                         if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver
-                                                               .messages.SUCCEDED.toString()) != 0){
+                                .messages.SUCCEDED.toString()) != 0) {
                             System.out.println("measure failed");
                             break;
                         }
@@ -132,6 +132,7 @@ public class Server {
 
                     System.out.println("TCPBandwidthReceiver: completed");
                     break;
+                }
                 case "UDPCapacityPPSender":{
                     //UDP latency test using Packet Pair, MRS has to receive
                     udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
@@ -160,11 +161,12 @@ public class Server {
                     System.out.println("UDPBandwidthSender: completed");
                     break;
                 }
+                case "UDPCapacityPPReceiver": {
+                    //UDP Latency test using Packet Pair, MRS has to send
+                    udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
 
-
-                //UDP Latency test using Packet Pair, MRS has to send
-                case "UDPCapacityPPReceiver":
-                    udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
                     //MRS first has to receive a packet from the client to know Client's Address and Port
                     byte[] buf = new byte[1000];
                     DatagramPacket dgp = new DatagramPacket(buf, buf.length);
@@ -173,15 +175,20 @@ public class Server {
                     } catch (IOException ex) {
                         Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    //Connecting and actually starting the test
 
+                    //remote -> observer bandwidth measure
                     udpListener.connect(dgp.getAddress(), dgp.getPort());
                     Measurements.UDPCapacityPPSender(udpListener, udp_bandwidth_pktsize);
                     udpListener.disconnect();
+                    if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver
+                                                               .messages.SUCCEDED.toString()) != 0){
+                        System.out.println("measure failed");
+                        break;
+                    }
+                    System.out.println("UDPBandwidthReceiver: completed");
 
-                    //Log
-                    System.out.println("Finished!");
                     break;
+                }
 
                 //UDP RTT test, MRS has to receive
                 case "UDPRTTMO":

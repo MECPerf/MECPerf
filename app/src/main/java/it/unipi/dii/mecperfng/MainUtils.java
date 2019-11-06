@@ -106,31 +106,39 @@ public class MainUtils {
                     return -1;
                 }
                 Measurements.UDPCapacityPPSender(connectionSocket, udp_bandwidth_pktsize);
+
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                                                                      .COMPLETED.toString()) == 0) {
+                    controlSocketObserver.closeConnection();
+                    return 0;
+                }
+
+                controlSocketObserver.closeConnection();
+                return -1;
             }
             else {
-                controlSocketObserver.sendCMD("UDPCapacityPPReceiver" + "#0#" + keyword+ "#"+ udp_bandwidth_pktsize);
-
-                //Client has to send a packet to server to let the server knows Client's
-                // IP and Port
+                controlSocketObserver.sendCMD("UDPCapacityPPReceiver#" + keyword+ "#"+
+                                              udp_bandwidth_pktsize);
+                //Client has to send a packet to server to let the server knows Client's IP and Port
                 String outString = "Dummy message";
                 byte[] buf = outString.getBytes();
                 connectionSocket.send( new DatagramPacket(buf, buf.length));
-                Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(connectionSocket,
-                        udp_bandwidth_pktsize);
+                Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(
+                                                           connectionSocket, udp_bandwidth_pktsize);
+                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
 
-                sendDataToAggregator(aggregatorAddress, aggregatorPort, "UDPBandwidth",
-                              "Observer", "Client",0, measureResult,
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                                                                      .COMPLETED.toString()) != 0) {
+                    System.out.println("measure with Observer FAILED");
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
+                sendDataToAggregator(aggregatorAddress, aggregatorPort, "UDPBandwidth", "Observer",
+                                     "Client",0, measureResult,
                                      keyword, udp_bandwidth_pktsize, 2);
-            }
-
-            String measureOutcome = controlSocketObserver.receiveCMD();
-            controlSocketObserver.closeConnection();
-
-            if (measureOutcome.compareTo(controlSocketObserver.messages.COMPLETED.toString()) == 0) {
+                controlSocketObserver.closeConnection();
                 return 0;
             }
-
-            return -1;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             return -1;
@@ -260,5 +268,4 @@ public class MainUtils {
             }
         }
     }
-
 }

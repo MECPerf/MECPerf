@@ -227,12 +227,11 @@ public class Observer {
                     System.out.println("UDPBandwidthSender: completed");
                     break;
                 }
-
-
                 case "UDPCapacityPPReceiver":{
-                    //MO forwards the command to the server and sends the metrics server-observer to the aggregator
-                    //MO has to receive a packet from the client to know Client's Address and Port
-                    udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
+                    udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
+
                     byte[] buf = new byte[1000];
                     DatagramPacket dgp = new DatagramPacket(buf, buf.length);
                     try {
@@ -240,16 +239,21 @@ public class Observer {
                     } catch (IOException ex) {
                         Logger.getLogger(Observer.class.getName()).log(Level.SEVERE, null, ex);
                     }
-
                     udpListener.connect(dgp.getAddress(), dgp.getPort());
 
-                    //TODO implementare ACK "sono pronto a ricevere i dati"
-                    Thread.sleep(10000);
+                    //first measure (observer -> client)
                     Measurements.UDPCapacityPPSender(udpListener, udp_bandwidth_pktsize);
                     udpListener.disconnect();
+                    if (controlSocketApp.receiveCMD().compareTo(controlSocketApp.messages.SUCCEDED
+                                                                                .toString()) != 0) {
+                        System.out.println("Client-observer measure failed");
+                        break;
+                    }
+                    System.out.println("First measure (sender) completed");
 
+                    //second measure (remote -> observer)
                     controlSocketRemote.sendCMD(cmd);
-
+                    //MO has to send a packet to server to let the server knows Client's IP and Port
                     DatagramSocket udpsocket = null;
                     try {
                         udpsocket = new DatagramSocket();
@@ -257,20 +261,25 @@ public class Observer {
                         String outString = "UDPCapacityPPReceiver";
                         buff = outString.getBytes();
                         DatagramPacket out = new DatagramPacket(buff, buff.length, InetAddress.getByName(SERVERIP), UDPPORT);
-                        //MO has to send a packet to server to let the server knows Client's IP and Port
                         udpsocket.send(out);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(udpsocket, udp_bandwidth_pktsize);
+                    Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(udpsocket,
+                                                                             udp_bandwidth_pktsize);
+                    controlSocketRemote.sendCMD(controlSocketRemote.messages.SUCCEDED.toString());
+                    System.out.println("Second measure (sender) completed");
 
-                    sendAggregator("UDPBandwidth", Integer.parseInt(cmdSplitted[1]), "Server", "Observer", -1, measureResult, cmdSplitted[2], udp_bandwidth_pktsize, 2);
+                    controlSocketApp.sendCMD(controlSocketApp.messages.COMPLETED.toString());
 
-                    System.out.println("UDPCapacityPPReceiver: mappa ricevuta da REMOTE SERVER: \n" +measureResult + "\n");
-                    controlSocketApp.sendCMD("DONE");
+                    sendAggregator("UDPBandwidth", 0, "Server", "Observer",
+                            -1, measureResult, cmdSplitted[1], udp_bandwidth_pktsize, 2);
+
+                    System.out.println("results sent to aggregator");
 
                     break;
                 }
+
                 case "UDPRTTC": {
                     //MO forwards the command to the server and sends the metrics observer-server
                     udp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
@@ -390,9 +399,8 @@ public class Observer {
                 }
             }
             controlSocketRemote.closeConnection();
+            controlSocketApp.closeConnection();
         }
-
-
     }
 
 
