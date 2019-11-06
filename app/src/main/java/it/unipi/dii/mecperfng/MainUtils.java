@@ -44,8 +44,8 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD( "TCPBandwidthSender#" + keyword + "#" +
                                               tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                                                                          .START.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
+                                                                                .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -67,9 +67,9 @@ public class MainUtils {
                                        "#"+tcp_bandwidth_pktsize+"#"+tcp_bandwidth_num_pkt);
                 Map<Long, Integer> longIntegerMap = Measurements.TCPBandwidthReceiver(
                                                         communicationSocket, tcp_bandwidth_pktsize);
-                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+                controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
                                                                       .COMPLETED.toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
@@ -105,8 +105,8 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD("UDPCapacityPPSender#" + keyword+ "#"+
                                               udp_bandwidth_pktsize);
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages.
-                                                                          START.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
+                                                                                .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -114,8 +114,8 @@ public class MainUtils {
                 }
                 Measurements.UDPCapacityPPSender(connectionSocket, udp_bandwidth_pktsize);
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                                                                      .COMPLETED.toString()) == 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
+                                                                                .toString()) == 0) {
                     controlSocketObserver.closeConnection();
                     return 0;
                 }
@@ -132,10 +132,10 @@ public class MainUtils {
                 connectionSocket.send( new DatagramPacket(buf, buf.length));
                 Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(
                                                            connectionSocket, udp_bandwidth_pktsize);
-                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+                controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                                                                      .COMPLETED.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
+                                                                                .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -204,8 +204,8 @@ public class MainUtils {
 
                 Measurements.TCPRTTReceiver(communicationSocket, tcp_rtt_pktsize, tcp_rtt_num_pack);
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                        .COMPLETED.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
+                                                                                .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -273,8 +273,8 @@ public class MainUtils {
                 udpsocket.send(new DatagramPacket(buf, buf.length));
                 Measurements.UDPRTTReceiver(udpsocket, udp_rtt_pktsize, udp_rtt_num_pack);
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                        .COMPLETED.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
+                                                                                .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();

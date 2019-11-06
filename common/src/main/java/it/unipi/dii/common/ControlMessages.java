@@ -10,28 +10,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Objects;
 
 
 
 
 public class ControlMessages {
     public enum Messages{
-        STOP,
         START,
         COMPLETED,
         SUCCEDED,
         FAILED
     }
-
-
     private Socket controlSocket = null;
     private DataOutputStream dataOutputStream = null;
     public Messages messages;
-
-
-
-
-
 
 
 
@@ -108,7 +101,7 @@ public class ControlMessages {
             ex.printStackTrace();
         }
 
-        DataInputStream dataInputStream = new DataInputStream(inputStream);
+        DataInputStream dataInputStream = new DataInputStream(Objects.requireNonNull(inputStream));
         try {
             //The command received is composed by "command id-test"
             receivedCommand = dataInputStream.readUTF();
@@ -128,5 +121,4 @@ public class ControlMessages {
             ioe.printStackTrace();
         }
     }
-
 }
