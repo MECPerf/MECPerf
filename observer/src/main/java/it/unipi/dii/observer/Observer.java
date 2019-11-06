@@ -137,33 +137,48 @@ public class Observer {
                     System.out.println("TCPBandwidthSender: completed");
                     break;
                 }
-
                 case "TCPBandwidthReceiver": {
-                    /*
-                        the observer sends packets to the app
-                        the remote server sends packet to the observer
-                    */
-                    tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[4]) * tcp_bandwidth_pktsize;
+                    Map<Long, Integer> mappaSO = null;
+                    tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[3]) * tcp_bandwidth_pktsize;
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
+                    System.out.println("Number of packes : " + Integer.parseInt(cmdSplitted[3]));
 
                     try {
                         Socket tcpSenderConnectionSocket = tcpListener.accept();
-                        Socket tcpReceiverConnectionSocket = new Socket(InetAddress.getByName(SERVERIP), TCPPORT);
+                        Socket tcpReceiverConnectionSocket = new Socket(InetAddress.getByName(
+                                                                                SERVERIP), TCPPORT);
+
+                        //first measure (observer -> client)
+                        Measurements.TCPBandwidthSender(tcpSenderConnectionSocket,
+                                                       tcp_bandwidth_stream, tcp_bandwidth_pktsize);
+                        if (controlSocketApp.receiveCMD().compareTo(controlSocketApp.messages
+                                                                       .SUCCEDED.toString()) != 0) {
+                            System.out.println("Edge measure failed");
+                            break;
+                        }
+                        System.out.println("First measure (sender) completed");
 
 
-                        Measurements.TCPBandwidthSender(tcpSenderConnectionSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
-
+                        //second measure (remote -> observer)
                         controlSocketRemote.sendCMD(cmd);
-
-                        Map<Long, Integer> mappaSO = Measurements.TCPBandwidthReceiver(tcpReceiverConnectionSocket, tcp_bandwidth_pktsize);
-
-                        sendAggregator("TCPBandwidth", Integer.parseInt(cmdSplitted[1]), "Server", "Observer", -1, mappaSO, cmdSplitted[2], tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[4]));
-
+                        mappaSO = Measurements.TCPBandwidthReceiver(tcpReceiverConnectionSocket,
+                                                                    tcp_bandwidth_pktsize);
+                        controlSocketRemote.sendCMD(controlSocketRemote.messages.SUCCEDED.toString());
+                        System.out.println("Second measure (sender) completed");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-                    System.out.println("TCPBandwidth: command finished");
-                    controlSocketApp.sendCMD("DONE");
+
+                    controlSocketApp.sendCMD(controlSocketApp.messages.COMPLETED.toString());
+
+                    sendAggregator("TCPBandwidth", 0, "Server",
+                            "Observer", -1, mappaSO, cmdSplitted[1],
+                            tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[3]));
+                    System.out.println("results sent to aggregator");
+
+                    System.out.println("TCPBandwidthReceiver: completed");
                     break;
                 }
                 case "UDPCapacityPPSender": {

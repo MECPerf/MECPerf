@@ -44,31 +44,41 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD( "TCPBandwidthSender#" + keyword + "#" +
                                               tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages.START.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                                                                          .START.toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
                     return -1;
                 }
                 Measurements.TCPBandwidthSender(communicationSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
+
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                                                                      .COMPLETED.toString()) == 0) {
+                    controlSocketObserver.closeConnection();
+                    return 0;
+                }
+                return -1;
             }
             else {
-                controlSocketObserver.sendCMD("TCPBandwidthReceiver" + "#" + '0' + "#" + keyword +
+                controlSocketObserver.sendCMD("TCPBandwidthReceiver#" + keyword +
                                        "#"+tcp_bandwidth_pktsize+"#"+tcp_bandwidth_num_pkt);
+                Map<Long, Integer> longIntegerMap = Measurements.TCPBandwidthReceiver(
+                                                        communicationSocket, tcp_bandwidth_pktsize);
+                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
 
-                Map<Long, Integer> longIntegerMap = Measurements.
-                                   TCPBandwidthReceiver(communicationSocket, tcp_bandwidth_pktsize);
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                                                                      .COMPLETED.toString()) != 0) {
+                    System.out.println("measure with Observer FAILED");
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
 
                 sendDataToAggregator(aggregatorAddress, aggregatorPort,"TCPBandwidth",
                         "Observer","Client", -1, longIntegerMap,
                         keyword, tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
-            }
 
-            String measureOutcome = controlSocketObserver.receiveCMD();
-            controlSocketObserver.closeConnection();
-            if (measureOutcome.compareTo(controlSocketObserver.messages.COMPLETED.toString()) == 0) {
+                controlSocketObserver.closeConnection();
                 return 0;
             }
-
-            return -1;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             return -1;

@@ -81,7 +81,6 @@ public class Server {
 
             //Start test based on command received
             switch(cmdSplitted[0]){
-
                 case "TCPBandwidthSender": {
                     //the observer sends to the remote server
                     Map<Long, Integer> mappa;
@@ -96,7 +95,7 @@ public class Server {
                         controlSocketObserver.sendCMD(controlSocketObserver.messages.START.toString());
                         mappa = Measurements.TCPBandwidthReceiver(tcpReceiverConnectionSocket, tcp_bandwidth_pktsize);
                         controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
-                        System.out.println("TCPBandwidthReceiver() DONE");
+                        System.out.println("measure (receiver) completed");
 
                         sendDataToAggregator("TCPBandwidth", 0, "Observer",
                                 "Server", -1, mappa, cmdSplitted[1],
@@ -111,19 +110,27 @@ public class Server {
                     break;
                 }
                 case "TCPBandwidthReceiver":
-                    tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[4]) * tcp_bandwidth_pktsize;
+                    tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[3]) * tcp_bandwidth_pktsize;
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
+                    System.out.println("Number of packes : " + Integer.parseInt(cmdSplitted[3]));
 
                     try {
-                        //the remote server sends packet to the observer
-
                         Socket tcpSenderConnectionSocket = tcpListener.accept();
-                        Measurements.TCPBandwidthSender(tcpSenderConnectionSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
+                        Measurements.TCPBandwidthSender(tcpSenderConnectionSocket,
+                                                       tcp_bandwidth_stream, tcp_bandwidth_pktsize);
+                        if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver
+                                                               .messages.SUCCEDED.toString()) != 0){
+                            System.out.println("measure failed");
+                            break;
+                        }
+                        System.out.println("measure (receiver) completed");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
-                    System.out.println("TCPBandwidth: RemoteServer -> Observer finished");
+                    System.out.println("TCPBandwidthReceiver: completed");
                     break;
                 case "UDPCapacityPPSender":{
                     //UDP latency test using Packet Pair, MRS has to receive
