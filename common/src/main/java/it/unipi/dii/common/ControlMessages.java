@@ -15,8 +15,21 @@ import java.net.Socket;
 
 
 public class ControlMessages {
-    Socket controlSocket = null;
-    DataOutputStream dataOutputStream = null;
+    public enum Messages{
+        STOP,
+        START,
+        COMPLETED,
+        SUCCEDED,
+        FAILED
+    }
+
+
+    private Socket controlSocket = null;
+    private DataOutputStream dataOutputStream = null;
+    public Messages messages;
+
+
+
 
 
 
