@@ -327,14 +327,16 @@ public class Observer {
                     }
                     break;
                 }
-
-                case "UDPRTTMO": {
+                case "UDPRTTReceiver": {
                     double latency = 0.0;
-                    udp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    udp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
+                    udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + udp_rtt_pktsize);
+                    System.out.println("Number of packes : " + udp_rtt_num_pack);
+
                     try {
                         //MO has to receive a packet from the client to know Client's Address and Port
-
                         byte[] bufrtt = new byte[1000];
                         DatagramPacket dgprtt = new DatagramPacket(bufrtt, bufrtt.length);
                         try {
@@ -343,20 +345,13 @@ public class Observer {
                             Logger.getLogger(Observer.class.getName()).log(Level.SEVERE, null, ex);
                         }
                         udpListener.connect(dgprtt.getAddress(), dgprtt.getPort());
-
-
                         latency = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
-                        sendAggregator("UDPRTT", Integer.parseInt(cmdSplitted[1]), "Observer", "Client", latency, null, cmdSplitted[2], udp_rtt_pktsize, udp_rtt_num_pack);
                         udpListener.disconnect();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
 
-                    System.out.println("MO UDP RTT : " + latency + " Ms");
+                        System.out.println("First measure (sender) completed");
 
-                    controlSocketRemote.sendCMD("UDPRTTMRS" + "#" + cmdSplitted[1] + "#" + cmdSplitted[2] + "#" + cmdSplitted[3] + "#" + cmdSplitted[4]);
+                        controlSocketRemote.sendCMD(cmd);
 
-                    try {
                         DatagramSocket udpsocketRTT = new DatagramSocket();
                         byte[] bufRTT;
                         String outString = "UDPCapacityPPReceiver";
@@ -365,10 +360,24 @@ public class Observer {
                         //Client has to send a packet to server to let the server knows Client's IP and Port
                         udpsocketRTT.send(out);
                         Measurements.UDPRTTReceiver(udpsocketRTT, udp_rtt_pktsize, udp_rtt_num_pack);
-                        controlSocketApp.sendCMD("DONE");
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        if (controlSocketRemote.receiveCMD().compareTo(controlSocketRemote.messages
+                                .SUCCEDED.toString()) != 0) {
+                            System.out.println("Measure failed");
+
+                            controlSocketApp.sendCMD(controlSocketApp.messages.FAILED.toString());
+                            break;
+                        }
+                        System.out.println("Second measure (receiver) completed");
+                        controlSocketApp.sendCMD(controlSocketApp.messages.COMPLETED.toString());
+
+                        sendAggregator("UDPRTT", 0, "Observer", "Client", latency, null, cmdSplitted[1], udp_rtt_pktsize, udp_rtt_num_pack);
+                        System.out.println("results sent to aggregator");
+
+                        System.out.println("UDPRTTReceiver: completed");
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
                     }
+
                     break;
                     }
                 case "TCPRTTSender": {
@@ -422,9 +431,8 @@ public class Observer {
                     System.out.println("TCPRTTSender: completed");
                     break;
                 }
-
                 case "TCPRTTReceiver": {
-                    double latency = 0.0;
+                    double latency;
                     Socket tcpRTT = null;
                     //MO sends metrics client-observer and forwards the command to the server
                     tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);

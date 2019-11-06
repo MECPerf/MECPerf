@@ -211,15 +211,14 @@ public class Server {
                     }
                     break;
                 }
-
-
-                case "UDPRTTMRS":
+                case "UDPRTTReceiver":{
                     //UDP RTT test, MRS has to send
-                    udp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    udp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
+                    udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
+                    System.out.println("\nReceived command: " + cmdSplitted[0]);
+                    System.out.println("Packet size: " + udp_rtt_pktsize);
+                    System.out.println("Number of packes: " + udp_rtt_num_pack);
 
-                    System.out.println("udp_rtt_pktsize: " +udp_rtt_pktsize);
-                    System.out.println("udp_rtt_num_pack: " +udp_rtt_num_pack);
                     try {
                         //MRS has to first receive a packet from the client to know Client's Address and Port
                         byte[] bufrtt = new byte[1000];
@@ -234,17 +233,20 @@ public class Server {
                         udpListener.connect(dgprtt.getAddress(), dgprtt.getPort());
                         latency = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
                         udpListener.disconnect();
+
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
 
                     //send data to Aggregator
-                    sendDataToAggregator("UDPRTT", Integer.parseInt(cmdSplitted[1]), "Server", "Observer", latency , null, cmdSplitted[2], udp_rtt_pktsize, udp_rtt_num_pack);
-                    //Log
-                    System.out.println("Server UDP RTT : " + latency + " Ms");
+                    sendDataToAggregator("UDPRTT", 0, "Server", "Observer", latency , null, cmdSplitted[1], udp_rtt_pktsize, udp_rtt_num_pack);
+                    System.out.println("results sent to aggregator");
+
+                    System.out.println("UDPRTTReceiver: completed");
                     break;
-
-
+                }
                 case "TCPRTTSender": {
                     // the observer starts a RTT measure using the remote server s receiver
                     tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);

@@ -203,18 +203,18 @@ public class MainUtils {
                                        tcp_rtt_pktsize + "#" + tcp_rtt_num_pack);
 
                 Measurements.TCPRTTReceiver(communicationSocket, tcp_rtt_pktsize, tcp_rtt_num_pack);
-            }
 
-            if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                                                                    .COMPLETED.toString()) != 0) {
-                System.out.println("measure with Observer FAILED");
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                        .COMPLETED.toString()) != 0) {
+                    System.out.println("measure with Observer FAILED");
+
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
 
                 controlSocketObserver.closeConnection();
-                return -1;
+                return 0;
             }
-
-            controlSocketObserver.closeConnection();
-            return 0;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             return -1;
@@ -266,22 +266,24 @@ public class MainUtils {
                 // the client application starts a TCP RTT measure with the observer as
                 //sender
 
-                controlSocketObserver.sendCMD("UDPRTTMO" + "#0#" + keyword+"#" + udp_rtt_pktsize +
+                controlSocketObserver.sendCMD("UDPRTTReceiver#" + keyword+"#" + udp_rtt_pktsize +
                                        "#" + udp_rtt_num_pack);
                 String outString = "DummyPacket";
                 byte[] buf = outString.getBytes();
                 udpsocket.send(new DatagramPacket(buf, buf.length));
                 Measurements.UDPRTTReceiver(udpsocket, udp_rtt_pktsize, udp_rtt_num_pack);
-            }
 
-            String measureOutcome = controlSocketObserver.receiveCMD();
-            controlSocketObserver.closeConnection();
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                        .COMPLETED.toString()) != 0) {
+                    System.out.println("measure with Observer FAILED");
 
-            if (measureOutcome.compareTo("DONE") == 0) {
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
+
+                controlSocketObserver.closeConnection();
                 return 0;
             }
-
-            return -1;
         } catch (IOException ioe) {
             return -1;
         }
