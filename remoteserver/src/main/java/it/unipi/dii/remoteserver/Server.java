@@ -236,21 +236,34 @@ public class Server {
                     break;
 
 
-                case "TCPRTTMO":
+                case "TCPRTTSender": {
                     // the observer starts a RTT measure using the remote server s receiver
-                    tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
-                    System.out.println("tcp_rtt_pktsize: " +tcp_rtt_pktsize);
-                    System.out.println("tcp_rtt_num_pack: " +tcp_rtt_num_pack);
+                    tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
+                    System.out.println("\nReceived command: " + cmdSplitted[0]);
+                    System.out.println("Packet size: " + tcp_rtt_pktsize);
+                    System.out.println("Number of packes: " + tcp_rtt_num_pack);
+
+
 
                     try {
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.START.toString());
                         Socket tcpRTT = tcpListener.accept();
+
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.START.toString());
                         Measurements.TCPRTTReceiver(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
+                        if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver
+                                                              .messages.SUCCEDED.toString()) != 0) {
+                            System.out.println("measure failed");
+                            break;
+                        }
+                        System.out.println("TCPRTTSender: completed");
+
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                     break;
-
+                }
 
                 case "TCPRTTMRS":
                     //the observer starts a TCP RTT using the remote server as sender
