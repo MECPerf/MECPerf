@@ -10,6 +10,7 @@ APPCOMMANDLINE_PATH=$PROJECT_ROOT_PATH/app/src/main/java/
 echo "start compiling..."
 
 
+
 javac $COMMON_PATH/it/unipi/dii/common/Measure.java 
 javac $COMMON_PATH/it/unipi/dii/common/Measurements.java
 javac $COMMON_PATH/it/unipi/dii/common/ControlMessages.java
@@ -37,6 +38,7 @@ echo "creating jars..."
 
 cd $COMMON_PATH
 jar cf $PROJECT_ROOT_PATH/CommandLineApp.jar it/unipi/dii/common/ControlMessages.class it/unipi/dii/common/ControlMessages.java
+jar uf $PROJECT_ROOT_PATH/CommandLineApp.jar it/unipi/dii/common/ControlMessages\$Messages.class
 jar uf $PROJECT_ROOT_PATH/CommandLineApp.jar it/unipi/dii/common/Measurements.class it/unipi/dii/common/Measurements.java 
 jar uf $PROJECT_ROOT_PATH/CommandLineApp.jar it/unipi/dii/common/Measure.class it/unipi/dii/common/Measure.java 
 cd $APPCOMMANDLINE_PATH
@@ -53,6 +55,7 @@ cd $COMMON_PATH
 jar cf $PROJECT_ROOT_PATH/Observer.jar it/unipi/dii/common/Measurements.class it/unipi/dii/common/Measurements.java 
 jar uf $PROJECT_ROOT_PATH/Observer.jar it/unipi/dii/common/Measure.class it/unipi/dii/common/Measure.java 
 jar uf $PROJECT_ROOT_PATH/Observer.jar it/unipi/dii/common/ControlMessages.class it/unipi/dii/common/ControlMessages.java
+jar uf $PROJECT_ROOT_PATH/Observer.jar it/unipi/dii/common/ControlMessages\$Messages.class
 cd $OBSERVER_PATH
 jar uf $PROJECT_ROOT_PATH/Observer.jar it/unipi/dii/observer/Observer.class it/unipi/dii/observer/Observer.java 
 echo "      Observer.jar created"
@@ -64,6 +67,7 @@ cd $COMMON_PATH
 jar cf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/Measurements.class it/unipi/dii/common/Measurements.java 
 jar uf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/Measure.class it/unipi/dii/common/Measure.java
 jar uf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/ControlMessages.class it/unipi/dii/common/ControlMessages.java
+jar uf $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/common/ControlMessages\$Messages.class
 cd $REMOTESERVER_PATH
 jar uf  $PROJECT_ROOT_PATH/Server.jar it/unipi/dii/remoteserver/Server.class it/unipi/dii/remoteserver/Server.java
 echo "      Server.jar done"
