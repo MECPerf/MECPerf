@@ -5,9 +5,10 @@ package it.unipi.dii.remoteserver;
  * and open the template in the editor.
  */
 
-import java.io.DataInputStream;
+
+
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -66,11 +67,8 @@ public class Server {
 
         while (true) {
             ControlMessages controlSocketObserver = null;
-            //Listening for commands
-            Socket cmdSocket = null;
             try {
                 controlSocketObserver = new ControlMessages(cmdListener.accept());
-                //cmdSocket = cmdListener.accept();
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
@@ -79,34 +77,39 @@ public class Server {
             String separator ="#";
             String[] cmdSplitted = cmd.split(separator);
 
-            //Log
-            System.out.println("\nThe cmd sent from the socket was: " + cmdSplitted[0]);
-
-            double bandwidth = 0.0;
             double latency = 0.0;
 
             //Start test based on command received
-
             switch(cmdSplitted[0]){
 
-                case "TCPBandwidthSender":
+                case "TCPBandwidthSender": {
                     //the observer sends to the remote server
                     Map<Long, Integer> mappa;
-                    tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
-
+                    tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
+                    System.out.println("Number of packes : " + Integer.parseInt(cmdSplitted[3]));
 
                     try {
                         Socket tcpReceiverConnectionSocket = tcpListener.accept();
+
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.START.toString());
                         mappa = Measurements.TCPBandwidthReceiver(tcpReceiverConnectionSocket, tcp_bandwidth_pktsize);
-                        sendDataToAggregator("TCPBandwidth", Integer.parseInt(cmdSplitted[1]),
-                                           "Observer", "Server", -1, mappa, cmdSplitted[2], tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[4]) );
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+                        System.out.println("TCPBandwidthReceiver() DONE");
+
+                        sendDataToAggregator("TCPBandwidth", 0, "Observer",
+                                "Server", -1, mappa, cmdSplitted[1],
+                                tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[3]));
+                        System.out.println("Sent result to aggregator");
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
-                    System.out.println("TCPBandwidth: Observer -> RemoteServer finished");
+                    System.out.println("TCPBandwidthSender: completed");
                     break;
+                }
 
                 case "TCPBandwidthReceiver":
                     tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);

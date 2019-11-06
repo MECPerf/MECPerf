@@ -42,17 +42,15 @@ public class MainUtils {
             ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
 
             if (direction.equals("Sender")) {
-                controlSocketObserver.sendCMD( "TCPBandwidthSender" + "#0#" + keyword + "#" +
+                controlSocketObserver.sendCMD( "TCPBandwidthSender" + "#" + keyword + "#" +
                                        tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
-
-                try{
-                    //TODO sostituire la sleep con una ACK da parte del Receiver => "Sono pronto a ricevere"
-                    Thread.sleep(10000);
-                }catch( InterruptedException e) {
-                    e.printStackTrace();
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages.START.toString()) != 0) {
+                    System.out.println("Start measure with Observer FAILED");
+                    return -1;
                 }
                 Measurements.TCPBandwidthSender(communicationSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
-            } else {
+            }
+            else {
                 controlSocketObserver.sendCMD("TCPBandwidthReceiver" + "#" + '0' + "#" + keyword +
                                        "#"+tcp_bandwidth_pktsize+"#"+tcp_bandwidth_num_pkt);
 
@@ -66,8 +64,7 @@ public class MainUtils {
 
             String measureOutcome = controlSocketObserver.receiveCMD();
             controlSocketObserver.closeConnection();
-
-            if (measureOutcome.compareTo("DONE") == 0) {
+            if (measureOutcome.compareTo(controlSocketObserver.messages.COMPLETED.toString()) == 0) {
                 return 0;
             }
 
