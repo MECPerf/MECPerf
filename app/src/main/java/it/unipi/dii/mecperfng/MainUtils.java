@@ -232,16 +232,34 @@ public class MainUtils {
             udpsocket.connect(InetAddress.getByName(observerAddress), observerPort);
 
             if (direction.equals("Sender")) {
-                // the client application starts a TCP RTT measure as sender. The
-                // observer is the receiver
+                // the client application starts a TCP RTT measure as sender. The observer is the
+                // receiver
+                controlSocketObserver.sendCMD("UDPRTTSender#" + keyword +"#" +
+                                                        udp_rtt_pktsize + "#" + udp_rtt_num_pack);
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                        .                                                 START.toString()) != 0) {
+                    System.out.println("Start measure with Observer FAILED");
 
-                controlSocketObserver.sendCMD("UDPRTTC" + "#0#" + keyword +"#" + udp_rtt_pktsize +
-                                       "#" + udp_rtt_num_pack);
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
+
+                //perform measure
                 double latency = Measurements.UDPRTTSender(udpsocket, udp_rtt_pktsize,
-                                       udp_rtt_num_pack);
+                                                           udp_rtt_num_pack);
+                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                        .COMPLETED.toString()) != 0) {
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
                 sendDataToAggregator(aggregatorAddress, aggregatorPort, "UDPRTT",
                               "Client","Observer", latency, null, keyword,
                                      udp_rtt_pktsize, udp_rtt_num_pack);
+
+                controlSocketObserver.closeConnection();
+                return 0;
             } else {
                 // the client application starts a TCP RTT measure with the observer as
                 //sender

@@ -279,29 +279,55 @@ public class Observer {
 
                     break;
                 }
-
-                case "UDPRTTC": {
+                case "UDPRTTSender": {
                     //MO forwards the command to the server and sends the metrics observer-server
-                    udp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    udp_rtt_num_pack = Integer.parseInt(cmdSplitted[4]);
-                    try {
-                        Measurements.UDPRTTReceiver(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
+                    udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + udp_rtt_pktsize);
+                    System.out.println("Number of packes : " + udp_rtt_num_pack);
 
-                        controlSocketRemote.sendCMD("UDPRTTMO" + "#" + cmdSplitted[1] + "#" + cmdSplitted[2] + "#" + cmdSplitted[3] + "#" + cmdSplitted[4]);
+                    try {
+                        controlSocketApp.sendCMD(controlSocketApp.messages.START.toString());
+                        Measurements.UDPRTTReceiver(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
+                        if (controlSocketApp.receiveCMD().compareTo(controlSocketApp.messages
+                                .SUCCEDED.toString()) != 0) {
+                            System.out.println("Start measure with remote FAILED");
+
+                            controlSocketApp.sendCMD(controlSocketApp.messages.FAILED.toString());
+                            break;
+                        }
+                        System.out.println("First measure (receiver) completed");
+
+                        //second measure (observer -> remote -> observer)
+                        controlSocketRemote.sendCMD(cmd);
+                        if (controlSocketRemote.receiveCMD().compareTo(controlSocketRemote.messages
+                                .START.toString()) != 0) {
+                            System.out.println("Start measure with remote FAILED");
+
+                            controlSocketApp.sendCMD(controlSocketApp.messages.FAILED.toString());
+                            break;
+                        }
+
                         DatagramSocket udpsocketmo = new DatagramSocket();
                         udpsocketmo.connect(InetAddress.getByName(SERVERIP), UDPPORT);
                         double latency = Measurements.UDPRTTSender(udpsocketmo, udp_rtt_pktsize, udp_rtt_num_pack);
+                        controlSocketRemote.sendCMD(controlSocketRemote.messages.SUCCEDED.toString());
+                        controlSocketApp.sendCMD(controlSocketApp.messages.COMPLETED.toString());
+                        System.out.println("Second measure (sender) completed");
 
-                        sendAggregator("UDPRTT", Integer.parseInt(cmdSplitted[1]), "Observer", "Server", latency, null, cmdSplitted[2], udp_rtt_pktsize, udp_rtt_num_pack);
+                        sendAggregator("UDPRTT", 0, "Observer", "Server",
+                                latency, null, cmdSplitted[1], udp_rtt_pktsize, udp_rtt_num_pack);
 
-                        System.out.println("UDPRTTC: latenza verso REMOTE SERVER: \n" + latency + "\n");
-                        controlSocketApp.sendCMD("DONE");
+                        System.out.println("results sent to aggregator");
 
+                        System.out.println("UDPRTTSender: completed");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                     break;
                 }
+
                 case "UDPRTTMO": {
                     double latency = 0.0;
                     udp_rtt_pktsize = Integer.parseInt(cmdSplitted[3]);
@@ -322,8 +348,6 @@ public class Observer {
                         latency = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
                         sendAggregator("UDPRTT", Integer.parseInt(cmdSplitted[1]), "Observer", "Client", latency, null, cmdSplitted[2], udp_rtt_pktsize, udp_rtt_num_pack);
                         udpListener.disconnect();
-
-
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -366,7 +390,7 @@ public class Observer {
 
                         if (controlSocketApp.receiveCMD().compareTo(controlSocketApp.messages
                                                                          .SUCCEDED.toString()) != 0) {
-                            System.out.println("Start measure with remote FAILED");
+                            System.out.println("Measure failed");
 
                             controlSocketApp.sendCMD(controlSocketApp.messages.FAILED.toString());
                             break;
@@ -398,6 +422,7 @@ public class Observer {
                     System.out.println("TCPRTTSender: completed");
                     break;
                 }
+                
                 case "TCPRTTMO": {
                     double latency = 0.0;
                     //MO sends metrics client-observer and forwards the command to the server
