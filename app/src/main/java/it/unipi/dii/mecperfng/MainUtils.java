@@ -32,9 +32,9 @@ public class MainUtils {
      *          -1 = IOException
      */
     public static int tcpBandwidthMeasure(String direction,  String keyword, int commandPort,
-                                             String observerAddress, int observerPort,
-                                             String aggregatorAddress, int aggregatorPort,
-                                             int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt){
+                                          String observerAddress, int observerPort,
+                                          String aggregatorAddress, int aggregatorPort,
+                                          int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt){
         try{
             int tcp_bandwidth_stream = tcp_bandwidth_num_pkt * tcp_bandwidth_pktsize;
 
@@ -42,8 +42,8 @@ public class MainUtils {
             ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
 
             if (direction.equals("Sender")) {
-                controlSocketObserver.sendCMD( "TCPBandwidthSender" + "#" + keyword + "#" +
-                                       tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
+                controlSocketObserver.sendCMD( "TCPBandwidthSender#" + keyword + "#" +
+                                              tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
                 if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages.START.toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
                     return -1;
@@ -78,9 +78,9 @@ public class MainUtils {
 
 
     public static int udpBandwidthMeasure(String direction,  String keyword,int commandPort,
-                                             String observerAddress, int observerPort,
-                                             String aggregatorAddress, int aggregatorPort,
-                                             int udp_bandwidth_pktsize){
+                                          String observerAddress, int observerPort,
+                                          String aggregatorAddress, int aggregatorPort,
+                                          int udp_bandwidth_pktsize){
         try{
             ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
             DatagramSocket connectionSocket = new DatagramSocket();
@@ -88,17 +88,16 @@ public class MainUtils {
 
 
             if (direction.equals("Sender")) {
-                controlSocketObserver.sendCMD("UDPCapacityPPSender" + "#0#" + keyword+ "#"+
-                                       udp_bandwidth_pktsize);
-                try{
-                    //TODO sostituire la sleep con una ACK da parte del Receiver => "Sono pronto a ricevere"
-                    Thread.sleep(10000);
-                }catch( InterruptedException e) {
-                    e.printStackTrace();
+                controlSocketObserver.sendCMD("UDPCapacityPPSender#" + keyword+ "#"+
+                                              udp_bandwidth_pktsize);
+                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages.
+                                                                          START.toString()) != 0) {
+                    System.out.println("Start measure with Observer FAILED");
+                    return -1;
                 }
-
                 Measurements.UDPCapacityPPSender(connectionSocket, udp_bandwidth_pktsize);
-            } else {
+            }
+            else {
                 controlSocketObserver.sendCMD("UDPCapacityPPReceiver" + "#0#" + keyword+ "#"+ udp_bandwidth_pktsize);
 
                 //Client has to send a packet to server to let the server knows Client's
@@ -117,7 +116,7 @@ public class MainUtils {
             String measureOutcome = controlSocketObserver.receiveCMD();
             controlSocketObserver.closeConnection();
 
-            if (measureOutcome.compareTo("DONE") == 0) {
+            if (measureOutcome.compareTo(controlSocketObserver.messages.COMPLETED.toString()) == 0) {
                 return 0;
             }
 

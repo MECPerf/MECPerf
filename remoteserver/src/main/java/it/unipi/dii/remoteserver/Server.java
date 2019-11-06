@@ -110,7 +110,6 @@ public class Server {
                     System.out.println("TCPBandwidthSender: completed");
                     break;
                 }
-
                 case "TCPBandwidthReceiver":
                     tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
                     tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[4]) * tcp_bandwidth_pktsize;
@@ -126,17 +125,35 @@ public class Server {
 
                     System.out.println("TCPBandwidth: RemoteServer -> Observer finished");
                     break;
+                case "UDPCapacityPPSender":{
+                    //UDP latency test using Packet Pair, MRS has to receive
+                    udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    Map<Long, Integer> measureResult = null;
+                    System.out.println("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("Packet size : " + udp_bandwidth_pktsize);
 
-                //UDP latency test using Packet Pair, MRS has to receive
-                case "UDPCapacityPPSender":
-                    udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[3]);
-                    Map<Long, Integer> measureResult =  Measurements.UDPCapacityPPReceiver(udpListener, udp_bandwidth_pktsize);
+                    try {
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.START
+                                                                                    .toString());
+                        measureResult =  Measurements.UDPCapacityPPReceiver(
+                                                                udpListener, udp_bandwidth_pktsize);
+                        controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED
+                                                                                    .toString());
+                        System.out.println("measure (receiver DONE");
+                    }catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
 
                     //send data to Aggregator
-                    sendDataToAggregator("UDPBandwidth", Integer.parseInt(cmdSplitted[1]), "Observer", "Server", -1 , measureResult, cmdSplitted[2], udp_bandwidth_pktsize, 2);
+                    sendDataToAggregator("UDPBandwidth", 0, "Observer",
+                                    "Server", -1 , measureResult,
+                                         cmdSplitted[1], udp_bandwidth_pktsize, 2);
+                    System.out.println("Sent results to aggregator");
 
-                    System.out.println("TCPBandwidthSender: mappa ricevuta da OBSERVER: \n" +measureResult + "\n");
+                    System.out.println("UDPBandwidthSender: completed");
                     break;
+                }
+
 
                 //UDP Latency test using Packet Pair, MRS has to send
                 case "UDPCapacityPPReceiver":
