@@ -276,7 +276,8 @@ public class MainUtils {
 
                 controlSocketObserver.closeConnection();
                 return 0;
-            } else {
+            }
+            else {
                 // the client application starts a TCP RTT measure with the observer as
                 //sender
 
@@ -285,7 +286,11 @@ public class MainUtils {
                 String outString = "DummyPacket";
                 byte[] buf = outString.getBytes();
                 udpsocket.send(new DatagramPacket(buf, buf.length));
-                Measurements.UDPRTTReceiver(udpsocket, udp_rtt_pktsize, udp_rtt_num_pack);
+                int ret = Measurements.UDPRTTReceiver(udpsocket, udp_rtt_pktsize, udp_rtt_num_pack);
+                if (ret < 0){
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
                                                                                 .toString()) != 0) {

@@ -33,21 +33,30 @@ public class Measurements {
      * @param udp_rtt_num_pack  The number of UDP packets used
      * @throws IOException
      */
-    public static void UDPRTTReceiver(DatagramSocket serverSocket, int  udp_rtt_pktsize,
+    public static int UDPRTTReceiver(DatagramSocket serverSocket, int  udp_rtt_pktsize,
                                       int udp_rtt_num_pack) throws IOException {
         byte[] sendData = new byte[udp_rtt_pktsize];
         byte[] receiveData = new byte[udp_rtt_pktsize];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length);
+        serverSocket.setSoTimeout(10000); //10s timeout
+        try {
+            for (int i = 0; i < udp_rtt_num_pack; i++) {
 
-        for (int i = 0; i < udp_rtt_num_pack; i++) {
-            serverSocket.receive(receivePacket);
-            InetAddress IPAddress = receivePacket.getAddress();
-            sendPacket.setAddress(IPAddress);
-            int port = receivePacket.getPort();
-            sendPacket.setPort(port);
-            serverSocket.send(sendPacket);
+                serverSocket.receive(receivePacket);
+                InetAddress IPAddress = receivePacket.getAddress();
+                sendPacket.setAddress(IPAddress);
+                int port = receivePacket.getPort();
+                sendPacket.setPort(port);
+                serverSocket.send(sendPacket);
+            }
         }
+        catch (SocketTimeoutException e){
+            System.out.println("UDPRTT: SOCKET TIMEOUT.\nReturning.");
+            return -1;
+        }
+
+        return 0;
     }
 
 

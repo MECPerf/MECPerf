@@ -66,6 +66,7 @@ public class ControlMessages {
         try {
             if (this.dataOutputStream != null)
                 this.dataOutputStream.close();
+            if (this.controlSocket != null)
             this.controlSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,6 +107,9 @@ public class ControlMessages {
             //The command received is composed by "command id-test"
             receivedCommand = dataInputStream.readUTF();
         }
+        catch (EOFException e){
+            throw e;
+        }
         catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -116,6 +120,7 @@ public class ControlMessages {
 
 
     public void initializeNewMeasure(String receiverAddress, int receiverPort) {
+        closeConnection();
         try {
             openControlConnection(InetAddress.getByName(receiverAddress), receiverPort);
         } catch (IOException ioe) {
