@@ -148,10 +148,8 @@ public class Server {
 
                     try {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.START.toString());
-                        System.out.print("1");
                         measureResult = Measurements.UDPCapacityPPReceiver(
                                 udpListener, udp_bandwidth_pktsize);
-                        System.out.print("2");
                         if (measureResult == null)
                         {
                             System.out.println("Measure failed");
@@ -162,7 +160,6 @@ public class Server {
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-                    System.out.print("3");
                     //send data to Aggregator
                     sendDataToAggregator("UDPBandwidth", "Observer","Server",
                                         -1, measureResult,
