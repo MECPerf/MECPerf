@@ -53,7 +53,7 @@ public class MainUtils {
                 }
                 Measurements.TCPBandwidthSender(communicationSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
                                                                       .COMPLETED.toString()) == 0) {
                     controlSocketObserver.closeConnection();
                     return 0;
@@ -132,6 +132,13 @@ public class MainUtils {
                 connectionSocket.send( new DatagramPacket(buf, buf.length));
                 Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(
                                                            connectionSocket, udp_bandwidth_pktsize);
+                if (measureResult == null)
+                {
+                    System.out.println("Measure filed");
+                    controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
@@ -169,8 +176,8 @@ public class MainUtils {
                 // the client application starts a TCP RTT measure (as sender) with the observer
                 controlSocketObserver.sendCMD("TCPRTTSender#" + keyword + "#" + tcp_rtt_pktsize
                                                + "#" + tcp_rtt_num_pack);
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                                                                          .START.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
+                                                                                .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -180,10 +187,10 @@ public class MainUtils {
                 //perform measure
                 double latency = Measurements.TCPRTTSender(communicationSocket, tcp_rtt_pktsize,
                                                            tcp_rtt_num_pack);
-                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+                controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
                                                                      .COMPLETED.toString()) != 0) {
                     controlSocketObserver.closeConnection();
                     return -1;
@@ -238,8 +245,8 @@ public class MainUtils {
                 // receiver
                 controlSocketObserver.sendCMD("UDPRTTSender#" + keyword +"#" +
                                                         udp_rtt_pktsize + "#" + udp_rtt_num_pack);
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
-                        .                                                 START.toString()) != 0) {
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
+                                                                                .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -249,9 +256,16 @@ public class MainUtils {
                 //perform measure
                 double latency = Measurements.UDPRTTSender(udpsocket, udp_rtt_pktsize,
                                                            udp_rtt_num_pack);
-                controlSocketObserver.sendCMD(controlSocketObserver.messages.SUCCEDED.toString());
+                if (latency == -1)
+                {
+                    System.out.println("Measure filed");
+                    controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
+                controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
-                if (controlSocketObserver.receiveCMD().compareTo(controlSocketObserver.messages
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
                         .COMPLETED.toString()) != 0) {
                     controlSocketObserver.closeConnection();
                     return -1;

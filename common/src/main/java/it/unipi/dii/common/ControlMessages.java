@@ -5,6 +5,7 @@ package it.unipi.dii.common;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -78,7 +79,6 @@ public class ControlMessages {
 
     public void sendCMD(String command) throws IOException {
         // get the output stream from the socket.
-        System.out.println("CMD: " + command);
         if (this.dataOutputStream == null) {
             OutputStream outputStream = this.controlSocket.getOutputStream();
             this.dataOutputStream = new DataOutputStream(outputStream);
@@ -91,7 +91,7 @@ public class ControlMessages {
 
 
 
-    public String receiveCMD(){
+    public String receiveCMD() throws EOFException {
         String receivedCommand = null;
         InputStream inputStream = null;
 
@@ -105,7 +105,8 @@ public class ControlMessages {
         try {
             //The command received is composed by "command id-test"
             receivedCommand = dataInputStream.readUTF();
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             ex.printStackTrace();
         }
 

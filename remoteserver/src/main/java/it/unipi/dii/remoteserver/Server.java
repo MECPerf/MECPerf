@@ -8,6 +8,7 @@ package it.unipi.dii.remoteserver;
 
 
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
@@ -63,16 +64,27 @@ public class Server {
 
         while (true) {
             ControlMessages controlSocketObserver = null;
+            String cmd = "";
+            String separator ="#";
+
             try {
                 controlSocketObserver = new ControlMessages(cmdListener.accept());
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
 
-            String cmd = controlSocketObserver.receiveCMD();
-            String separator ="#";
-            String[] cmdSplitted = cmd.split(separator);
+            try {
+                cmd = controlSocketObserver.receiveCMD();
+            }
+            catch (EOFException | NullPointerException e)
+            {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, e);
+                controlSocketObserver.closeConnection();
 
+                continue;
+            }
+
+            String[] cmdSplitted = cmd.split(separator);
             double latency = 0.0;
 
             //Start test based on command received
@@ -81,9 +93,9 @@ public class Server {
                     //the observer sends to the remote server
                     Map<Long, Integer> mappa;
                     int tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
-                    System.out.println("\nReceived command : " + cmdSplitted[0]);
-                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
-                    System.out.println("Number of packes : " + Integer.parseInt(cmdSplitted[3]));
+                    System.out.print("\nReceived command : " + cmdSplitted[0]);
+                    System.out.print("\t[Packet size : " + tcp_bandwidth_pktsize);
+                    System.out.println(", Number of packes : " + Integer.parseInt(cmdSplitted[3]) + "]");
 
                     try {
                         Socket tcpReceiverConnectionSocket = tcpListener.accept();
@@ -91,7 +103,6 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.START.toString());
                         mappa = Measurements.TCPBandwidthReceiver(tcpReceiverConnectionSocket, tcp_bandwidth_pktsize);
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
-                        System.out.println("measure (receiver) completed");
 
                         sendDataToAggregator("TCPBandwidth","Observer","Server",
                                             -1, mappa, cmdSplitted[1],
@@ -108,9 +119,9 @@ public class Server {
                 case "TCPBandwidthReceiver": {
                     int tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[3]) * tcp_bandwidth_pktsize;
-                    System.out.println("\nReceived command : " + cmdSplitted[0]);
-                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
-                    System.out.println("Number of packes : " + Integer.parseInt(cmdSplitted[3]));
+                    System.out.print("\nReceived command : " + cmdSplitted[0]);
+                    System.out.print("\t[Packet size : " + tcp_bandwidth_pktsize);
+                    System.out.println(", Number of packes : " + tcp_bandwidth_stream + "]");
 
                     try {
                         Socket tcpSenderConnectionSocket = tcpListener.accept();
@@ -121,7 +132,6 @@ public class Server {
                             System.out.println("measure failed");
                             break;
                         }
-                        System.out.println("measure (receiver) completed");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
@@ -133,19 +143,26 @@ public class Server {
                     //UDP latency test using Packet Pair, MRS has to receive
                     int udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
                     Map<Long, Integer> measureResult = null;
-                    System.out.println("\nReceived command : " + cmdSplitted[0]);
-                    System.out.println("Packet size : " + udp_bandwidth_pktsize);
+                    System.out.print("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("\t[Packet size : " + udp_bandwidth_pktsize + "]");
 
                     try {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.START.toString());
+                        System.out.print("1");
                         measureResult = Measurements.UDPCapacityPPReceiver(
                                 udpListener, udp_bandwidth_pktsize);
+                        System.out.print("2");
+                        if (measureResult == null)
+                        {
+                            System.out.println("Measure failed");
+                            controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
+                            break;
+                        }
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
-                        System.out.println("measure (receiver DONE");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-
+                    System.out.print("3");
                     //send data to Aggregator
                     sendDataToAggregator("UDPBandwidth", "Observer","Server",
                                         -1, measureResult,
@@ -158,8 +175,8 @@ public class Server {
                 case "UDPCapacityPPReceiver": {
                     //UDP Latency test using Packet Pair, MRS has to send
                     int udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
-                    System.out.println("\nReceived command : " + cmdSplitted[0]);
-                    System.out.println("Packet size : " + Integer.parseInt(cmdSplitted[2]));
+                    System.out.print("\nReceived command : " + cmdSplitted[0]);
+                    System.out.println("\t[Packet size : " + udp_bandwidth_pktsize + "]");
 
                     //MRS first has to receive a packet from the client to know Client's Address and Port
                     byte[] buf = new byte[1000];
@@ -174,11 +191,19 @@ public class Server {
                     udpListener.connect(dgp.getAddress(), dgp.getPort());
                     Measurements.UDPCapacityPPSender(udpListener, udp_bandwidth_pktsize);
                     udpListener.disconnect();
-                    if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
-                                                                       .SUCCEDED.toString()) != 0) {
-                        System.out.println("measure failed");
-                        break;
+                    try {
+                        if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
+                                .SUCCEDED.toString()) != 0) {
+                            System.out.println("measure failed");
+                            break;
+                        }
+                    }catch(EOFException e){
+                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, e);
+                        controlSocketObserver.closeConnection();
+
+                        continue;
                     }
+
                     System.out.println("UDPBandwidthReceiver: completed");
 
                     break;
@@ -187,9 +212,9 @@ public class Server {
                     //UDP RTT test, MRS has to receive
                     int udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
-                    System.out.println("\nReceived command: " + cmdSplitted[0]);
-                    System.out.println("Packet size: " + udp_rtt_pktsize);
-                    System.out.println("Number of packes: " + udp_rtt_num_pack);
+                    System.out.print("\nReceived command: " + cmdSplitted[0]);
+                    System.out.print("\t[Packet size: " + udp_rtt_pktsize);
+                    System.out.println(", Number of packes: " + udp_rtt_num_pack + "]");
 
                     try {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.START.toString());
@@ -209,9 +234,9 @@ public class Server {
                     //UDP RTT test, MRS has to send
                     int udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
-                    System.out.println("\nReceived command: " + cmdSplitted[0]);
-                    System.out.println("Packet size: " + udp_rtt_pktsize);
-                    System.out.println("Number of packes: " + udp_rtt_num_pack);
+                    System.out.print("\nReceived command: " + cmdSplitted[0]);
+                    System.out.print("\t[Packet size: " + udp_rtt_pktsize);
+                    System.out.println(", Number of packes: " + udp_rtt_num_pack + "]");
 
                     try {
                         //MRS has to first receive a packet from the client to know Client's Address and Port
@@ -227,6 +252,12 @@ public class Server {
                         udpListener.connect(dgprtt.getAddress(), dgprtt.getPort());
                         latency = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
                         udpListener.disconnect();
+                        if (latency == -1)
+                        {
+                            System.out.println("Measure filed");
+                            controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
+                            break;
+                        }
 
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
@@ -239,17 +270,17 @@ public class Server {
                                      null, cmdSplitted[1], udp_rtt_pktsize,
                                                udp_rtt_num_pack);
                     System.out.println("results sent to aggregator");
-
                     System.out.println("UDPRTTReceiver: completed");
+
                     break;
                 }
                 case "TCPRTTSender": {
                     // the observer starts a RTT measure using the remote server s receiver
                     int tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
-                    System.out.println("\nReceived command: " + cmdSplitted[0]);
-                    System.out.println("Packet size: " + tcp_rtt_pktsize);
-                    System.out.println("Number of packes: " + tcp_rtt_num_pack);
+                    System.out.print("\nReceived command: " + cmdSplitted[0]);
+                    System.out.print("\t[Packet size: " + tcp_rtt_pktsize);
+                    System.out.println("Number of packes: " + tcp_rtt_num_pack + "]");
 
                     try {
                         controlSocketObserver.sendCMD(controlSocketObserver.messages.START.toString());
@@ -273,9 +304,9 @@ public class Server {
                     //the observer starts a TCP RTT using the remote server as sender
                     int tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
-                    System.out.println("\nReceived command: " + cmdSplitted[0]);
-                    System.out.println("Packet size: " + tcp_rtt_pktsize);
-                    System.out.println("Number of packes: " + tcp_rtt_num_pack);
+                    System.out.print("\nReceived command: " + cmdSplitted[0]);
+                    System.out.print("\t[Packet size: " + tcp_rtt_pktsize);
+                    System.out.println(", Number of packes: " + tcp_rtt_num_pack + "]");
 
                     try {
                         Socket tcpRTT = tcpListener.accept();
@@ -290,8 +321,8 @@ public class Server {
                     sendDataToAggregator("TCPRTT","Server", "Observer", latency,
                                 null, cmdSplitted[1], tcp_rtt_pktsize, tcp_rtt_num_pack);
                     System.out.println("results sent to aggregator");
-
                     System.out.println("TCPRTTReceiver: completed");
+
                     break;
                 }
             }
@@ -312,7 +343,6 @@ public class Server {
             objOutputStream = new ObjectOutputStream(socket.getOutputStream());
             Measure measure = new Measure();
             measure.setType(type);
-            //measure.setID(id);
             measure.setSender(sender);
             measure.setReceiver(receiver);
             measure.setLatency(latency);
