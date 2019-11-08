@@ -51,11 +51,14 @@ public class MainActivity extends AppCompatActivity
         private String cmd;
         private String keyword;
 
+
+
         public AsyncCMD(String cmd, String keyw) {
             super();
             this.cmd = cmd;
             this.keyword = keyw;
         }
+
 
 
         @Override
@@ -69,79 +72,101 @@ public class MainActivity extends AppCompatActivity
             String direction = direction_spinner.getItemAtPosition(direction_spinner
                                                 .getSelectedItemPosition()).toString();
 
-            int outcome = 0;
+            int outcome;
             switch (cmd) {
-                case "TCPBANDWIDTHBUTTON":
+                case "TCPBANDWIDTHBUTTON":{
                     int tcp_bandwidth_pktsize = Integer.parseInt(sp.getString(
-                                                         "pack_size_TCP_BANDWIDTH", "1024"));
-                    int tcp_bandwidth_num_pkt = Integer.parseInt(sp.getString(
+                                                         "pack_size_TCP_BANDWIDTH", "1024")),
+                           tcp_bandwidth_num_pkt = Integer.parseInt(sp.getString(
                                                          "num_pack_TCP_BANDWIDTH", "1024"));
+
 
                     for (int i = 0; i< numberOfConsecutiveTests;i++) {
                         outcome = MainUtils.tcpBandwidthMeasure(direction, keyword, CMDPORT,
                                                     observerAddress, TCPPORT,
                                                     aggregatorAddress, AGGRPORT,
                                                     tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
-                        if (outcome != 0)
-                            return -1;
+                        String txt = "TCP bandwidth " + i + ": ";
+                        if (outcome != 0) {
+                            txt += "FAILED";
+                            i--;
+                        }
+                        else
+                            txt += "SUCCESS";
+
+                        Log.d("Measures", txt);
                     }
 
-                    return outcome;
-
-
-                case "UDPBANDWIDTHBUTTON":
+                    return 0;
+                }
+                case "UDPBANDWIDTHBUTTON": {
                     int udp_bandwidth_pktsize = Integer.parseInt(sp.getString(
-                                                         "pack_size_UDP_BANDWIDTH", "1024"));
+                            "pack_size_UDP_BANDWIDTH", "1024"));
 
-                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
+                    for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
                                 aggregatorAddress, AGGRPORT,
                                 udp_bandwidth_pktsize);
-                        if (outcome != 0)
-                            return -1;
+                        String txt = "UDP bandwidth " + i + ": ";
+                        if (outcome != 0){
+                            txt += "FAILED";
+                            i--;
+                        }
+                        else
+                            txt += "SUCCESS";
+                        Log.d("Measures", txt);
                     }
 
-                return outcome;
-
-                case "TCPRTTBUTTON":
+                    return 0;
+                }
+                case "TCPRTTBUTTON": {
                     int tcp_rtt_pktsize = Integer.parseInt(sp.getString(
-                                                                  "pack_size_TCP_RTT", "1"));
+                            "pack_size_TCP_RTT", "1"));
                     int tcp_rtt_num_pack = Integer.parseInt(sp.getString(
-                                                                 "num_pack_TCP_RTT", "100"));
+                            "num_pack_TCP_RTT", "100"));
 
-                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
-                        outcome =  MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT,
+                    for (int i = 0; i < numberOfConsecutiveTests; i++) {
+                        outcome = MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT,
                                 observerAddress, TCPPORT,
                                 aggregatorAddress, AGGRPORT,
                                 tcp_rtt_pktsize, tcp_rtt_num_pack);
-                        if (outcome != 0)
-                            return -1;
+                        String txt = "TCP RTT " + i + ": ";
+                        if (outcome != 0){
+                            txt += "FAILED";
+                            i--;
+                        }
+                        else
+                            txt += "SUCCESS";
+                        Log.d("Measures", txt);
                     }
-
-                    return outcome;
-
-                case "UDPRTTBUTTON":
+                    return 0;
+                }
+                case "UDPRTTBUTTON": {
                     int udp_rtt_pktsize = Integer.parseInt(sp.getString(
-                                                                  "pack_size_UDP_RTT", "1"));
+                            "pack_size_UDP_RTT", "1"));
                     int udp_rtt_num_pack = Integer.parseInt(sp.getString(
-                                                                 "num_pack_UDP_RTT", "100"));
-                    
-                    for (int i = 0; i< numberOfConsecutiveTests;i++) {
-                        outcome =  MainUtils.udpRTTMeasure(direction, keyword, CMDPORT,
+                            "num_pack_UDP_RTT", "100"));
+
+                    for (int i = 0; i < numberOfConsecutiveTests; i++) {
+                        outcome = MainUtils.udpRTTMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
                                 aggregatorAddress, AGGRPORT,
                                 udp_rtt_pktsize, udp_rtt_num_pack);
-                        if (outcome != 0)
-                            return -1;
+                        String txt = "UDP RTT " + i + ": ";
+                        if (outcome != 0){
+                            txt += "FAILED";
+                            i--;
+                        }
+                        else
+                            txt += "SUCCESS";
+                        Log.d("Measures", txt);
                     }
-
-                    return outcome;
-
-
+                    return 0;
+                }
                 }
 
-            return -1;
+            return 0;
         }
 
 
@@ -163,8 +188,6 @@ public class MainActivity extends AppCompatActivity
                     toast.show();
                 }
 
-            //final EditText editText = findViewById(R.id.keyWordEditView);
-            //editText.setText("");
             enableAllButton();
         }
 
