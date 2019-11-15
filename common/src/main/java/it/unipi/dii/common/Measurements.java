@@ -207,7 +207,6 @@ public class Measurements {
      */
     public static void TCPBandwidthSender(Socket socket, int number_of_bytes,
                                           int tcp_bandwidth_pktsize) throws IOException {
-        System.out.println("Sending " + number_of_bytes + " bytes<");
         OutputStream outputStream = null;
         byte[] buffer = new byte[tcp_bandwidth_pktsize];
         Random random = new Random();
