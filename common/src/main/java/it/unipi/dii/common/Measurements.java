@@ -52,7 +52,6 @@ public class Measurements {
             }
         }
         catch (SocketTimeoutException e){
-            System.out.println("UDPRTT: SOCKET TIMEOUT.\nReturning.");
             return -1;
         }
 
@@ -95,7 +94,6 @@ public class Measurements {
             }
         }
         catch (SocketTimeoutException e){
-            System.out.println("UDPRTT: SOCKET TIMEOUT.\nReturning.");
             return -1;
         }
 
@@ -339,7 +337,6 @@ public class Measurements {
             serverSocket.receive(receivePacket2);
         }
         catch (SocketTimeoutException e){
-            System.out.println("UDPRTT: SOCKET TIMEOUT.\nReturning.");
             return null;
         }
         catch (IOException e) {
