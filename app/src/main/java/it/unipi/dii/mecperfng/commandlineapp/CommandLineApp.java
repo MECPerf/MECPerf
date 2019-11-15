@@ -1,173 +1,342 @@
 package it.unipi.dii.mecperfng.commandlineapp;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+
+
+
+
 
 import it.unipi.dii.mecperfng.MainUtils;
 
 public class CommandLineApp {
-    private static final int CMDPORT = 6792,
-            TCPPORT = 6791,
-            UDPPORT = 6790,
-            AGGRPORT = 6766;
-    private static int command,
-            pktSize = 0,
-            pktNumber = 0;
+    private static int CMDPORT = -1,
+                       TCPPORT = -1,
+                       UDPPORT = -1,
+                       AGGRPORT = -1,
+                       pktSizeTCPBandwidth = -1,
+                       pktSizeUDPBandwidth = -1,
+                       pktSizeTCPLatency = -1,
+                       pktSizeUDPLatency = -1,
+                       numPktTCPBandwidth = -1,
+                       numPktTCPLatency = -1,
+                       numPktUDPLatency = -1,
+                       timerInterval = -1;
 
+    private static String observerAddress = null,
+                          aggregatorAddress = null,
+                          measureType = "all",
+                          direction = "all",
+                          keyword = "DEFAULT";
 
-    private static final String observerAddress = "131.114.73.2",
-            aggregatorAddress = "131.114.73.3",
-            measureType = "";
-    private static String direction = "",
-            keyword = "DEFAULT";
 
 
     public static void main(String[] args){
-        retrieveMeasureParameters();
+        parseArguments(args);
 
-        startMeasure();
-    }
+        System.out.println("Observer address: " + observerAddress);
+        System.out.println("Aggregator address: " + aggregatorAddress);
+        System.out.println("Aggregator port: " + AGGRPORT);
+        System.out.println("Command port: " + CMDPORT);
+        System.out.println("TCP port: " + TCPPORT);
+        System.out.println("UDP port: " + UDPPORT);
+
+        System.out.println("Type of measure: " + measureType);
+        System.out.println("direction: " + direction);
+        System.out.println("Keyword: " + keyword);
+
+        System.out.println("pktSizeTCPBandwidth: " + pktSizeTCPBandwidth);
+        System.out.println("pktSizeUDPBandwidth: " + pktSizeUDPBandwidth);
+        System.out.println("pktSizeTCPLatency: " + pktSizeTCPLatency);
+        System.out.println("pktSizeUDPLatency: " + pktSizeUDPLatency);
+        System.out.println("numPktTCPBandwidth: " + numPktTCPBandwidth);
+        System.out.println("numPktTCPLatency: " + numPktTCPLatency);
+        System.out.println("numPktUDPLatency: " + numPktUDPLatency);
 
 
-    private static void retrieveMeasureParameters() {
-        try {
-            int readInt;
-            String readString;
-            command = -1;
-            direction = "";
-            BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
 
-            while(command == -1) {
-                System.out.println("Inserire tipo misura");
-                System.out.println("\t1) TCP Bandwidth");
-                System.out.println("\t2) TCP RTT");
-                System.out.println("\t3) UDP Bandwidth");
-                System.out.println("\t4) UDP RTT");
+        if (timerInterval < 0)
+            startMeasure();
+        else{
+            System.out.println("\n\nTimer interval = " + timerInterval);
+
+            while (true){
+                startMeasure();
+                System.out.println("\n*************************** SLEEPING ***************************\n");
+
                 try {
-                    readInt = Integer.parseInt(inputReader.readLine());
-                }catch (NumberFormatException ne){
-                    continue;
-                }
-
-                if (readInt < 1 || readInt > 4)
-                    continue;
-
-                command = readInt;
-            }
-
-            while(direction.compareTo("") == 0) {
-
-                System.out.println("Inserire la direzione");
-                System.out.println("\t1) Sender");
-                System.out.println("\t2) Receiver");
-                try{
-                    readInt = Integer.parseInt(inputReader.readLine());
-                }catch (NumberFormatException ne){
-                    continue;
-                }
-
-                switch (readInt) {
-                    case 1:
-                        direction = "Sender";
-                        break;
-                    case 2:
-                        direction = "Receiver";
-                        break;
+                    Thread.sleep(timerInterval * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-
-            System.out.println("Camobiare la keyword? (keyword = " + keyword + ")\n y/n");
-            readString = inputReader.readLine();
-
-            System.out.println("readString: " + readString);
-            if (readString.equals("y"))
-                keyword = inputReader.readLine();
-            else
-                System.out.println("DIFFERENT");
-
-
-            while(true) {
-                System.out.println("Inserire la dimensione del pacchetto");
-                try {
-                    readInt = Integer.parseInt(inputReader.readLine());
-                }catch (NumberFormatException ne){
-                    continue;
-                }
-
-                if (readInt < 1)
-                    continue;
-
-                pktSize = readInt;
-                break;
-            }
-
-            if (command != 3)
-                while(true) {
-                    System.out.println("Inserire il numero di pacchetti");
-                    try {
-                        readInt = Integer.parseInt(inputReader.readLine());
-                    }catch (NumberFormatException ne){
-                        continue;
-                    }
-
-                    if (readInt < 1)
-                        continue;
-
-                    pktNumber = readInt;
-                    break;
-                }
-
-
-        }catch(IOException ioe){
-            ioe.printStackTrace();
-            return;
         }
     }
+
+
+
+    private static void parseArguments(String[] args){
+        for (int i = 0; i< args.length; i++) {
+
+            if (args[i].equals("-o") || args[i].equals("--observer-address")) {
+                observerAddress = args[++i];
+                continue;
+            }
+            if (args[i].equals("-a") || args[i].equals("--aggregator-address")){
+                aggregatorAddress = args[++i];
+                continue;
+            }
+            if (args[i].equals("-p") || args[i].equals("--aggregator-port")){
+                AGGRPORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-c") || args[i].equals("--command-port")){
+                 CMDPORT= Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-t") || args[i].equals("--tcp-port")){
+                TCPPORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-u") || args[i].equals("--udp-port")){
+                UDPPORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-m") || args[i].equals("--measure-type")){
+                 measureType = args[++i];
+                continue;
+            }
+            if (args[i].equals("-d") || args[i].equals("--direction")){
+                direction = args[++i];
+                continue;
+            }
+            if (args[i].equals("-k") || args[i].equals("--keyword")){
+                 keyword= args[++i];
+                continue;
+            }
+
+            if (args[i].equals("-stb") || args[i].equals("--packet-size-tcp-bandwidth")){
+                pktSizeTCPBandwidth = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-sub") || args[i].equals("--packet-size-udp-bandwidth")){
+                pktSizeUDPBandwidth = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-ntb") || args[i].equals("--num-packet-tcp-bandwidth")){
+                numPktTCPBandwidth = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-stl") || args[i].equals("--packet-size-tcp-latency")){
+                pktSizeTCPLatency = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-sul") || args[i].equals("--packet-size-udp-latency")){
+                pktSizeUDPLatency = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-ntl") || args[i].equals("--num-packet-tcp-latency")){
+                numPktTCPLatency = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-nul") || args[i].equals("--num-packet-udp-latency")){
+                numPktUDPLatency = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-t") || args[i].equals("--timer-interval")){
+                timerInterval = Integer.parseInt(args[++i]);
+                continue;
+            }
+
+
+
+            System.out.println("Unknown command " + args[i]);
+        }
+    }
+
 
 
     private static void startMeasure() {
-        System.out.println("\n\nDirection: " + direction);
-        System.out.println("Keyword: " + keyword);
-        System.out.println("pktSize: " + pktSize);
-        System.out.println("pktNumber: " + pktNumber);
+        int ret;
 
-        int ret = 0;
+        if (measureType.equalsIgnoreCase("bandwidthTCP") ||
+            measureType.equalsIgnoreCase("all")){
 
-        switch (command) {
-            case 1: //1) TCP Bandwidth
-                System.out.println("Type of measure: TCP bandwidth");
+            if (numPktTCPBandwidth < 0){
+                System.out.println("Error: numPktTCPBandwidth missing");
+                System.exit(1);
+            }
+            if (pktSizeTCPBandwidth < 0){
+                System.out.println("Error: pktSizeTCPBandwidth missing");
+                System.exit(1);
+            }
 
-                ret = MainUtils.tcpBandwidthMeasure(direction, keyword, CMDPORT,
-                                    observerAddress, TCPPORT, aggregatorAddress, AGGRPORT, pktSize,
-                                    pktNumber);
 
-                break;
+            if (direction.equalsIgnoreCase("receiver") ||
+                direction.equalsIgnoreCase("all")) {
+                while (true) {
+                    System.out.println("Type of measure: TCP bandwidth Receiver(" +
+                                       numPktTCPBandwidth + "packets of " + pktSizeTCPBandwidth +
+                                       "bytes)");
 
-            case 3: //3)UDP Bandwidth"
-                System.out.println("Type of measure: UDP bandwidth");
+                    ret = MainUtils.tcpBandwidthMeasure("Receiver", keyword, CMDPORT,
+                                                        observerAddress, TCPPORT, aggregatorAddress,
+                                                        AGGRPORT, pktSizeTCPBandwidth,
+                                                        numPktTCPBandwidth);
+                    if (ret == 0)
+                        break;
 
-                    ret = MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
-                            observerAddress, UDPPORT, aggregatorAddress, AGGRPORT, pktSize);
-                break;
+                    System.out.println("Error: try again!");
+                }
+            }
+            if (direction.equalsIgnoreCase("sender") ||
+                    direction.equalsIgnoreCase("all")) {
+                while(true){
+                    System.out.println("Type of measure: TCP bandwidth Sender (" +
+                                       numPktTCPBandwidth + "packets of " + pktSizeTCPBandwidth +
+                                       "bytes)");
 
-            case 2: //2) TCP RTT
-                System.out.println("Type of measure: TCP RTT");
+                    ret = MainUtils.tcpBandwidthMeasure("Sender", keyword, CMDPORT,
+                                                        observerAddress, TCPPORT, aggregatorAddress,
+                                                        AGGRPORT, pktSizeTCPBandwidth,
+                                                        numPktTCPBandwidth);
+                    if (ret == 0)
+                        break;
 
-                    ret =  MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT, observerAddress,
-                                     TCPPORT, aggregatorAddress, AGGRPORT, pktSize, pktNumber);
-
-                break;
-            case 4: //4) UDP RTT
-                System.out.println("Type of measure: UDP RTT");
-                ret = MainUtils.udpRTTMeasure(direction, keyword, CMDPORT, observerAddress, UDPPORT,
-                            aggregatorAddress, AGGRPORT,pktSize, pktNumber);
-                break;
+                    System.out.println("Error: try again!");
+                }
+            }
         }
+        if (measureType.equalsIgnoreCase("bandwidthUDP") ||
+            measureType.equalsIgnoreCase("all")){
 
-        System.out.println(ret);
+            if (pktSizeUDPBandwidth < 0){
+                System.out.println("Error: pktSizeUDPBandwidth missing");
+                System.exit(1);
+            }
+
+
+            if (direction.equalsIgnoreCase("receiver") ||
+                direction.equalsIgnoreCase("all")) {
+                while (true){
+                    System.out.println("Type of measure: UDP bandwidth Receiver (2 packets of " +
+                                       pktSizeUDPBandwidth + "bytes)");
+
+                    ret = MainUtils.udpBandwidthMeasure("Receiver", keyword, CMDPORT,
+                                                        observerAddress, UDPPORT, aggregatorAddress,
+                                                        AGGRPORT, pktSizeUDPBandwidth);
+                    if (ret == 0)
+                        break;
+
+                    System.out.println("Error: try again!");
+                }
+            }
+            if (direction.equalsIgnoreCase("sender") ||
+                    direction.equalsIgnoreCase("all")) {
+                while(true){
+                    System.out.println("Type of measure: UDP bandwidth Sender (2 packets of " +
+                                       pktSizeUDPBandwidth + "bytes)");
+
+                    ret = MainUtils.udpBandwidthMeasure("Sender", keyword, CMDPORT,
+                                                        observerAddress, UDPPORT, aggregatorAddress,
+                                                        AGGRPORT, pktSizeUDPBandwidth);
+                    if (ret == 0)
+                        break;
+
+                    System.out.println("Error: try again!");
+                }
+            }
+
+        }
+        if (measureType.equalsIgnoreCase("latencyTCP") ||
+            measureType.equalsIgnoreCase("all")){
+
+            if (pktSizeTCPLatency < 0){
+                System.out.println("Error: pktSizeTCPLatency missing");
+                System.exit(1);
+            }
+            if (numPktTCPLatency < 0){
+                System.out.println("Error: numPktTCPLatency missing");
+                System.exit(1);
+            }
+
+            if (direction.equalsIgnoreCase("receiver") ||
+                    direction.equalsIgnoreCase("all")) {
+                while (true){
+                    System.out.println("Type of measure: TCP RTT Receiver (" + numPktTCPLatency +
+                                       "packets of " + pktSizeTCPLatency + "bytes)");
+
+                    ret =  MainUtils.tcpRTTMeasure("Receiver", keyword, CMDPORT,
+                                                   observerAddress, TCPPORT, aggregatorAddress,
+                                                   AGGRPORT, pktSizeTCPLatency, numPktTCPLatency);
+                    if (ret == 0)
+                        break;
+
+                    System.out.println("Error: try again!");
+                }
+            }
+            if (direction.equalsIgnoreCase("sender") ||
+                    direction.equalsIgnoreCase("all")) {
+                while(true){
+                    System.out.println("Type of measure: TCP RTT Sender (" + numPktTCPLatency +
+                                       "packets of " + pktSizeTCPLatency + "bytes)");
+
+                    ret =  MainUtils.tcpRTTMeasure("Sender", keyword, CMDPORT,
+                                                   observerAddress, TCPPORT, aggregatorAddress,
+                                                   AGGRPORT, pktSizeTCPLatency, numPktTCPLatency);
+                    if (ret == 0)
+                        break;
+
+                    System.out.println("Error: try again!");
+                }
+            }
+        }
+        if (measureType.equalsIgnoreCase("latencyUDP") ||
+            measureType.equalsIgnoreCase("all")){
+            if (pktSizeUDPLatency < 0){
+                System.out.println("Error: pktSizeUDPLatency missing");
+                System.exit(1);
+            }
+            if (numPktUDPLatency < 0){
+                System.out.println("Error: numPktUDPLatency missing");
+                System.exit(1);
+            }
+
+
+            if (direction.equalsIgnoreCase("receiver") ||
+                    direction.equalsIgnoreCase("all")) {
+                while (true){
+                    System.out.println("Type of measure: UDP RTT Receiver Receiver (" +
+                                       numPktUDPLatency + "packets of " + pktSizeUDPLatency +
+                                       "bytes)");
+
+                    ret = MainUtils.udpRTTMeasure("Receiver", keyword, CMDPORT,
+                                                  observerAddress, UDPPORT, aggregatorAddress,
+                                                  AGGRPORT, pktSizeUDPLatency, numPktUDPLatency);
+
+                    if (ret == 0)
+                        break;
+                    System.out.println("Error: try again!");
+                }
+            }
+            if (direction.equalsIgnoreCase("sender") ||
+                    direction.equalsIgnoreCase("all")) {
+                System.out.println("Type of measure: UDP RTT Sender (" + numPktUDPLatency +
+                                   "packets of " + pktSizeUDPLatency + "bytes)");
+                
+                while(true){
+                    ret = MainUtils.udpRTTMeasure("Sender", keyword, CMDPORT,
+                                                  observerAddress, UDPPORT, aggregatorAddress,
+                                                  AGGRPORT, pktSizeUDPLatency, numPktUDPLatency);
+                    if (ret == 0)
+                        break;
+
+                    System.out.println("Error: try again!");
+                }
+            }
+
+
+
+        }
     }
-
 }
 
 
