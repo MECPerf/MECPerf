@@ -16,13 +16,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.rmi.UnknownHostException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import it.unipi.dii.common.Measurements;
-import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.ControlMessages;
 
 /**
@@ -36,12 +33,6 @@ public class Server {
     private static final int CMDPORT = 6789;
     private static final int TCPPORT = 6788;
     private static final int UDPPORT = 6787;
-    private static final int OBSPort = 6792;
-    private static final String AGGREGATORIP = "131.114.73.3";
-    private static final int AGGRPORT = 6766;
-    private static final String observerAddress = "131.114.73.2";
-
-
 
 
     public static void main(String[] args){
@@ -113,6 +104,11 @@ public class Server {
 
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                 .toString());
+
+                        String observerAddress = getAddress(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
+                        int OBSPort = getPort(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
+                        System.out.print(OBSPort);
+
                         Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), OBSPort);
                         ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
                         objectOutputStream.writeObject(mappa);
@@ -176,6 +172,13 @@ public class Server {
 
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                                       .toString());
+
+
+                        String observerAddress = getAddress(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
+                        int OBSPort = getPort(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
+                        System.out.print(OBSPort);
+
+
                         Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), OBSPort);
                         ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
                         objectOutputStream.writeObject(measureResult);
@@ -356,5 +359,17 @@ public class Server {
             controlSocketObserver.closeConnection();
         }
     }
+
+    protected static String getAddress(String address)
+    {
+        address = address.replace("/", "");
+        return address.substring(0, address.indexOf(":"));
+    }
+
+    protected static int getPort(String address)
+    {
+        return Integer.parseInt(address.substring(address.indexOf(":" + 1)));
+    }
+
 }
 
