@@ -17,6 +17,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.rmi.UnknownHostException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,8 +36,11 @@ public class Server {
     private static final int CMDPORT = 6789;
     private static final int TCPPORT = 6788;
     private static final int UDPPORT = 6787;
+    private static final int OBSPort = 6792;
     private static final String AGGREGATORIP = "131.114.73.3";
     private static final int AGGRPORT = 6766;
+    private static final String observerAddress = "131.114.73.2";
+
 
 
 
@@ -106,9 +110,16 @@ public class Server {
                         mappa = Measurements.TCPBandwidthReceiver(tcpReceiverConnectionSocket, tcp_bandwidth_pktsize);
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
-                        sendDataToAggregator("TCPBandwidth","Observer","Server",
-                                            -1, mappa, cmdSplitted[1],
-                                tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[3]));
+
+                        controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
+                                .toString());
+                        Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), OBSPort);
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+                        objectOutputStream.writeObject(mappa);
+
+                        objectOutputStream.close();
+                        tmpsocket.close();
+
                         System.out.println("Sent result to aggregator");
 
                     } catch (IOException ex) {
@@ -151,8 +162,8 @@ public class Server {
 
                     try {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.START.toString());
-                        measureResult = Measurements.UDPCapacityPPReceiver(
-                                udpListener, udp_bandwidth_pktsize);
+                        measureResult = Measurements.UDPCapacityPPReceiver(udpListener,
+                                                                           udp_bandwidth_pktsize);
                         if (measureResult == null)
                         {
                             System.out.println("Measure failed");
@@ -160,14 +171,22 @@ public class Server {
                             controlSocketObserver.closeConnection();
                             break;
                         }
+
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
+
+                        controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
+                                                      .toString());
+                        Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), OBSPort);
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+                        objectOutputStream.writeObject(measureResult);
+
+                        objectOutputStream.close();
+                        tmpsocket.close();
                     }
-                    //send data to Aggregator
-                    sendDataToAggregator("UDPBandwidth", "Observer","Server",
-                                        -1, measureResult,
-                            cmdSplitted[1], udp_bandwidth_pktsize, 2);
+                    catch(IOException e){
+                        e.printStackTrace();
+                    }
+
                     System.out.println("Sent results to aggregator");
 
                     System.out.println("UDPBandwidthSender: completed");
@@ -264,14 +283,14 @@ public class Server {
                         udpListener.disconnect();
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
+                        controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                                .toString() + '#' + latency);
+
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
 
-                    //send data to Aggregator
-                    sendDataToAggregator("UDPRTT","Server","Observer", latency,
-                                     null, cmdSplitted[1], udp_rtt_pktsize,
-                                               udp_rtt_num_pack);
+
                     System.out.println("results sent to aggregator");
                     System.out.println("UDPRTTReceiver: completed");
 
@@ -317,13 +336,16 @@ public class Server {
                         latency = Measurements.TCPRTTSender(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
 
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
+
+                        //send data to Aggregator
+                        controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                                                      .toString() + '#' + latency);
+
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
 
-                    //send data to Aggregator
-                    sendDataToAggregator("TCPRTT","Server", "Observer", latency,
-                                null, cmdSplitted[1], tcp_rtt_pktsize, tcp_rtt_num_pack);
+
                     System.out.println("results sent to aggregator");
                     System.out.println("TCPRTTReceiver: completed");
 
@@ -332,43 +354,6 @@ public class Server {
             }
 
             controlSocketObserver.closeConnection();
-        }
-    }
-
-
-
-    protected static void sendDataToAggregator(String type, String sender, String receiver,
-                                               double latency, Map<Long, Integer> bandwidth,
-                                               String keyword, int len_pack, int num_pack){
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-        try {
-            socket = new Socket(InetAddress.getByName(AGGREGATORIP), AGGRPORT);
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            Measure measure = new Measure();
-            measure.setType(type);
-            measure.setSender(sender);
-            measure.setReceiver(receiver);
-            measure.setLatency(latency);
-            measure.setBandwidth(bandwidth);
-            measure.setExtra(keyword);
-            measure.setLen_pack(len_pack);
-            measure.setNum_pack(num_pack);
-
-            // write the message we want to send
-            objOutputStream.writeObject(measure);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        finally {
-            try {
-                if (objOutputStream != null)
-                    objOutputStream.close(); // close the output stream when we're done.
-                if (socket != null)
-                    socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }

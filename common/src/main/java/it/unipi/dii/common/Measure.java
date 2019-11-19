@@ -7,7 +7,13 @@ package it.unipi.dii.common;
  */
 
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -28,6 +34,9 @@ public class Measure implements Serializable {
     private int len_pack;
     private int num_pack;
 
+    private String senderAddress;
+    private String receiverAddress;
+
     private static final long serialVersionUID = 3919700812200232178L;
 
 
@@ -45,7 +54,9 @@ public class Measure implements Serializable {
      * @param latency Latency measured
      * @param "extra" contains Timestamp when we would show Result in App or Keyword in Insert
      */
-    public Measure(String type, String sender,String receiver, Map<Long,Integer> bandwidth,double latency, String extra, int len_pack, int num_pack){
+    public Measure(String type, String sender,String receiver, Map<Long,Integer> bandwidth,
+                   double latency, String extra, int len_pack, int num_pack, String senderAddress,
+                   String receiverAddress){
         this.type = type;
         this.sender = sender;
         this.receiver = receiver;
@@ -54,6 +65,8 @@ public class Measure implements Serializable {
         this.extra = extra;
         this.len_pack = len_pack;
         this.num_pack = num_pack;
+        this.senderAddress = senderAddress;
+        this.receiverAddress = receiverAddress;
     }
 
     /**
@@ -70,6 +83,9 @@ public class Measure implements Serializable {
 
         num_pack = m.num_pack;
         len_pack = m.len_pack;
+
+        senderAddress = m.senderAddress;
+        receiverAddress = m.receiverAddress;
     }
 
     public int getLen_pack() {
@@ -142,6 +158,22 @@ public class Measure implements Serializable {
 
     public void setLatency(Double latency) {
         this.latency = latency;
+    }
+
+    public String getSenderAddress() {
+        return senderAddress;
+    }
+
+    public void setSenderAddress(String senderAddress) {
+        this.senderAddress = senderAddress;
+    }
+
+    public String getReceiverAddress() {
+        return receiverAddress;
+    }
+
+    public void setReceiverAddress(String receiverAddress) {
+        this.receiverAddress = receiverAddress;
     }
 }
 

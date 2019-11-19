@@ -1,6 +1,7 @@
 package it.unipi.dii.mecperfng;
 
 
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
@@ -10,7 +11,6 @@ import java.net.Socket;
 import java.util.Map;
 
 
-import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.Measurements;
 import it.unipi.dii.common.ControlMessages;
 
@@ -24,28 +24,25 @@ public class MainUtils {
      * @param commandPort
      * @param observerAddress
      * @param observerPort
-     * @param aggregatorAddress
-     * @param aggregatorPort
      * @param tcp_bandwidth_pktsize
      * @param tcp_bandwidth_num_pkt
      * @return: 0 = successfull
      *          -1 = IOException
      */
-    public static int tcpBandwidthMeasure(String direction,  String keyword, int commandPort,
+    public static int tcpBandwidthMeasure(String direction, String keyword, int commandPort,
                                           String observerAddress, int observerPort,
-                                          String aggregatorAddress, int aggregatorPort,
-                                          int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt){
-        try{
+                                          int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt) {
+        try {
             int tcp_bandwidth_stream = tcp_bandwidth_num_pkt * tcp_bandwidth_pktsize;
 
             Socket communicationSocket = new Socket(InetAddress.getByName(observerAddress), observerPort);
-            ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
+            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
 
             if (direction.equals("Sender")) {
-                controlSocketObserver.sendCMD( "TCPBandwidthSender#" + keyword + "#" +
-                                              tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
+                controlSocketObserver.sendCMD("TCPBandwidthSender#" + keyword + "#" +
+                        tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -54,33 +51,36 @@ public class MainUtils {
                 Measurements.TCPBandwidthSender(communicationSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
-                                                                      .COMPLETED.toString()) == 0) {
+                        .COMPLETED.toString()) == 0) {
                     controlSocketObserver.closeConnection();
                     return 0;
                 }
 
                 controlSocketObserver.closeConnection();
                 return -1;
-            }
-            else {
+            } else {
                 controlSocketObserver.sendCMD("TCPBandwidthReceiver#" + keyword +
-                                       "#"+tcp_bandwidth_pktsize+"#"+tcp_bandwidth_num_pkt);
+                        "#" + tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
                 Map<Long, Integer> longIntegerMap = Measurements.TCPBandwidthReceiver(
-                                                        communicationSocket, tcp_bandwidth_pktsize);
+                        communicationSocket, tcp_bandwidth_pktsize);
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
-                                                                      .COMPLETED.toString()) != 0) {
+                        .COMPLETED.toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
 
-                sendDataToAggregator(aggregatorAddress, aggregatorPort,"TCPBandwidth",
-                        "Observer","Client", -1, longIntegerMap,
-                        keyword, tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
+                controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
+                                              .toString());
+                Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), commandPort);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+                objectOutputStream.writeObject(longIntegerMap);
 
+                objectOutputStream.close();
+                tmpsocket.close();
                 controlSocketObserver.closeConnection();
                 return 0;
             }
@@ -91,22 +91,20 @@ public class MainUtils {
     }
 
 
-
-    public static int udpBandwidthMeasure(String direction,  String keyword,int commandPort,
+    public static int udpBandwidthMeasure(String direction, String keyword, int commandPort,
                                           String observerAddress, int observerPort,
-                                          String aggregatorAddress, int aggregatorPort,
-                                          int udp_bandwidth_pktsize){
-        try{
-            ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
+                                          int udp_bandwidth_pktsize) {
+        try {
+            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
             DatagramSocket connectionSocket = new DatagramSocket();
             connectionSocket.connect(InetAddress.getByName(observerAddress), observerPort);
 
 
             if (direction.equals("Sender")) {
-                controlSocketObserver.sendCMD("UDPCapacityPPSender#" + keyword+ "#"+
-                                              udp_bandwidth_pktsize);
+                controlSocketObserver.sendCMD("UDPCapacityPPSender#" + keyword + "#" +
+                        udp_bandwidth_pktsize);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -115,25 +113,23 @@ public class MainUtils {
                 Measurements.UDPCapacityPPSender(connectionSocket, udp_bandwidth_pktsize);
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
-                                                                                .toString()) == 0) {
+                        .toString()) == 0) {
                     controlSocketObserver.closeConnection();
                     return 0;
                 }
 
                 controlSocketObserver.closeConnection();
                 return -1;
-            }
-            else {
-                controlSocketObserver.sendCMD("UDPCapacityPPReceiver#" + keyword+ "#"+
-                                              udp_bandwidth_pktsize);
+            } else {
+                controlSocketObserver.sendCMD("UDPCapacityPPReceiver#" + keyword + "#" +
+                        udp_bandwidth_pktsize);
                 //Client has to send a packet to server to let the server knows Client's IP and Port
                 String outString = "Dummy message";
                 byte[] buf = outString.getBytes();
-                connectionSocket.send( new DatagramPacket(buf, buf.length));
+                connectionSocket.send(new DatagramPacket(buf, buf.length));
                 Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(
-                                                           connectionSocket, udp_bandwidth_pktsize);
-                if (measureResult == null)
-                {
+                        connectionSocket, udp_bandwidth_pktsize);
+                if (measureResult == null) {
                     System.out.println("Measure filed");
                     controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
                     controlSocketObserver.closeConnection();
@@ -142,16 +138,21 @@ public class MainUtils {
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
-                sendDataToAggregator(aggregatorAddress, aggregatorPort, "UDPBandwidth", "Observer",
-                                     "Client",0, measureResult,
-                                     keyword, udp_bandwidth_pktsize, 2);
 
+                controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
+                                              .toString());
+                Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), commandPort);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+                objectOutputStream.writeObject(measureResult);
+
+                objectOutputStream.close();
+                tmpsocket.close();
                 controlSocketObserver.closeConnection();
                 return 0;
             }
@@ -162,22 +163,20 @@ public class MainUtils {
     }
 
 
-
     public static int tcpRTTMeasure(String direction, String keyword, int commandPort,
-                                       String observerAddress, int observerPort,
-                                       String aggregatorAddress, int aggregatorPort,
-                                       int tcp_rtt_pktsize, int tcp_rtt_num_pack){
+                                    String observerAddress, int observerPort,
+                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack) {
 
         try {
             Socket communicationSocket = new Socket(InetAddress.getByName(observerAddress), observerPort);
-            ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
+            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
 
             if (direction.equals("Sender")) {
                 // the client application starts a TCP RTT measure (as sender) with the observer
                 controlSocketObserver.sendCMD("TCPRTTSender#" + keyword + "#" + tcp_rtt_pktsize
-                                               + "#" + tcp_rtt_num_pack);
+                        + "#" + tcp_rtt_num_pack);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -186,33 +185,31 @@ public class MainUtils {
 
                 //perform measure
                 double latency = Measurements.TCPRTTSender(communicationSocket, tcp_rtt_pktsize,
-                                                           tcp_rtt_num_pack);
+                        tcp_rtt_num_pack);
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
-                                                                     .COMPLETED.toString()) != 0) {
+                        .COMPLETED.toString()) != 0) {
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
 
-                sendDataToAggregator(aggregatorAddress, aggregatorPort, "TCPRTT",
-                        "Client","Observer", latency, null, keyword,
-                        tcp_rtt_pktsize, tcp_rtt_num_pack);
+                controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                                              .toString() + '#' + latency );
 
                 controlSocketObserver.closeConnection();
                 return 0;
-            }
-            else {
+            } else {
                 //the observer starts a TCP RTT measure using the mobile application
                 // as receiver
                 controlSocketObserver.sendCMD("TCPRTTReceiver#" + keyword + "#" +
-                                       tcp_rtt_pktsize + "#" + tcp_rtt_num_pack);
+                        tcp_rtt_pktsize + "#" + tcp_rtt_num_pack);
 
                 Measurements.TCPRTTReceiver(communicationSocket, tcp_rtt_pktsize, tcp_rtt_num_pack);
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -229,24 +226,22 @@ public class MainUtils {
     }
 
 
-
     public static int udpRTTMeasure(String direction, String keyword, int commandPort,
-                                       String observerAddress, int observerPort,
-                                       String aggregatorAddress, int aggregatorPort,
-                                       int udp_rtt_pktsize, int udp_rtt_num_pack){
+                                    String observerAddress, int observerPort,
+                                    int udp_rtt_pktsize, int udp_rtt_num_pack) {
 
         try {
-            ControlMessages controlSocketObserver= new ControlMessages(observerAddress, commandPort);
+            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
             DatagramSocket udpsocket = new DatagramSocket();
             udpsocket.connect(InetAddress.getByName(observerAddress), observerPort);
 
             if (direction.equals("Sender")) {
                 // the client application starts a TCP RTT measure as sender. The observer is the
                 // receiver
-                controlSocketObserver.sendCMD("UDPRTTSender#" + keyword +"#" +
-                                                        udp_rtt_pktsize + "#" + udp_rtt_num_pack);
+                controlSocketObserver.sendCMD("UDPRTTSender#" + keyword + "#" +
+                        udp_rtt_pktsize + "#" + udp_rtt_num_pack);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -255,9 +250,8 @@ public class MainUtils {
 
                 //perform measure
                 double latency = Measurements.UDPRTTSender(udpsocket, udp_rtt_pktsize,
-                                                           udp_rtt_num_pack);
-                if (latency == -1)
-                {
+                        udp_rtt_num_pack);
+                if (latency == -1) {
                     System.out.println("Measure filed");
                     controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
                     controlSocketObserver.closeConnection();
@@ -270,30 +264,28 @@ public class MainUtils {
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
-                sendDataToAggregator(aggregatorAddress, aggregatorPort, "UDPRTT",
-                              "Client","Observer", latency, null, keyword,
-                                     udp_rtt_pktsize, udp_rtt_num_pack);
+                controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                                              .toString() + '#' + latency);
 
                 controlSocketObserver.closeConnection();
                 return 0;
-            }
-            else {
+            } else {
                 // the client application starts a TCP RTT measure with the observer as
                 //sender
 
-                controlSocketObserver.sendCMD("UDPRTTReceiver#" + keyword+"#" + udp_rtt_pktsize +
-                                       "#" + udp_rtt_num_pack);
+                controlSocketObserver.sendCMD("UDPRTTReceiver#" + keyword + "#" + udp_rtt_pktsize +
+                        "#" + udp_rtt_num_pack);
                 String outString = "DummyPacket";
                 byte[] buf = outString.getBytes();
                 udpsocket.send(new DatagramPacket(buf, buf.length));
                 int ret = Measurements.UDPRTTReceiver(udpsocket, udp_rtt_pktsize, udp_rtt_num_pack);
-                if (ret < 0){
+                if (ret < 0) {
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
-                                                                                .toString()) != 0) {
+                        .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
 
                     controlSocketObserver.closeConnection();
@@ -308,34 +300,4 @@ public class MainUtils {
         }
     }
 
-
-
-    protected static  void sendDataToAggregator(String aggregatorAddress, int aggregatorPort,
-                                                String type, String sender, String receiver,
-                                                double latency, Map<Long, Integer> bandwidth,
-                                                String keyword, int len_pack, int num_pack) {
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-
-
-        try {
-            socket = new Socket(InetAddress.getByName(aggregatorAddress), aggregatorPort);
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            Measure measure = new Measure(type, sender, receiver, bandwidth, latency, keyword,
-                                          len_pack, num_pack);
-
-            objOutputStream.writeObject(measure);
-        } catch (IOException | NullPointerException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (objOutputStream != null)
-                    objOutputStream.close(); // close the output stream when we're done.
-                if (socket != null)
-                    socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

@@ -3,15 +3,12 @@ package it.unipi.dii.mecperfng.commandlineapp;
 
 
 
-
-
 import it.unipi.dii.mecperfng.MainUtils;
 
 public class CommandLineApp {
     private static int CMDPORT = -1,
                        TCPPORT = -1,
                        UDPPORT = -1,
-                       AGGRPORT = -1,
                        pktSizeTCPBandwidth = -1,
                        pktSizeUDPBandwidth = -1,
                        pktSizeTCPLatency = -1,
@@ -22,7 +19,6 @@ public class CommandLineApp {
                        timerInterval = -1;
 
     private static String observerAddress = null,
-                          aggregatorAddress = null,
                           measureType = "all",
                           direction = "all",
                           keyword = "DEFAULT";
@@ -32,9 +28,7 @@ public class CommandLineApp {
     public static void main(String[] args){
         parseArguments(args);
 
-        System.out.println("Observer address: " + observerAddress);
-        System.out.println("Aggregator address: " + aggregatorAddress);
-        System.out.println("Aggregator port: " + AGGRPORT);
+        /*System.out.println("Observer address: " + observerAddress);
         System.out.println("Command port: " + CMDPORT);
         System.out.println("TCP port: " + TCPPORT);
         System.out.println("UDP port: " + UDPPORT);
@@ -49,8 +43,7 @@ public class CommandLineApp {
         System.out.println("pktSizeUDPLatency: " + pktSizeUDPLatency);
         System.out.println("numPktTCPBandwidth: " + numPktTCPBandwidth);
         System.out.println("numPktTCPLatency: " + numPktTCPLatency);
-        System.out.println("numPktUDPLatency: " + numPktUDPLatency);
-
+        System.out.println("numPktUDPLatency: " + numPktUDPLatency);*/
 
 
         if (timerInterval < 0)
@@ -78,14 +71,6 @@ public class CommandLineApp {
 
             if (args[i].equals("-o") || args[i].equals("--observer-address")) {
                 observerAddress = args[++i];
-                continue;
-            }
-            if (args[i].equals("-a") || args[i].equals("--aggregator-address")){
-                aggregatorAddress = args[++i];
-                continue;
-            }
-            if (args[i].equals("-p") || args[i].equals("--aggregator-port")){
-                AGGRPORT = Integer.parseInt(args[++i]);
                 continue;
             }
             if (args[i].equals("-c") || args[i].equals("--command-port")){
@@ -178,9 +163,8 @@ public class CommandLineApp {
                                        "bytes)");
 
                     ret = MainUtils.tcpBandwidthMeasure("Receiver", keyword, CMDPORT,
-                                                        observerAddress, TCPPORT, aggregatorAddress,
-                                                        AGGRPORT, pktSizeTCPBandwidth,
-                                                        numPktTCPBandwidth);
+                                                        observerAddress, TCPPORT,
+                                                        pktSizeTCPBandwidth, numPktTCPBandwidth);
                     if (ret == 0)
                         break;
 
@@ -195,8 +179,7 @@ public class CommandLineApp {
                                        "bytes)");
 
                     ret = MainUtils.tcpBandwidthMeasure("Sender", keyword, CMDPORT,
-                                                        observerAddress, TCPPORT, aggregatorAddress,
-                                                        AGGRPORT, pktSizeTCPBandwidth,
+                                                        observerAddress, TCPPORT, pktSizeTCPBandwidth,
                                                         numPktTCPBandwidth);
                     if (ret == 0)
                         break;
@@ -221,8 +204,8 @@ public class CommandLineApp {
                                        pktSizeUDPBandwidth + "bytes)");
 
                     ret = MainUtils.udpBandwidthMeasure("Receiver", keyword, CMDPORT,
-                                                        observerAddress, UDPPORT, aggregatorAddress,
-                                                        AGGRPORT, pktSizeUDPBandwidth);
+                                                        observerAddress, UDPPORT,
+                                                        pktSizeUDPBandwidth);
                     if (ret == 0)
                         break;
 
@@ -236,8 +219,8 @@ public class CommandLineApp {
                                        pktSizeUDPBandwidth + "bytes)");
 
                     ret = MainUtils.udpBandwidthMeasure("Sender", keyword, CMDPORT,
-                                                        observerAddress, UDPPORT, aggregatorAddress,
-                                                        AGGRPORT, pktSizeUDPBandwidth);
+                                                        observerAddress, UDPPORT,
+                                                        pktSizeUDPBandwidth);
                     if (ret == 0)
                         break;
 
@@ -265,8 +248,8 @@ public class CommandLineApp {
                                        "packets of " + pktSizeTCPLatency + "bytes)");
 
                     ret =  MainUtils.tcpRTTMeasure("Receiver", keyword, CMDPORT,
-                                                   observerAddress, TCPPORT, aggregatorAddress,
-                                                   AGGRPORT, pktSizeTCPLatency, numPktTCPLatency);
+                                                   observerAddress, TCPPORT, pktSizeTCPLatency,
+                                                   numPktTCPLatency);
                     if (ret == 0)
                         break;
 
@@ -280,8 +263,8 @@ public class CommandLineApp {
                                        "packets of " + pktSizeTCPLatency + "bytes)");
 
                     ret =  MainUtils.tcpRTTMeasure("Sender", keyword, CMDPORT,
-                                                   observerAddress, TCPPORT, aggregatorAddress,
-                                                   AGGRPORT, pktSizeTCPLatency, numPktTCPLatency);
+                                                   observerAddress, TCPPORT, pktSizeTCPLatency,
+                                                   numPktTCPLatency);
                     if (ret == 0)
                         break;
 
@@ -309,8 +292,8 @@ public class CommandLineApp {
                                        "bytes)");
 
                     ret = MainUtils.udpRTTMeasure("Receiver", keyword, CMDPORT,
-                                                  observerAddress, UDPPORT, aggregatorAddress,
-                                                  AGGRPORT, pktSizeUDPLatency, numPktUDPLatency);
+                                                  observerAddress, UDPPORT, pktSizeUDPLatency,
+                                                  numPktUDPLatency);
 
                     if (ret == 0)
                         break;
@@ -319,13 +302,14 @@ public class CommandLineApp {
             }
             if (direction.equalsIgnoreCase("sender") ||
                     direction.equalsIgnoreCase("all")) {
-                System.out.println("Type of measure: UDP RTT Sender (" + numPktUDPLatency +
-                                   "packets of " + pktSizeUDPLatency + "bytes)");
                 
                 while(true){
+                    System.out.println("Type of measure: UDP RTT Sender (" + numPktUDPLatency +
+                            "packets of " + pktSizeUDPLatency + "bytes)");
+
                     ret = MainUtils.udpRTTMeasure("Sender", keyword, CMDPORT,
-                                                  observerAddress, UDPPORT, aggregatorAddress,
-                                                  AGGRPORT, pktSizeUDPLatency, numPktUDPLatency);
+                                                  observerAddress, UDPPORT,  pktSizeUDPLatency,
+                                                  numPktUDPLatency);
                     if (ret == 0)
                         break;
 

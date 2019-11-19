@@ -15,7 +15,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,11 +24,15 @@ import it.unipi.dii.common.MeasureResult;
 public class Aggregator {
     private static final int AGGREGATOR_PORT = 6766;
 
-    private static final String INSERT_TEST_TABLE = "INSERT INTO MECPerf.Test (Timestamp, Sender, Receiver, Command, Keyword, PackSize, NumPack) "
-            + " VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)";
+    private static final String INSERT_TEST_TABLE = "INSERT INTO MECPerf.Test (TestNumber,Timestamp,"
+                                                    + " Direction, Command, SenderIdentity, "
+                                                    + "ReceiverIdentity, SenderIPv4Address, "
+                                                    + "ReceiverIPv4Address,  Keyword, PackSize, "
+                                                    + "NumPack)  VALUES (?, CURRENT_TIMESTAMP, ?, ?,"
+                                                    +                   "?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String INSERT_BANDWIDTH_TABLE = "INSERT INTO MECPerf.BandwidthMeasure "
-            + " VALUES (?, ?, ?, ?)";
+    private static final String INSERT_BANDWIDTH_TABLE = "INSERT INTO MECPerf.BandwidthMeasure " +
+                                                         " VALUES (?, ?, ?, ?)";
 
     private static final String INSERT_LATENCY_TABLE = "INSERT INTO MECPerf.RttMeasure "
             + " VALUES (?, ?)";
@@ -56,6 +59,11 @@ public class Aggregator {
             + " AND Sender = ? "
             + " GROUP BY Test.ID, Test.Sender, Test.Receiver, Test.Command ";
 
+    private static final String SELECT_TEST_NUMBER= "SELECT ID, TestNumber FROM MECPerf.Test  "
+                                                    + "ORDER BY ID desc " ;
+
+
+
     public static void main (String[] args){
         ServerSocket welcomeSoket = null;
 
@@ -74,41 +82,28 @@ public class Aggregator {
                 ObjectInputStream mapInputStream = new ObjectInputStream(isr);
                 Measure measure = (Measure) mapInputStream.readObject();
 
+
                 switch(measure.getType()){
-                    case "TCPBandwidth": case "UDPBandwidth":{
-                        System.out.println("Comando: TCPBandwidth/UDPBandwidth");
+                    case "TCPBandwidth":
+                    case "UDPBandwidth":
+                    case "TCPRTT":
+                    case "UDPRTT": {
+                        System.out.println("Comando: " + measure.getType());
+
+                        Measure measureSecondSegment = (Measure) mapInputStream.readObject();
+
                         try(
-                            Connection dbConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf", "MECPerf","password");
+                            Connection dbConnection = DriverManager.getConnection(
+                                        "jdbc:mysql://localhost:3306/MECPerf?useSSL=false",
+                                        "MECPerf","password")
                             ){
                             dbConnection.setAutoCommit(false);
 
-                            long id = writeToDB(measure, dbConnection);
+                            long id = writeToDB(measure, measureSecondSegment, dbConnection);
                             if(id == -1){
                                 System.out.println("Inserimento in Tabella Test Fallito");
-                            }else {
-                                writeToDB_Bandwidth(measure.getBandwidth(), id, dbConnection, measure.getType().substring(0, 3));
-                                System.out.println("Inserimento in Tabella Test, Bandwidth effettuato con successo!");
                             }
-                            dbConnection.setAutoCommit(true);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    }
-                    case "TCPRTT": case "UDPRTT":{
-                        System.out.println("Comando: TCPRTT/UDPRTT");
-                        try(Connection dbConnection = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf", "MECPerf","password");
-                            ){
 
-                            dbConnection.setAutoCommit(false);
-
-                            long id = writeToDB(measure, dbConnection);
-                            if(id == -1){
-                                System.out.println("Inserimento in Tabella Test Fallito");
-                            }else {
-                                writeToDB_Latency(measure.getLatency(), id, dbConnection);
-                                System.out.println("Inserimento in Tabella Test, Latency effettuato con successo!");
-                            }
                             dbConnection.setAutoCommit(true);
                         } catch (SQLException e) {
                             e.printStackTrace();
@@ -169,6 +164,8 @@ public class Aggregator {
         }
     }
 
+
+
     private static void writeToDB_Latency(Double latency, long id, Connection co) throws SQLException {
 
         try (PreparedStatement ps = co.prepareStatement(INSERT_LATENCY_TABLE);
@@ -190,6 +187,8 @@ public class Aggregator {
         }
     }
 
+
+
     private static void writeToDB_Bandwidth(Map<Long, Integer> map, long id, Connection co, String protocol) throws SQLException {
         try (PreparedStatement ps = co.prepareStatement(INSERT_BANDWIDTH_TABLE);
         ){
@@ -200,20 +199,18 @@ public class Aggregator {
             System.out.println("PROTOCOL: " + protocol+" MAP_SIZE: " + map.size());
 
             for (Map.Entry<Long, Integer> entry : map.entrySet()) { //per UDP ha un solo elemento
-
                 long actualTime = entry.getKey();
                 long diff = actualTime - previous;
 
                 if (Long.MAX_VALUE < actualTime)
                     System.exit(1);
 
-                System.out.println("TEMPO_"+iteration+": " + actualTime);
-                System.out.println("DIFF_PREC: " + diff);
 
                 previous = actualTime;
                 iteration++;
                 if ((iteration == 1) &&(protocol.equals("TCP")))
                     continue;
+
 
                 ps.setInt(2, iteration);
                 ps.setLong(3, diff);
@@ -238,30 +235,121 @@ public class Aggregator {
         }
     }
 
-    private static long writeToDB(Measure m, Connection co) {
-        long result = -1;
 
-        try (PreparedStatement ps = co.prepareStatement(INSERT_TEST_TABLE, Statement.RETURN_GENERATED_KEYS); //KEYHOLDER
-             ){
-                 ps.setString(1, m.getSender());
-                 ps.setString(2, m.getReceiver());
-                 ps.setString(3, m.getType());
-                 ps.setString(4, m.getExtra());//keyword
-                 ps.setInt(5, m.getLen_pack());
-                 ps.setInt(6, m.getNum_pack());
 
-                 System.out.println("rows affected: " + ps.executeUpdate());
+    private static long writeToDB(Measure measureFirstSegment, Measure measureSecondSegment,
+                                  Connection co) throws SQLException{
+        int testNumber = readLastTestNumber() + 1;
 
-                 ResultSet rs = ps.getGeneratedKeys();
+        long id = writeSegment(measureFirstSegment, co, testNumber);
+        if(id == -1){
+            System.out.println("Inserimento in Tabella Test Fallito");
 
-                if (rs.next()) {
-                    result = rs.getLong(1);
-                }
+            return -1;
+        }
+
+        id = writeSegment(measureSecondSegment, co, testNumber);
+        if(id == -1){
+            System.out.println("Inserimento in Tabella Test Fallito");
+
+            return -1;
+        }
+
+
+        return id;
+    }
+
+    private static long writeSegment(Measure measure, Connection co, int testNumber) throws SQLException{
+        long id = -1;
+
+        try (PreparedStatement ps = co.prepareStatement(INSERT_TEST_TABLE,
+                Statement.RETURN_GENERATED_KEYS)){
+            // 1: TestNumber
+            ps.setInt(1, testNumber);
+            // 2: Direction
+
+            if (measure.getSender().equals("Client") && measure.getReceiver().equals("Observer") ||
+                    measure.getSender().equals("Observer") && measure.getReceiver().equals("Server") )
+                ps.setString(2, "Upstream");
+            if (measure.getSender().equals("Server") && measure.getReceiver().equals("Observer") ||
+                    measure.getSender().equals("Observer") && measure.getReceiver().equals("Client") )
+                ps.setString(2, "Downstream");
+            // 3: Command
+            ps.setString(3, measure.getType());
+            // 4: SenderIdentity
+            ps.setString(4, measure.getSender());
+            // 5: ReceiverIdentity
+            ps.setString(5, measure.getReceiver());
+            // 6: SenderIPv4Address
+            ps.setString(6, measure.getSenderAddress());
+            // 7: ReceiverIPv4Address
+            ps.setString(7, measure.getReceiverAddress());
+            // 8: Keyword
+            ps.setString(8, measure.getExtra());//keyword
+            // 9: PackSize
+            ps.setInt(9, measure.getLen_pack());
+            // 10: NumPack
+            ps.setInt(10, measure.getNum_pack());
+
+            System.out.println("rows affected: " + ps.executeUpdate());
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                id = rs.getLong(1);
+
+
+            }
+
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return result;
+        if(id == -1){
+            System.out.println("Inserimento in Tabella Test Fallito");
+
+            co.rollback();
+            return -1;
+        }
+
+        switch(measure.getType()) {
+            case "TCPBandwidth":
+            case "UDPBandwidth": {
+                writeToDB_Bandwidth(measure.getBandwidth(), id, co, measure.getType().substring(0, 3));
+                System.out.println("Inserimento in Tabella Test, Bandwidth effettuato con successo!");
+                break;
+            }
+            case "TCPRTT":
+            case "UDPRTT": {
+                writeToDB_Latency(measure.getLatency(), id, co);
+                System.out.println("Inserimento in Tabella Test, Latency effettuato con successo!");
+
+                break;
+            }
+        }
+
+
+        return id;
+    }
+
+    private static int readLastTestNumber(){
+        int testNumber = -1;
+
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf?useSSL=false", "MECPerf","password");
+             PreparedStatement ps = co.prepareStatement(SELECT_TEST_NUMBER);
+        ){
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                testNumber = Integer.parseInt(rs.getString("TestNumber"));
+                System.out.println(testNumber);
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return testNumber;
+
     }
 
     private static List<String> loadDataFromDb(){
@@ -314,6 +402,8 @@ public class Aggregator {
         return results;
     }
 
+
+
     private static List<MeasureResult> loadBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();
 
@@ -350,6 +440,8 @@ public class Aggregator {
 
         return results;
     }
+
+
 
     private static List<MeasureResult> loadAVGBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();

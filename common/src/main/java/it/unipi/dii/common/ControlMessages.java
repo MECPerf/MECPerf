@@ -21,11 +21,12 @@ public class ControlMessages {
         START,
         COMPLETED,
         SUCCEDED,
-        FAILED
+        FAILED,
+        MEASUREDBANDWIDTH,
+        MEASUREDLATENCY
     }
     private Socket controlSocket = null;
     private DataOutputStream dataOutputStream = null;
-    public Messages messages;
 
 
 
@@ -126,5 +127,9 @@ public class ControlMessages {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
+    }
+
+    public Socket getSocket(){
+        return this.controlSocket;
     }
 }
