@@ -213,6 +213,7 @@ public class Measurements {
         try {
             outputStream = socket.getOutputStream();
 
+
             while (number_of_bytes > 0) {
                 if (number_of_bytes < tcp_bandwidth_pktsize) {
                     outputStream.write(buffer, 0, number_of_bytes);

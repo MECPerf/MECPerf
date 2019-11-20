@@ -28,7 +28,7 @@ public class CommandLineApp {
     public static void main(String[] args){
         parseArguments(args);
 
-        /*System.out.println("Observer address: " + observerAddress);
+        System.out.println("Observer address: " + observerAddress);
         System.out.println("Command port: " + CMDPORT);
         System.out.println("TCP port: " + TCPPORT);
         System.out.println("UDP port: " + UDPPORT);
@@ -43,7 +43,7 @@ public class CommandLineApp {
         System.out.println("pktSizeUDPLatency: " + pktSizeUDPLatency);
         System.out.println("numPktTCPBandwidth: " + numPktTCPBandwidth);
         System.out.println("numPktTCPLatency: " + numPktTCPLatency);
-        System.out.println("numPktUDPLatency: " + numPktUDPLatency);*/
+        System.out.println("numPktUDPLatency: " + numPktUDPLatency);
 
 
         if (timerInterval < 0)
