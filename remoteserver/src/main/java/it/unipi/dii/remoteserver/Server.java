@@ -13,9 +13,11 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,20 +32,26 @@ import it.unipi.dii.common.ControlMessages;
 
 public class Server {
     //command listener, tcp data and udp data ports
-    private static final int CMDPORT = 6789;
-    private static final int TCPPORT = 6788;
-    private static final int UDPPORT = 6787;
+    private static int REMOTECMDPORT = -1,
+                       REMOTETCPPORT = -1,
+                       REMOTEUDPPORT = -1;
 
 
     public static void main(String[] args){
-        ServerSocket cmdListener = null;//ServerSocket per la ricezione dei comandi
-        ServerSocket tcpListener = null;//ServerSocket per le misurazioni TCP
-        DatagramSocket udpListener = null;//ServerSocket per le misurazioni UDP
+        parseArguments(args);
+        if (!checkArguments()){
+            System.out.println("checkArguments() failed");
+            System.exit(0);
+        }
+
+        ServerSocket cmdListener = null;    //ServerSocket per la ricezione dei comandi
+        ServerSocket tcpListener = null;    //ServerSocket per le misurazioni TCP
+        DatagramSocket udpListener = null;  //ServerSocket per le misurazioni UDP
         //socket initialization
         try {
-            cmdListener = new ServerSocket(CMDPORT);
-            tcpListener = new ServerSocket(TCPPORT);
-            udpListener = new DatagramSocket(UDPPORT);
+            cmdListener = new ServerSocket(REMOTECMDPORT);
+            tcpListener = new ServerSocket(REMOTETCPPORT);
+            udpListener = new DatagramSocket(REMOTEUDPPORT);
 
             System.out.println("Server CMD: inizializzato sulla porta " +
                                cmdListener.getLocalPort());
@@ -51,17 +59,18 @@ public class Server {
                                tcpListener.getLocalPort());
             System.out.println("Server UDP: inizializzato sulla porta " +
                                udpListener.getLocalPort());
+
+
         } catch (NullPointerException | IOException e) {
             e.printStackTrace();
         }
-
 
 
         while (true) {
             System.out.println("\nWaiting for  a command...");
 
             ControlMessages controlSocketObserver = null;
-            String cmd = "";
+            String cmd;
             String separator ="#";
 
             try {
@@ -82,7 +91,7 @@ public class Server {
             }
 
             String[] cmdSplitted = cmd.split(separator);
-            double latency = 0.0;
+            double latency;
 
             //Start test based on command received
             switch(cmdSplitted[0]) {
@@ -90,9 +99,11 @@ public class Server {
                     //the observer sends to the remote server
                     Map<Long, Integer> mappa;
                     int tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    System.out.println(cmd);
                     System.out.print("Received command : " + cmdSplitted[0]);
                     System.out.print("\t[Packet size : " + tcp_bandwidth_pktsize);
                     System.out.println(", Number of packes : " + Integer.parseInt(cmdSplitted[3]) + "]");
+
 
                     try {
                         Socket tcpReceiverConnectionSocket = tcpListener.accept();
@@ -105,11 +116,7 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                 .toString());
 
-                        String observerAddress = getAddress(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
-                        int OBSPort = getPort(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
-                        System.out.print(OBSPort);
-
-                        Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), OBSPort);
+                        Socket tmpsocket = new Socket(InetAddress.getByName(cmdSplitted[5]), Integer.parseInt(cmdSplitted[4]));
                         ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
                         objectOutputStream.writeObject(mappa);
 
@@ -173,15 +180,10 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                                       .toString());
 
-
-                        String observerAddress = getAddress(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
-                        int OBSPort = getPort(controlSocketObserver.getSocket().getRemoteSocketAddress().toString());
-                        System.out.print(OBSPort);
-
-
-                        Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), OBSPort);
+                        Socket tmpsocket = new Socket(InetAddress.getByName(cmdSplitted[4]), Integer.parseInt(cmdSplitted[3]));
                         ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
                         objectOutputStream.writeObject(measureResult);
+                        objectOutputStream.flush();
 
                         objectOutputStream.close();
                         tmpsocket.close();
@@ -360,16 +362,53 @@ public class Server {
         }
     }
 
-    protected static String getAddress(String address)
-    {
+
+
+    private static boolean checkArguments(){
+        //check REMOTE ports
+        if (REMOTECMDPORT < 0){
+            System.out.println("Error: REMOTECMDPORT cannot be negative");
+            return false;
+        }
+        if (REMOTETCPPORT < 0){
+            System.out.println("Error: REMOTETCPPORT cannot be negative");
+            return false;
+        }
+        if (REMOTEUDPPORT < 0){
+            System.out.println("Error: REMOTEUDPPORT cannot be negative");
+            return false;
+        }
+
+        return true;
+    }
+
+
+
+    private static void parseArguments(String[] args){
+        for (int i = 0; i< args.length; i++) {
+            if (args[i].equals("-rtp") || args[i].equals("--remote-tcp-port")) {
+                REMOTETCPPORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+
+            if (args[i].equals("-rup") || args[i].equals("--remote-udp-port")) {
+                REMOTEUDPPORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-rcp") || args[i].equals("--remote-cmd-port")) {
+                REMOTECMDPORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+
+            System.out.println("Unknown command " + args[i]);
+        }
+    }
+
+
+
+    protected static String getAddress(String address){
         address = address.replace("/", "");
         return address.substring(0, address.indexOf(":"));
     }
-
-    protected static int getPort(String address)
-    {
-        return Integer.parseInt(address.substring(address.indexOf(":" + 1)));
-    }
-
 }
 
