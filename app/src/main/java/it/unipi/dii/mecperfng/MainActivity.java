@@ -84,7 +84,6 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i< numberOfConsecutiveTests;i++) {
                         outcome = MainUtils.tcpBandwidthMeasure(direction, keyword, CMDPORT,
                                                     observerAddress, TCPPORT,
-                                                    aggregatorAddress, AGGRPORT,
                                                     tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
                         String txt = "TCP bandwidth " + i + ": ";
                         if (outcome != 0) {
@@ -106,7 +105,6 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
-                                aggregatorAddress, AGGRPORT,
                                 udp_bandwidth_pktsize);
                         String txt = "UDP bandwidth " + i + ": ";
                         if (outcome != 0){
@@ -129,7 +127,6 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT,
                                 observerAddress, TCPPORT,
-                                aggregatorAddress, AGGRPORT,
                                 tcp_rtt_pktsize, tcp_rtt_num_pack);
                         String txt = "TCP RTT " + i + ": ";
                         if (outcome != 0){
@@ -151,7 +148,6 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.udpRTTMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
-                                aggregatorAddress, AGGRPORT,
                                 udp_rtt_pktsize, udp_rtt_num_pack);
                         String txt = "UDP RTT " + i + ": ";
                         if (outcome != 0){
