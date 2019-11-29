@@ -26,8 +26,10 @@ def create_app():
         string += '<a href="/bandwidth">bandwidth</a> <br>'
 
         #mobile commands
-        string += '<a href="/get_data_list">get_data_list</a> optional: keyword(default "", json(default False) <br>'
+        string += '<a href="/get_data_list">get_data_list</a> optional: keyword(default ""), json(default False) <br>'
         string += '<a href="/get_RTT_data">get_RTT_data</a> required: id, sender<br>'
+        string += '<a href="/get_bandwidth_data">get_bandwidth_data</a> required: id, sender<br>'
+        string += '<a href="/get_AVGBandwidth_data">get_AVGBandwidth_data</a> required: id, sender<br>'
         return string
         
 
@@ -158,6 +160,98 @@ def create_app():
         result += "]"
         
         return result
+
+
+
+    @app.route('/get_bandwidth_data', methods=['GET'])
+    def get_bandwidth_data():
+        result = ""
+
+        try:
+            testid = str(request.args.get('id'))
+            sender = str(request.args.get('sender'))
+        except KeyError:
+            return ""
+
+        query = "SELECT JSON_OBJECT( "
+        query += "'SenderIdentity', SenderIdentity, " 
+        query += "'ReceiverIdentity', ReceiverIdentity, "
+        query += "'Command', Command, "
+        query += "'nanoTimes', nanoTimes, "
+        query += "'kBytes', kBytes, "
+        query += "'Keyword', Keyword) "
+        query += " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
+        query += " WHERE Test.ID = %s AND SenderIdentity = %s "
+
+
+        cur = mysql.connection.cursor()
+        cur.execute(query, ([int(testid), sender]))
+
+
+        queryRes = cur.fetchall()
+        cur.close()
+
+        i = 0
+        for row in queryRes:
+            if i == 0:
+                result += "["
+                i += 1
+            else:
+                result += ", "
+            result += str(row[0].encode('utf-8'))
+        result += "]"
+        
+        return result
+
+
+
+    @app.route('/get_AVGbandwidth_data', methods=['GET'])
+    def get_AVGbandwidth_data():
+        result = ""
+
+        try:
+            testid = str(request.args.get('id'))
+            sender = str(request.args.get('sender'))
+        except KeyError:
+            return ""
+
+        query = "SELECT JSON_OBJECT( "
+        query += "'SenderIdentity', SenderIdentity, " 
+        query += "'ReceiverIdentity', ReceiverIdentity, "
+        query += "'Command', Command, "
+        query += "'Bandwidth', (1.0 * (SUM(kBytes) / (1.0 * SUM(nanoTimes)))*1000000000) , "
+        query += "'Keyword', Keyword) "
+        query += " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
+        query += " WHERE Test.ID = %s AND SenderIdentity = %s "
+        query += " GROUP BY Test.ID "
+
+
+        cur = mysql.connection.cursor()
+        cur.execute(query, ([int(testid), sender]))
+
+
+        queryRes = cur.fetchall()
+        cur.close()
+
+        i = 0
+        for row in queryRes:
+            if i == 0:
+                result += "["
+                i += 1
+            else:
+                result += ", "
+            result += str(row[0].encode('utf-8'))
+        result += "]"
+        
+        return result
+
+
+
+            
+
+
+
+
 
 
     return app
