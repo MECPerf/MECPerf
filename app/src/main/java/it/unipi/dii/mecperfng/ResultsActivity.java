@@ -5,6 +5,9 @@ This code was implemented by Enrico Alberti.
 The use of this code is permitted by BSD licenses
  */
 
+
+
+
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
@@ -23,27 +26,31 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.RequestFuture;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONArray;
+import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
-
-
-
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 import it.unipi.dii.common.Measure;
 
+
+
 public class ResultsActivity extends AppCompatActivity {
     private SharedPreferences sp;
     private static final int AGGRPORT = 6766;
-
     private AsyncCMD mAsyncTask = null;
-
     private ListView listView;
+
 
 
     @Override
@@ -79,6 +86,8 @@ public class ResultsActivity extends AppCompatActivity {
         mAsyncTask.execute((String) "null"); //SHOW ALL
     }
 
+
+
     private class Result {
         private boolean ok;
         private List<String> value;
@@ -97,6 +106,8 @@ public class ResultsActivity extends AppCompatActivity {
             return ok;
         }
     }
+
+
 
     private class ListViewAdapter extends ArrayAdapter<String>{
         private int groupid;
@@ -145,7 +156,7 @@ public class ResultsActivity extends AppCompatActivity {
 
             String[] tmp = item_i.split("/");
             if(tmp.length > 3) {
-                holder.dateTextView.setText(tmp[0] + " =>" + tmp[3]); //DATE
+                holder.dateTextView.setText(tmp[0] + " =>" + tmp[3]); //DATE => direction
                 holder.directionTextView.setText("Keyword: " + tmp[2]); //KEYWORD
             }
 
@@ -167,7 +178,7 @@ public class ResultsActivity extends AppCompatActivity {
                     Intent intent = new Intent(getBaseContext(), RttActivity.class);
                     String item_i = getitemList(position);
                     String[] tmp = item_i.split("/");
-                    intent.putExtra("EXTRA_DATE", tmp[0]);
+                    intent.putExtra("EXTRA_ID", tmp[4]);
                     intent.putExtra("EXTRA_SENDER", subject[0]);
                     startActivity(intent);
                 }
@@ -206,14 +217,19 @@ public class ResultsActivity extends AppCompatActivity {
     }
 
 
+
     private class AsyncCMD extends AsyncTask<String, Void, Result> {
 
         private String cmd;
+
+
 
         public AsyncCMD(String cmd) {
             super();
             this.cmd = cmd;
         }
+
+
 
         @Override
         protected void onCancelled() {
@@ -221,12 +237,12 @@ public class ResultsActivity extends AppCompatActivity {
         }
 
 
+
         /**
          *
          * @param 'args_0' contains keyword
          * @return
          */
-
         @Override
         protected Result doInBackground(String... args) {
             List<String> results_all = null;
@@ -236,12 +252,13 @@ public class ResultsActivity extends AppCompatActivity {
                     case "LOADER": {
                         results_all = restoreDataFromAggregator(); //ALL
 
+
                         if (!args[0].equals("null")) {
                             for (String entry : results_all) {
                                 String[] tmp = entry.split("/");
 
                                 if ((tmp.length > 3) && (tmp[2].toUpperCase().contains(args[0].toUpperCase()))) { //FILTER
-                                    results.add(tmp[0] + "/" + tmp[1]+ "/"+ tmp[2] +"/"+tmp[3]);
+                                    results.add(tmp[0] + "/" + tmp[1]+ "/"+ tmp[2] +"/"+tmp[3]+"/"+tmp[4]);
                                 }
                             }
                         } else{
@@ -255,6 +272,8 @@ public class ResultsActivity extends AppCompatActivity {
             else
                 return null;
         }
+
+
 
         @Override
         protected void onPostExecute(Result result) {
@@ -273,41 +292,58 @@ public class ResultsActivity extends AppCompatActivity {
         }
     }
 
-    protected List<String> restoreDataFromAggregator() {
-        List<String> results = null;
 
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-        ObjectInputStream objInputStream;
+
+    protected List<String> restoreDataFromAggregator() {
+        final List<String> results = new Vector<>();
+
+        String response = "";
         String aggregatorIP = sp.getString("aggregator_address", "NA");
+        RequestQueue requestQueue = Volley.newRequestQueue(this);  // this = context
+
+
+        final String url = "http://" + aggregatorIP + ":5001/get_data_list";
+        RequestFuture<String> future = RequestFuture.newFuture();
+        StringRequest request = new StringRequest(Request.Method.GET, url, future, future) ;
+        requestQueue.add(request);
 
         try {
-            socket = new Socket(InetAddress.getByName(aggregatorIP), AGGRPORT);
-
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            Measure measure = new Measure("GET_DATA_LIST", "", "", null, -1, null, -1, -1);
-
-            objOutputStream.writeObject(measure);
-
-            objInputStream = new ObjectInputStream(socket.getInputStream());
-
-            results = (List<String>)objInputStream.readObject();
-        } catch (IOException | NullPointerException e) {
+            Log.d("Future:","1");
+            response = future.get(30, TimeUnit.SECONDS); // this will block
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        }
+        catch (TimeoutException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (objOutputStream != null)
-                    objOutputStream.close(); // close the output stream when we're done.
-                if (socket != null)
-                    socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+        }
+        catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        JSONArray jsonArray;
+        try{
+            jsonArray = new JSONArray(response);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                String sender = jsonArray.getJSONObject(i).getString("SenderIdentity");
+                String receiver = jsonArray.getJSONObject(i).getString("ReceiverIdentity");
+                String direction = sender +"->"+receiver;
+                String total = jsonArray.getJSONObject(i).getString("Timestamp") + "/" +
+                               jsonArray.getJSONObject(i).getString("Command") + "/" +
+                               jsonArray.getJSONObject(i).getString("Keyword") + "/" +
+                               direction + "/" + jsonArray.getJSONObject(i).getString("ID");
+                results.add(total);
+                Log.d("Future:", total);
             }
         }
+        catch (JSONException e){
+            e.printStackTrace();
+            return null;
+        }
+
 
         return results;
     }
-
 }

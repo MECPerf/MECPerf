@@ -5,6 +5,8 @@ This code was implemented by Enrico Alberti.
 The use of this code is permitted by BSD licenses
  */
 
+
+
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,6 +18,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.RequestFuture;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -23,16 +37,20 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.MeasureResult;
 
 public class RttActivity extends AppCompatActivity {
     private SharedPreferences sp;
     private static final int AGGRPORT = 6766;
-
     private AsyncCMD mAsyncTask = null;
-
     private ListView measureListView;
+
 
 
     private class AsyncCMD extends AsyncTask<String, Void, List<MeasureResult>> {
@@ -50,8 +68,6 @@ public class RttActivity extends AppCompatActivity {
         }
 
 
-        //args[0] = date
-        //args[1] = Sender
 
         @Override
         protected List<MeasureResult> doInBackground(String... args) {
@@ -115,47 +131,62 @@ public class RttActivity extends AppCompatActivity {
         measureListView=(ListView)findViewById(R.id.measurementsListView);
         measureListView.setEnabled(false);
 
-        String date = getIntent().getStringExtra("EXTRA_DATE");
+        String ID = getIntent().getStringExtra("EXTRA_ID");
         String sender = getIntent().getStringExtra("EXTRA_SENDER");
+
         mAsyncTask = new AsyncCMD("RTT_LOADER");
-        mAsyncTask.execute((String) date, sender);
+        mAsyncTask.execute(ID, sender);
     }
 
-    protected List<MeasureResult> getRttFromDb(String date, String sender) {
-        List<MeasureResult> results = null;
 
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-        ObjectInputStream objInputStream;
-        String aggregatorIP = sp.getString("aggregator_address", "NA");
 
+    protected List<MeasureResult> getRttFromDb(String ID, String sender) {
+        String response = "",
+               aggregatorIP = sp.getString("aggregator_address", "NA"),
+               url = "http://" + aggregatorIP + ":5001/get_RTT_data?id=" + ID + "&sender=" + sender;
+        ;
+
+        Log.d("URL", url);
+        RequestQueue requestQueue = Volley.newRequestQueue(this);  // this = context
+        RequestFuture<String> future = RequestFuture.newFuture();
+        StringRequest request = new StringRequest(Request.Method.GET, url, future, future) ;
+        requestQueue.add(request);
 
         try {
-            socket = new Socket(InetAddress.getByName(aggregatorIP), AGGRPORT);
-
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-
-            Measure measure = new Measure("GET_RTT_DATA", sender, "", null, -1, date, -1, -1);
-
-            objOutputStream.writeObject(measure);
-
-            objInputStream = new ObjectInputStream(socket.getInputStream());
-            results = (List<MeasureResult>)objInputStream.readObject();
-            Log.d("TEST", "LISTA DI OGGETTI COME RITORNO DA  QUERY: " + results);
-        } catch (IOException | NullPointerException e) {
+            response = future.get(30, TimeUnit.SECONDS); // this will block
+        }
+        catch (InterruptedException | TimeoutException | ExecutionException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (objOutputStream != null)
-                    objOutputStream.close(); // close the output stream when we're done.
-                if (socket != null)
-                    socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            return null;
+        }
+
+        Vector<MeasureResult> results = new Vector();
+        JSONArray jsonArray;
+        try{
+            jsonArray = new JSONArray(response);
+            Log.d("RTTActivity Response", response);
+            Log.d("RTTActivity Response", "length: " + jsonArray.length());
+
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                MeasureResult tmp = new MeasureResult();
+                tmp.setSender(jsonArray.getJSONObject(i).getString("SenderIdentity"));
+                tmp.setReceiver(jsonArray.getJSONObject(i).getString("ReceiverIdentity"));
+                tmp.setCommand(jsonArray.getJSONObject(i).getString("Command"));
+                tmp.setLatency(jsonArray.getJSONObject(i).getDouble("latency"));
+                tmp.setKeyword(jsonArray.getJSONObject(i).getString("Keyword"));
+                results.add(tmp);
+
+
+                Log.d("RTTActivity Respons", "array: " + jsonArray.getJSONObject(i).getString("SenderIdentity"));
+                Log.d("RTTActivity Respons:", "tmp" + tmp.getSender());
             }
         }
+        catch (JSONException e){
+            e.printStackTrace();
+            return null;
+        }
+
 
         return results;
     }

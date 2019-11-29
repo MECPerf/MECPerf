@@ -38,15 +38,15 @@ public class Aggregator {
             + " VALUES (?, ?)";
 
 
-    private static final String SELECT_ALL_TEST_TABLE = "SELECT DATE_FORMAT(Timestamp, '%Y-%m-%d %T') As Timestamp, Command, Keyword, Sender, Receiver "
+   /* private static final String SELECT_ALL_TEST_TABLE = "SELECT DATE_FORMAT(Timestamp, '%Y-%m-%d %T') As Timestamp, Command, Keyword, Sender, Receiver "
             + " FROM MECPerf.Test "
             + " GROUP BY ID, Timestamp, Command, Keyword "
-            + " ORDER BY (Timestamp) DESC ";
+            + " ORDER BY (Timestamp) DESC ";*/
 
-    private static final String SELECT_MEASURE_RTT_TABLE = "SELECT Sender, Receiver, Command, latency, Keyword "
+    /*private static final String SELECT_MEASURE_RTT_TABLE = "SELECT Sender, Receiver, Command, latency, Keyword "
             + " FROM MECPerf.RttMeasure INNER JOIN MECPerf.Test ON(Test.ID=RttMeasure.id) "
             + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? "
-            + " AND Sender = ? ";
+            + " AND Sender = ? ";*/
 
     private static final String SELECT_MEASURE_BANDWIDTH_TABLE = "SELECT Sender, Receiver, Command, nanoTimes, kBytes, Keyword "
             + " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
@@ -94,7 +94,7 @@ public class Aggregator {
 
                         try(
                             Connection dbConnection = DriverManager.getConnection(
-                                        "jdbc:mysql://localhost:3306/MECPerf?useSSL=false",
+                                        "jdbc:mysql://131.114.73.3:3306/MECPerf?useSSL=false",
                                         "MECPerf","password")
                             ){
                             dbConnection.setAutoCommit(false);
@@ -110,7 +110,7 @@ public class Aggregator {
                         }
                         break;
                     }
-                    case "GET_DATA_LIST":{
+                   /* case "GET_DATA_LIST":{
                         System.out.println("Comando: GET_DATA_LIST");
                         ObjectOutputStream objOutputStream = null;
                         objOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
@@ -119,8 +119,8 @@ public class Aggregator {
                         System.out.println("LISTA: " + list);
                         objOutputStream.writeObject(list);
                         break;
-                    }
-                    case "GET_RTT_DATA":{
+                    }*/
+                    /*case "GET_RTT_DATA":{
                         System.out.println("Comando: GET_RTT_DATA");
                         ObjectOutputStream objOutputStream = null;
                         objOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
@@ -129,7 +129,7 @@ public class Aggregator {
                         System.out.println("OGGETTO_RTT: " + obj);
                         objOutputStream.writeObject(obj);
                         break;
-                    }
+                    }*/
                     case "GET_BANDWIDTH_DATA":{
                         System.out.println("Comando: GET_BANDWIDTH_DATA");
                         ObjectOutputStream objOutputStream = null;
@@ -334,7 +334,7 @@ public class Aggregator {
     private static int readLastTestNumber(){
         int testNumber = -1;
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf?useSSL=false", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf?useSSL=false", "MECPerf","password");
              PreparedStatement ps = co.prepareStatement(SELECT_TEST_NUMBER);
         ){
             ResultSet rs = ps.executeQuery();
@@ -352,10 +352,10 @@ public class Aggregator {
 
     }
 
-    private static List<String> loadDataFromDb(){
+    /*private static List<String> loadDataFromDb(){
         List<String> results = new ArrayList<>();
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3/MECPerf", "MECPerf","password");
              PreparedStatement ps = co.prepareStatement(SELECT_ALL_TEST_TABLE);
         ){
             ResultSet rs = ps.executeQuery();
@@ -372,13 +372,13 @@ public class Aggregator {
             e.printStackTrace();
         }
         return results;
-    }
+    }*/
 
 
-    private static List<MeasureResult> loadRttDataFromDb(String date, String sender) {
+    /*private static List<MeasureResult> loadRttDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf", "MECPerf","password");
              PreparedStatement ps = co.prepareStatement(SELECT_MEASURE_RTT_TABLE);
         ){
 
@@ -401,13 +401,13 @@ public class Aggregator {
 
         return results;
     }
-
+*/
 
 
     private static List<MeasureResult> loadBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf", "MECPerf","password");
              PreparedStatement ps = co.prepareStatement(SELECT_MEASURE_BANDWIDTH_TABLE);
         ){
 
@@ -446,7 +446,7 @@ public class Aggregator {
     private static List<MeasureResult> loadAVGBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://localhost:3306/MECPerf", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf", "MECPerf","password");
              PreparedStatement ps = co.prepareStatement(SELECT_AVG_MEASURE_BANDWIDTH_TABLE);
         ){
 
