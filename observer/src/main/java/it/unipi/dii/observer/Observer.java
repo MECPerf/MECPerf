@@ -844,15 +844,11 @@ public class Observer {
                     if (i instanceof Inet4Address) {
                         try {
                             InetAddress localhostAddress = InetAddress.getByName("127.0.0.1");
+                            InetAddress localhostAddress2 = InetAddress.getByName("127.0.1.1");
                             InetAddress nullAddress = InetAddress.getByName("0.0.0.0");
 
 
-                            if (i.equals(InetAddress.getLocalHost())){
-                                System.out.println("\t localhost address (next)");
-
-                                continue;
-                            }
-                            if (i.equals(localhostAddress)){
+                            if (i.equals(localhostAddress) || i.equals(localhostAddress2)){
                                 System.out.println("\t localhost address (next)");
 
                                 continue;
