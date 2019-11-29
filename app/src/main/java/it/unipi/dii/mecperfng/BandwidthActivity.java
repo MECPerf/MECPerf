@@ -21,6 +21,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.RequestFuture;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,6 +40,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.MeasureResult;
@@ -168,10 +181,14 @@ public class BandwidthActivity extends AppCompatActivity {
 
             switch (cmd) {
                 case "BANDWIDTH_LOADER":{
-                    results = getBandwidthFromDb(args[0], args[2]); //ALL BANDWIDTH
+                    //results = getBandwidthFromDb(args[0], args[2]); //ALL BANDWIDTH
+                    for (int i= 0; i<args.length; i++)
+                        Log.d("ARGS", args[i].toString());
+                    results = getBandwidthFromDb(args[3], args[2], false); //ALL BANDWIDTH
 
                     if(args[1].equals("TCP")){
-                        results_AVG = getAVGBandwidthFromDb(args[0], args[2]);
+                        results_AVG = getBandwidthFromDb(args[3], args[2], true);
+
 
                         //SHOW DIAGRAM
                         tcpDiagramBtn=(Button)findViewById(R.id.tcp_bandwidth_diagram);
@@ -258,8 +275,14 @@ public class BandwidthActivity extends AppCompatActivity {
 
         sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String date = getIntent().getStringExtra("EXTRA_DATE");
+        String id = getIntent().getStringExtra("EXTRA_ID");
         String type = getIntent().getStringExtra("EXTRA_PROTOCOL"); //TCP o UDP
         String sender = getIntent().getStringExtra("EXTRA_SENDER");
+        Log.d("EXTRA", date);
+        Log.d("EXTRA", id);
+        Log.d("EXTRA", type);
+        Log.d("EXTRA", sender);
+
 
         measureListView=(ListView)findViewById(R.id.bandwidthMeasurementsListView);
         tcpDiagramBtn=(Button)findViewById(R.id.tcp_bandwidth_diagram);
@@ -272,7 +295,6 @@ public class BandwidthActivity extends AppCompatActivity {
             Log.d("TEST", "TYPE NULL");
             return;
         }
-
         if(type.equals("UDP")){
             Log.d("TEST", "UDP");
             measureListView.setEnabled(false);
@@ -300,83 +322,78 @@ public class BandwidthActivity extends AppCompatActivity {
         }
 
         mAsyncTask = new AsyncCMD("BANDWIDTH_LOADER");
-        String[] tmp = new String[]{date, type, sender};
+        String[] tmp = new String[]{date, type, sender, id};
 
         mAsyncTask.execute((String[]) tmp);
     }
 
-    protected List<MeasureResult> getBandwidthFromDb(String date, String sender) {
-        List<MeasureResult> results = null;
 
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-        ObjectInputStream objInputStream;
-        String aggregatorIP = sp.getString("aggregator_address", "NA");
+    protected List<MeasureResult> getBandwidthFromDb(String ID, String sender, boolean average) {
+        List<MeasureResult> results = new ArrayList<>();
+        String aggregatorIP = sp.getString("aggregator_address", "NA"),
+               response,
+               url ;
+        if (average)
+            url = "http://" + aggregatorIP + ":5001/get_AVGbandwidth_data?id=" + ID +
+                    "&sender=" + sender;
+        else
+            url = "http://" + aggregatorIP + ":5001/get_bandwidth_data?id=" + ID +
+                    "&sender=" + sender;
+        Log.d("URL", url);
 
+        RequestQueue requestQueue = Volley.newRequestQueue(this);  // this = context
+        RequestFuture<String> future = RequestFuture.newFuture();
+        StringRequest request = new StringRequest(Request.Method.GET, url, future, future) ;
+        requestQueue.add(request);
 
         try {
-            socket = new Socket(InetAddress.getByName(aggregatorIP), AGGRPORT);
-
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-
-            Measure measure = new Measure("GET_BANDWIDTH_DATA", sender, "", null, -1, date, -1, -1);
-
-            objOutputStream.writeObject(measure);
-
-            objInputStream = new ObjectInputStream(socket.getInputStream());
-            results = (List<MeasureResult>)objInputStream.readObject();
-        } catch (IOException | NullPointerException e) {
+            response = future.get(30, TimeUnit.SECONDS); // this will block
+        }
+        catch (InterruptedException | TimeoutException | ExecutionException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (objOutputStream != null)
-                    objOutputStream.close(); // close the output stream when we're done.
-                if (socket != null)
-                    socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            return null;
+        }
+
+        try {
+            JSONArray jsonArray;
+            jsonArray = new JSONArray(response);
+            Log.d("BandwidthActivity Response", response);
+            Log.d("BandwidthActivity Response", "length: " + jsonArray.length());
+            Log.d("BandwidthActivity Response", "average: " + average);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                MeasureResult tmp = new MeasureResult();
+                tmp.setSender(jsonArray.getJSONObject(i).getString("SenderIdentity"));
+                tmp.setReceiver(jsonArray.getJSONObject(i).getString("ReceiverIdentity"));
+                tmp.setCommand(jsonArray.getJSONObject(i).getString("Command"));
+
+                if (!average) {
+                    Double time = jsonArray.getJSONObject(i).getDouble("nanoTimes");
+                    Double bytes = jsonArray.getJSONObject(i).getDouble("kBytes");
+                    time = time / 1000000; //ms
+                    Double bandwidth = bytes / time; //KB/ms
+                    //bandwidth = bandwidth / 1024; //KB/ms Già in KB sul DB
+                    bandwidth = bandwidth * 1000; //KB/s
+
+                    tmp.setBandwidth(bandwidth);
+                }
+                else
+                    tmp.setBandwidth( jsonArray.getJSONObject(i).getDouble("Bandwidth"));
+
+                tmp.setKeyword( jsonArray.getJSONObject(i).getString("Keyword"));
+
+                results.add(tmp);
+
+
+                Log.d("BandwidthActivity Respons:", "tmp" + tmp.getSender());
             }
         }
+        catch (JSONException e){
+                e.printStackTrace();
+                return null;
+            }
 
         return results;
     }
 
-    protected List<MeasureResult> getAVGBandwidthFromDb(String date, String sender) {
-        List<MeasureResult> results = null;
-
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-        ObjectInputStream objInputStream;
-        String aggregatorIP = sp.getString("aggregator_address", "NA");
-
-        try {
-            socket = new Socket(InetAddress.getByName(aggregatorIP), AGGRPORT);
-
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-
-            Measure measure = new Measure("GET_AVG_BANDWIDTH_DATA", sender, "", null, -1, date, -1, -1);
-
-            objOutputStream.writeObject(measure);
-
-            objInputStream = new ObjectInputStream(socket.getInputStream());
-            results = (List<MeasureResult>)objInputStream.readObject();
-        } catch (IOException | NullPointerException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (objOutputStream != null)
-                    objOutputStream.close(); // close the output stream when we're done.
-                if (socket != null)
-                    socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return results;
-    }
 }

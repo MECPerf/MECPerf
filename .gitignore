@@ -36,6 +36,7 @@ local.properties
 *.pyc
 *.png
 *.txt
+*.sh
 
-
-
+RESTAggregator/RESTAggregator.egg-info/*
+RESTAggregator/dist/*

@@ -48,10 +48,10 @@ public class Aggregator {
             + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? "
             + " AND Sender = ? ";*/
 
-    private static final String SELECT_MEASURE_BANDWIDTH_TABLE = "SELECT Sender, Receiver, Command, nanoTimes, kBytes, Keyword "
+    /*private static final String SELECT_MEASURE_BANDWIDTH_TABLE = "SELECT Sender, Receiver, Command, nanoTimes, kBytes, Keyword "
             + " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
             + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? "
-            + " AND Sender = ? ";
+            + " AND Sender = ? ";*/
 
     private static final String SELECT_AVG_MEASURE_BANDWIDTH_TABLE= "SELECT Test.Sender, Test.Receiver, Test.Command, ((SUM(kBytes) / SUM(nanoTimes))*1000000000) as Bandwidth, Keyword "
             + " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
@@ -130,7 +130,7 @@ public class Aggregator {
                         objOutputStream.writeObject(obj);
                         break;
                     }*/
-                    case "GET_BANDWIDTH_DATA":{
+                   /* case "GET_BANDWIDTH_DATA":{
                         System.out.println("Comando: GET_BANDWIDTH_DATA");
                         ObjectOutputStream objOutputStream = null;
                         objOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
@@ -139,7 +139,7 @@ public class Aggregator {
                         System.out.println("OGGETTO_RTT: " + obj);
                         objOutputStream.writeObject(obj);
                         break;
-                    }
+                    }*/
                     case "GET_AVG_BANDWIDTH_DATA":{
                         System.out.println("Comando: GET_AVG_BANDWIDTH_DATA");
                         ObjectOutputStream objOutputStream = null;
@@ -402,7 +402,7 @@ public class Aggregator {
         return results;
     }
 */
-
+/*
 
     private static List<MeasureResult> loadBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();
@@ -441,7 +441,7 @@ public class Aggregator {
         return results;
     }
 
-
+*/
 
     private static List<MeasureResult> loadAVGBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();

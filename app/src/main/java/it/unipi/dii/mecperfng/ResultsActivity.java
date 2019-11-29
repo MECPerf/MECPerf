@@ -199,6 +199,7 @@ public class ResultsActivity extends AppCompatActivity {
 
                     Intent intent = new Intent(getBaseContext(), BandwidthActivity.class);
                     intent.putExtra("EXTRA_DATE", tmp[0]);
+                    intent.putExtra("EXTRA_ID", tmp[4]);
                     intent.putExtra("EXTRA_PROTOCOL", tmp[1].substring(0,3)); //TCP o UDP
                     intent.putExtra("EXTRA_SENDER", subject[0]);
                     startActivity(intent);
