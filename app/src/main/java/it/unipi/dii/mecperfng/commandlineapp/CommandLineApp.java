@@ -2,8 +2,9 @@ package it.unipi.dii.mecperfng.commandlineapp;
 
 
 
-
 import it.unipi.dii.mecperfng.MainUtils;
+
+
 
 public class CommandLineApp {
     private static int CMDPORT = -1,
@@ -21,7 +22,8 @@ public class CommandLineApp {
     private static String observerAddress = null,
                           measureType = "all",
                           direction = "all",
-                          keyword = "DEFAULT";
+                          keyword = "DEFAULT",
+                          interfaceName = null;
 
 
 
@@ -44,6 +46,10 @@ public class CommandLineApp {
         System.out.println("numPktTCPBandwidth: " + numPktTCPBandwidth);
         System.out.println("numPktTCPLatency: " + numPktTCPLatency);
         System.out.println("numPktUDPLatency: " + numPktUDPLatency);
+
+        if (interfaceName != null) {
+            System.out.println("interface name: " + interfaceName);
+        }
 
 
         if (timerInterval < 0)
@@ -130,7 +136,10 @@ public class CommandLineApp {
                 timerInterval = Integer.parseInt(args[++i]);
                 continue;
             }
-
+            if (args[i].equals("-i") || args[i].equals("--interface-name")){
+                interfaceName = args[++i];
+                continue;
+            }
 
 
             System.out.println("Unknown command " + args[i]);
@@ -164,7 +173,8 @@ public class CommandLineApp {
 
                     ret = MainUtils.tcpBandwidthMeasure("Receiver", keyword, CMDPORT,
                                                         observerAddress, TCPPORT,
-                                                        pktSizeTCPBandwidth, numPktTCPBandwidth);
+                                                        pktSizeTCPBandwidth, numPktTCPBandwidth,
+                                                        interfaceName);
                     if (ret == 0)
                         break;
 
@@ -180,7 +190,7 @@ public class CommandLineApp {
 
                     ret = MainUtils.tcpBandwidthMeasure("Sender", keyword, CMDPORT,
                                                         observerAddress, TCPPORT, pktSizeTCPBandwidth,
-                                                        numPktTCPBandwidth);
+                                                        numPktTCPBandwidth, interfaceName);
                     if (ret == 0)
                         break;
 
@@ -205,7 +215,7 @@ public class CommandLineApp {
 
                     ret = MainUtils.udpBandwidthMeasure("Receiver", keyword, CMDPORT,
                                                         observerAddress, UDPPORT,
-                                                        pktSizeUDPBandwidth);
+                                                        pktSizeUDPBandwidth, interfaceName);
                     if (ret == 0)
                         break;
 
@@ -220,7 +230,7 @@ public class CommandLineApp {
 
                     ret = MainUtils.udpBandwidthMeasure("Sender", keyword, CMDPORT,
                                                         observerAddress, UDPPORT,
-                                                        pktSizeUDPBandwidth);
+                                                        pktSizeUDPBandwidth, interfaceName);
                     if (ret == 0)
                         break;
 
@@ -249,7 +259,7 @@ public class CommandLineApp {
 
                     ret =  MainUtils.tcpRTTMeasure("Receiver", keyword, CMDPORT,
                                                    observerAddress, TCPPORT, pktSizeTCPLatency,
-                                                   numPktTCPLatency);
+                                                   numPktTCPLatency, interfaceName);
                     if (ret == 0)
                         break;
 
@@ -264,7 +274,7 @@ public class CommandLineApp {
 
                     ret =  MainUtils.tcpRTTMeasure("Sender", keyword, CMDPORT,
                                                    observerAddress, TCPPORT, pktSizeTCPLatency,
-                                                   numPktTCPLatency);
+                                                   numPktTCPLatency, interfaceName);
                     if (ret == 0)
                         break;
 
@@ -272,7 +282,7 @@ public class CommandLineApp {
                 }
             }
         }
-        if (measureType.equalsIgnoreCase("latencyUDP") ||
+       if (measureType.equalsIgnoreCase("latencyUDP") ||
             measureType.equalsIgnoreCase("all")){
             if (pktSizeUDPLatency < 0){
                 System.out.println("Error: pktSizeUDPLatency missing");
@@ -293,7 +303,7 @@ public class CommandLineApp {
 
                     ret = MainUtils.udpRTTMeasure("Receiver", keyword, CMDPORT,
                                                   observerAddress, UDPPORT, pktSizeUDPLatency,
-                                                  numPktUDPLatency);
+                                                  numPktUDPLatency, interfaceName);
 
                     if (ret == 0)
                         break;
@@ -309,16 +319,13 @@ public class CommandLineApp {
 
                     ret = MainUtils.udpRTTMeasure("Sender", keyword, CMDPORT,
                                                   observerAddress, UDPPORT,  pktSizeUDPLatency,
-                                                  numPktUDPLatency);
+                                                  numPktUDPLatency, interfaceName);
                     if (ret == 0)
                         break;
 
                     System.out.println("Error: try again!");
                 }
             }
-
-
-
         }
     }
 }

@@ -17,6 +17,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -116,12 +117,10 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                 .toString());
 
-                        Socket tmpsocket = new Socket(InetAddress.getByName(cmdSplitted[5]), Integer.parseInt(cmdSplitted[4]));
-                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                         objectOutputStream.writeObject(mappa);
 
                         objectOutputStream.close();
-                        tmpsocket.close();
 
                         System.out.println("Sent result to aggregator");
 
@@ -180,13 +179,11 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                                       .toString());
 
-                        Socket tmpsocket = new Socket(InetAddress.getByName(cmdSplitted[4]), Integer.parseInt(cmdSplitted[3]));
-                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                         objectOutputStream.writeObject(measureResult);
                         objectOutputStream.flush();
-
                         objectOutputStream.close();
-                        tmpsocket.close();
                     }
                     catch(IOException e){
                         e.printStackTrace();

@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.Objects;
 
@@ -46,9 +48,33 @@ public class ControlMessages {
 
 
 
+    public ControlMessages(String receiverAddress, int receiverPort, InetAddress sourceAddr, int sourcePort){
+        try {
+            openControlConnection(InetAddress.getByName(receiverAddress), receiverPort, sourceAddr, sourcePort);
+
+
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+
+
     private void openControlConnection(InetAddress receiverAddress, int receiverPort){
         try {
             this.controlSocket = new Socket(receiverAddress, receiverPort);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+
+    private void openControlConnection(InetAddress receiverAddress, int receiverPort, InetAddress sourceAddr, int sourcePort){
+        try {
+            this.controlSocket = new Socket();
+            this.controlSocket.bind(new InetSocketAddress(sourceAddr, sourcePort));
+            this.controlSocket.connect(new InetSocketAddress(receiverAddress, receiverPort));
+
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -128,6 +154,8 @@ public class ControlMessages {
             ioe.printStackTrace();
         }
     }
+
+
 
     public Socket getSocket(){
         return this.controlSocket;

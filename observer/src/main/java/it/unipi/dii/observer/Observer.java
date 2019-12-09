@@ -133,8 +133,8 @@ public class Observer {
 
                         String resultRemote = controlSocketRemote.receiveCMD();
 
-                        Socket connectionSocket = cmdListener.accept();
-                        InputStream isr = connectionSocket.getInputStream();
+
+                        InputStream isr = controlSocketRemote.getSocket().getInputStream();
                         ObjectInputStream mapInputStream = new ObjectInputStream(isr);
                         Map<Long, Integer> remoteMeasure = (Map<Long, Integer>) mapInputStream.readObject();
                         isr.close();
@@ -206,8 +206,9 @@ public class Observer {
                     controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
                     String resultApp = controlSocketApp.receiveCMD();
 
-                    Socket connectionSocket = cmdListener.accept();
-                    InputStream isr = connectionSocket.getInputStream();
+                    //Socket connectionSocket = cmdListener.accept();
+                    //InputStream isr = connectionSocket.getInputStream();
+                    InputStream isr = controlSocketApp.getSocket().getInputStream();
                     ObjectInputStream mapInputStream = new ObjectInputStream(isr);
                     Map<Long, Integer> applicationMeasure = (Map<Long, Integer>) mapInputStream.readObject();
                     isr.close();
@@ -282,8 +283,9 @@ public class Observer {
 
                     String resultRemote = controlSocketRemote.receiveCMD();
 
-                    Socket connectionSocket = cmdListener.accept();
-                    InputStream isr = connectionSocket.getInputStream();
+                    //Socket connectionSocket = cmdListener.accept();
+                    //InputStream isr = connectionSocket.getInputStream();
+                    InputStream isr = controlSocketRemote.getSocket().getInputStream();
                     ObjectInputStream mapInputStream = new ObjectInputStream(isr);
                     Map<Long, Integer> remoteMeasure = (Map<Long, Integer>) mapInputStream.readObject();
 
@@ -368,11 +370,11 @@ public class Observer {
 
                     String resultApp = controlSocketApp.receiveCMD();
 
-                    Socket connectionSocket = cmdListener.accept();
-                    InputStream isr = connectionSocket.getInputStream();
-                    ObjectInputStream mapInputStream = new ObjectInputStream(isr);
+                    //Socket connectionSocket = cmdListener.accept();
+                    //InputStream isr = connectionSocket.getInputStream();
+                    ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
                     Map<Long, Integer> applicationMeasure = (Map<Long, Integer>) mapInputStream.readObject();
-                    isr.close();
+                    //isr.close();
                     mapInputStream.close();
 
                     //application data

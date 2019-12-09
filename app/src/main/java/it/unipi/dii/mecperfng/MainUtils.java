@@ -2,13 +2,24 @@ package it.unipi.dii.mecperfng;
 
 
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 import it.unipi.dii.common.Measurements;
@@ -17,6 +28,34 @@ import it.unipi.dii.common.ControlMessages;
 
 
 public class MainUtils {
+    private static InetAddress getInterfacesInfo(String targetInterface){
+        try {
+            Enumeration<NetworkInterface> networkInterfaces =  NetworkInterface.getNetworkInterfaces();
+
+            while(networkInterfaces.hasMoreElements())
+            {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+
+                    if (networkInterface.isUp()) {
+                        if (networkInterface.getName().equals(targetInterface)) {
+                            Enumeration ee = networkInterface.getInetAddresses();
+                            while (ee.hasMoreElements()) {
+                                InetAddress i = (InetAddress) ee.nextElement();
+
+
+                                if (i instanceof Inet4Address) {
+                                    return i;
+                                }
+                            }
+                        }
+                    }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /*****
      *
      * @param direction
@@ -31,12 +70,29 @@ public class MainUtils {
      */
     public static int tcpBandwidthMeasure(String direction, String keyword, int commandPort,
                                           String observerAddress, int observerPort,
-                                          int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt) {
+                                          int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt,
+                                          String interfaceName) {
         try {
             int tcp_bandwidth_stream = tcp_bandwidth_num_pkt * tcp_bandwidth_pktsize;
 
-            Socket communicationSocket = new Socket(InetAddress.getByName(observerAddress), observerPort);
-            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
+            Socket communicationSocket = new Socket();
+            ControlMessages controlSocketObserver;
+
+            if (interfaceName != null) {
+                InetAddress sourceIPv4Address =getInterfacesInfo(interfaceName);
+                if (sourceIPv4Address == null)
+                {
+                    System.out.println("Error: Interface not found");
+                    return -1;
+                }
+
+                communicationSocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort, sourceIPv4Address, 0);
+
+            } else
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort);
+            communicationSocket.connect(new InetSocketAddress(InetAddress.getByName(observerAddress), observerPort));
+
 
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD("TCPBandwidthSender#" + keyword + "#" +
@@ -74,13 +130,12 @@ public class MainUtils {
                 }
 
                 controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
-                                              .toString());
-                Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), commandPort);
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+                        .toString());
+
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                 objectOutputStream.writeObject(longIntegerMap);
 
                 objectOutputStream.close();
-                tmpsocket.close();
                 controlSocketObserver.closeConnection();
                 return 0;
             }
@@ -93,11 +148,28 @@ public class MainUtils {
 
     public static int udpBandwidthMeasure(String direction, String keyword, int commandPort,
                                           String observerAddress, int observerPort,
-                                          int udp_bandwidth_pktsize) {
+                                          int udp_bandwidth_pktsize, String interfaceName) {
         try {
-            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
-            DatagramSocket connectionSocket = new DatagramSocket();
-            connectionSocket.connect(InetAddress.getByName(observerAddress), observerPort);
+            ControlMessages controlSocketObserver;
+            DatagramSocket connectionSocket;
+
+            if (interfaceName != null) {
+                InetAddress sourceIPv4Address =getInterfacesInfo(interfaceName);
+                if (sourceIPv4Address == null)
+                {
+                    System.out.println("Error: Interface not found");
+                    return -1;
+                }
+                connectionSocket = new DatagramSocket(null);
+                connectionSocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort, sourceIPv4Address, 0);
+
+            } else {
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort);
+                connectionSocket = new DatagramSocket();
+            }
+            connectionSocket.connect(new InetSocketAddress(InetAddress.getByName(observerAddress), observerPort));
+
 
 
             if (direction.equals("Sender")) {
@@ -147,12 +219,11 @@ public class MainUtils {
 
                 controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDBANDWIDTH
                                               .toString());
-                Socket tmpsocket = new Socket(InetAddress.getByName(observerAddress), commandPort);
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(tmpsocket.getOutputStream());
+
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                 objectOutputStream.writeObject(measureResult);
 
                 objectOutputStream.close();
-                tmpsocket.close();
                 controlSocketObserver.closeConnection();
                 return 0;
             }
@@ -165,11 +236,28 @@ public class MainUtils {
 
     public static int tcpRTTMeasure(String direction, String keyword, int commandPort,
                                     String observerAddress, int observerPort,
-                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack) {
+                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack, String interfaceName) {
 
         try {
-            Socket communicationSocket = new Socket(InetAddress.getByName(observerAddress), observerPort);
-            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
+            Socket communicationSocket = new Socket();
+            ControlMessages controlSocketObserver;
+
+            if (interfaceName != null) {
+                InetAddress sourceIPv4Address =getInterfacesInfo(interfaceName);
+                if (sourceIPv4Address == null)
+                {
+                    System.out.println("Error: Interface not found");
+                    return -1;
+                }
+
+                communicationSocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort, sourceIPv4Address, 0);
+
+            } else
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort);
+            communicationSocket.connect(new InetSocketAddress(InetAddress.getByName(observerAddress), observerPort));
+
+
 
             if (direction.equals("Sender")) {
                 // the client application starts a TCP RTT measure (as sender) with the observer
@@ -228,12 +316,31 @@ public class MainUtils {
 
     public static int udpRTTMeasure(String direction, String keyword, int commandPort,
                                     String observerAddress, int observerPort,
-                                    int udp_rtt_pktsize, int udp_rtt_num_pack) {
+                                    int udp_rtt_pktsize, int udp_rtt_num_pack, String interfaceName) {
 
         try {
-            ControlMessages controlSocketObserver = new ControlMessages(observerAddress, commandPort);
-            DatagramSocket udpsocket = new DatagramSocket();
-            udpsocket.connect(InetAddress.getByName(observerAddress), observerPort);
+            ControlMessages controlSocketObserver;
+            DatagramSocket udpsocket;
+
+            if (interfaceName != null) {
+
+                InetAddress sourceIPv4Address =getInterfacesInfo(interfaceName);
+                if (sourceIPv4Address == null)
+                {
+                    System.out.println("Error: Interface not found");
+                    return -1;
+                }
+
+                udpsocket =new DatagramSocket(null);
+                udpsocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort, sourceIPv4Address, 0);
+
+            } else {
+                controlSocketObserver = new ControlMessages(observerAddress, commandPort);
+                udpsocket = new DatagramSocket();
+            }
+            udpsocket.connect(new InetSocketAddress(InetAddress.getByName(observerAddress), observerPort));
+
 
             if (direction.equals("Sender")) {
                 // the client application starts a TCP RTT measure as sender. The observer is the
