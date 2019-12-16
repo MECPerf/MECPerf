@@ -4,19 +4,47 @@ from flask_mysqldb import MySQL
 import json
 
 
+
+def init_server(app):
+    with open('opt.txt') as json_file:
+        opt_json = json.load(json_file)
+
+        print "REST server info:"
+        for p in opt_json['RestServer']:
+            print('address: ' + p['address'] + ":" + p['port'])
+
+            host = p['address'] 
+            port = p['port']
+            print('\n')
+
+        print "DB info:"
+        for q in opt_json['Database']:
+            print('address: ' + q['address'] + ":" + q['port'])
+            print('DB name: ' + q['db_name'])
+            print('user name: ' + q['user'])
+            print('pw: ' + q['password'])
+            print('charset: ' + q['charset'])
+            print('\n')
+        
+
+            #configure MySQL connection
+            app.config['MYSQL_HOST'] = q['address']
+            app.config['MYSQL_PORT'] = int(q['port'])
+            app.config['MYSQL_USER'] = q['user']
+            app.config['MYSQL_PASSWORD'] = q['password']
+            app.config['MYSQL_DB'] = q['db_name']
+            app.config['MYSQL_DATABASE_CHARSET'] = 'latin1'
+        
+        print ("\n\n")
+        mysql = MySQL(app)
+
+        return mysql, host, port
+
+
+
 def create_app():
     app = Flask(__name__)
-
-
-    #configure MySQL connection
-    app.config['MYSQL_HOST'] = '131.114.73.3'
-    app.config['MYSQL_PORT'] = 3306
-    app.config['MYSQL_USER'] = 'MECPerf'
-    app.config['MYSQL_PASSWORD'] = 'password'
-    app.config['MYSQL_DB'] = 'MECPerf'
-    app.config['MYSQL_DATABASE_CHARSET'] = 'latin1'
-    mysql = MySQL(app)
-
+    mysql, host, port = init_server( app)
 
 
     @app.route('/')
@@ -32,7 +60,6 @@ def create_app():
         string += '<a href="/get_AVGBandwidth_data">get_AVGBandwidth_data</a> required: id, sender<br>'
         return string
         
-
 
     @app.route('/bandwidth', methods=['GET'])
     def getBandwidth():
@@ -60,7 +87,6 @@ def create_app():
         for row in queryRes:
             result += str(row).replace("(u'", "").replace("',)", "")
         return result
-    
 
 
     def build_bandwidth_query(json, keyword):
@@ -80,9 +106,6 @@ def create_app():
         query += "FROM Test where Keyword = %s"
 
         return json, query
-
-
-
 
 
     ##################################################### MOBILE QUERIES ################################
@@ -117,7 +140,6 @@ def create_app():
             result += str(row[0].encode('utf8'))
         result += "]"
         return result
-
 
 
     @app.route('/get_RTT_data', methods=['GET'])
@@ -162,7 +184,6 @@ def create_app():
         return result
 
 
-
     @app.route('/get_bandwidth_data', methods=['GET'])
     def get_bandwidth_data():
         result = ""
@@ -202,7 +223,6 @@ def create_app():
         result += "]"
         
         return result
-
 
 
     @app.route('/get_AVGbandwidth_data', methods=['GET'])
@@ -246,19 +266,11 @@ def create_app():
         return result
 
 
-
-            
-
-
-
-
-
-
-    return app
+    return host, port, app
 
 
 
 
 if __name__ == "__main__":
-    app = create_app()
-    app.run(host="131.114.73.3", port = 5001, debug=True)
+    host, port, app = create_app()
+    app.run(host=host, port = int(port), debug=True)
