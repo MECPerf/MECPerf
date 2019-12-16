@@ -38,13 +38,13 @@ def init_server(app):
         print ("\n\n")
         mysql = MySQL(app)
 
-        return mysql, host, port
+        return mysql
 
 
 
 def create_app():
     app = Flask(__name__)
-    mysql, host, port = init_server( app)
+    mysql = init_server( app)
 
 
     @app.route('/')
@@ -266,11 +266,15 @@ def create_app():
         return result
 
 
-    return host, port, app
+    return app
 
 
 
 
 if __name__ == "__main__":
-    host, port, app = create_app()
-    app.run(host=host, port = int(port), debug=True)
+    app = create_app()
+    with open('opt.txt') as json_file:
+        opt_json = json.load(json_file)
+    
+    for i in opt_json["RestServer"]:
+        app.run(host=i['address'], port = int(i['port']), debug=True)
