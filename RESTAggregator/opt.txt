@@ -1,0 +1,18 @@
+{
+    "RestServer": [
+        {
+            "address" : "",
+            "port": ""
+        }
+    ],
+    "Database": [
+        {
+            "address" : "",
+            "port": "",
+            "user" : "",
+            "password" : "",
+            "db_name" : "",
+            "charset" : ""
+        }
+    ]
+}
