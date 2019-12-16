@@ -33,7 +33,7 @@ def init_server(app):
             app.config['MYSQL_USER'] = q['user']
             app.config['MYSQL_PASSWORD'] = q['password']
             app.config['MYSQL_DB'] = q['db_name']
-            app.config['MYSQL_DATABASE_CHARSET'] = 'latin1'
+            app.config['MYSQL_DATABASE_CHARSET'] = q['charset']
         
         print ("\n\n")
         mysql = MySQL(app)
