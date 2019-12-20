@@ -6,8 +6,11 @@ The use of this code is permitted by BSD licenses
  */
 
 import java.io.*;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -22,41 +25,32 @@ import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.MeasureResult;
 
 public class Aggregator {
-    private static final int AGGREGATOR_PORT = 6766;
+    //private static final int AGGREGATOR_PORT = 6766;
+    private static int AGGREGATOR_PORT = -1;
+
+    private static String DBADDRESS = null,
+                          DBNAME = null,
+                          DBPASSWORD = null,
+                          DBUSERNAME = null;
+
 
     private static final String INSERT_TEST_TABLE = "INSERT INTO MECPerf.Test (TestNumber,Timestamp,"
                                                     + " Direction, Command, SenderIdentity, "
                                                     + "ReceiverIdentity, SenderIPv4Address, "
                                                     + "ReceiverIPv4Address,  Keyword, PackSize, "
                                                     + "NumPack)  VALUES (?, CURRENT_TIMESTAMP, ?, ?,"
-                                                    +                   "?, ?, ?, ?, ?, ?, ?)";
-
-    private static final String INSERT_BANDWIDTH_TABLE = "INSERT INTO MECPerf.BandwidthMeasure " +
-                                                         " VALUES (?, ?, ?, ?)";
-
-    private static final String INSERT_LATENCY_TABLE = "INSERT INTO MECPerf.RttMeasure "
-            + " VALUES (?, ?)";
+                                                    +                   "?, ?, ?, ?, ?, ?, ?)",
+                                INSERT_BANDWIDTH_TABLE = "INSERT INTO MECPerf.BandwidthMeasure "
+                                                         + " VALUES (?, ?, ?, ?)",
+                                INSERT_LATENCY_TABLE = "INSERT INTO MECPerf.RttMeasure "
+                                                       + " VALUES (?, ?)";
 
 
-   /* private static final String SELECT_ALL_TEST_TABLE = "SELECT DATE_FORMAT(Timestamp, '%Y-%m-%d %T') As Timestamp, Command, Keyword, Sender, Receiver "
-            + " FROM MECPerf.Test "
-            + " GROUP BY ID, Timestamp, Command, Keyword "
-            + " ORDER BY (Timestamp) DESC ";*/
-
-    /*private static final String SELECT_MEASURE_RTT_TABLE = "SELECT Sender, Receiver, Command, latency, Keyword "
-            + " FROM MECPerf.RttMeasure INNER JOIN MECPerf.Test ON(Test.ID=RttMeasure.id) "
-            + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? "
-            + " AND Sender = ? ";*/
-
-    /*private static final String SELECT_MEASURE_BANDWIDTH_TABLE = "SELECT Sender, Receiver, Command, nanoTimes, kBytes, Keyword "
+    private static final String SELECT_AVG_MEASURE_BANDWIDTH_TABLE= "SELECT Test.Sender, "
+            + "Test.Receiver, Test.Command, ((SUM(kBytes) / SUM(nanoTimes))*1000000000) as Bandwidth,"
+            + " Keyword"
             + " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
-            + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? "
-            + " AND Sender = ? ";*/
-
-    private static final String SELECT_AVG_MEASURE_BANDWIDTH_TABLE= "SELECT Test.Sender, Test.Receiver, Test.Command, ((SUM(kBytes) / SUM(nanoTimes))*1000000000) as Bandwidth, Keyword "
-            + " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
-            + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? "
-            + " AND Sender = ? "
+            + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? AND Sender = ? "
             + " GROUP BY Test.ID, Test.Sender, Test.Receiver, Test.Command ";
 
     private static final String SELECT_TEST_NUMBER= "SELECT ID, TestNumber FROM MECPerf.Test  "
@@ -66,6 +60,14 @@ public class Aggregator {
 
     public static void main (String[] args){
         ServerSocket welcomeSoket = null;
+
+        parseArguments(args);
+        if (!checkArguments()){
+            System.out.println("checkArguments() failed");
+            System.exit(0);
+        }
+        printArguments();
+
 
         try {
             welcomeSoket = new ServerSocket(AGGREGATOR_PORT);
@@ -93,9 +95,9 @@ public class Aggregator {
                         Measure measureSecondSegment = (Measure) mapInputStream.readObject();
 
                         try(
-                            Connection dbConnection = DriverManager.getConnection(
-                                        "jdbc:mysql://131.114.73.3:3306/MECPerf?useSSL=false",
-                                        "MECPerf","password")
+                            Connection dbConnection = DriverManager.getConnection("jdbc:mysql://"
+                                                     + DBADDRESS+":3306/"+ DBNAME + "?useSSL=false",
+                                                       DBUSERNAME, DBPASSWORD)
                             ){
                             dbConnection.setAutoCommit(false);
 
@@ -110,36 +112,6 @@ public class Aggregator {
                         }
                         break;
                     }
-                   /* case "GET_DATA_LIST":{
-                        System.out.println("Comando: GET_DATA_LIST");
-                        ObjectOutputStream objOutputStream = null;
-                        objOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
-                        List<String> list = loadDataFromDb();
-
-                        System.out.println("LISTA: " + list);
-                        objOutputStream.writeObject(list);
-                        break;
-                    }*/
-                    /*case "GET_RTT_DATA":{
-                        System.out.println("Comando: GET_RTT_DATA");
-                        ObjectOutputStream objOutputStream = null;
-                        objOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
-                        System.out.println("DATA QUERY: " + measure.getExtra());
-                        List<MeasureResult> obj = loadRttDataFromDb(measure.getExtra(), measure.getSender());
-                        System.out.println("OGGETTO_RTT: " + obj);
-                        objOutputStream.writeObject(obj);
-                        break;
-                    }*/
-                   /* case "GET_BANDWIDTH_DATA":{
-                        System.out.println("Comando: GET_BANDWIDTH_DATA");
-                        ObjectOutputStream objOutputStream = null;
-                        objOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
-                        System.out.println("DATA QUERY: " + measure.getExtra());
-                        List<MeasureResult> obj = loadBandwidthDataFromDb(measure.getExtra(), measure.getSender());
-                        System.out.println("OGGETTO_RTT: " + obj);
-                        objOutputStream.writeObject(obj);
-                        break;
-                    }*/
                     case "GET_AVG_BANDWIDTH_DATA":{
                         System.out.println("Comando: GET_AVG_BANDWIDTH_DATA");
                         ObjectOutputStream objOutputStream = null;
@@ -334,7 +306,8 @@ public class Aggregator {
     private static int readLastTestNumber(){
         int testNumber = -1;
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf?useSSL=false", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://"+DBADDRESS+":3306/"+
+                                                  DBNAME + "?useSSL=false", DBUSERNAME, DBPASSWORD);
              PreparedStatement ps = co.prepareStatement(SELECT_TEST_NUMBER);
         ){
             ResultSet rs = ps.executeQuery();
@@ -352,101 +325,13 @@ public class Aggregator {
 
     }
 
-    /*private static List<String> loadDataFromDb(){
-        List<String> results = new ArrayList<>();
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3/MECPerf", "MECPerf","password");
-             PreparedStatement ps = co.prepareStatement(SELECT_ALL_TEST_TABLE);
-        ){
-            ResultSet rs = ps.executeQuery();
-            // the '/' character is the SEPARATOR which the application use to SPLIT
-            while (rs.next()) {
-                String sender = rs.getString("Sender");
-                String receiver = rs.getString("Receiver");
-                String direction = sender +"->"+receiver;
-                String total = rs.getString("Timestamp") +"/"+rs.getString("Command") +"/"+rs.getString("Keyword") +"/"+direction;
-                results.add(total);
-            }
-            System.out.println("RESULTS: " + results);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return results;
-    }*/
-
-
-    /*private static List<MeasureResult> loadRttDataFromDb(String date, String sender) {
-        List<MeasureResult> results =  new ArrayList<>();
-
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf", "MECPerf","password");
-             PreparedStatement ps = co.prepareStatement(SELECT_MEASURE_RTT_TABLE);
-        ){
-
-            ps.setString(1, date);
-            ps.setString(2, sender);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                MeasureResult tmp = new MeasureResult();
-                tmp.setSender(rs.getString("Sender"));
-                tmp.setReceiver(rs.getString("Receiver"));
-                tmp.setCommand(rs.getString("Command"));
-                tmp.setLatency(rs.getDouble("latency"));
-                tmp.setKeyword(rs.getString("Keyword"));
-                results.add(tmp);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return results;
-    }
-*/
-/*
-
-    private static List<MeasureResult> loadBandwidthDataFromDb(String date, String sender) {
-        List<MeasureResult> results =  new ArrayList<>();
-
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf", "MECPerf","password");
-             PreparedStatement ps = co.prepareStatement(SELECT_MEASURE_BANDWIDTH_TABLE);
-        ){
-
-            ps.setString(1, date);
-            ps.setString(2, sender);
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                MeasureResult tmp = new MeasureResult();
-                tmp.setSender(rs.getString("Sender"));
-                tmp.setReceiver(rs.getString("Receiver"));
-                tmp.setCommand(rs.getString("Command"));
-
-                Double time = rs.getDouble("nanoTimes");
-                Double bytes = rs.getDouble("kBytes");
-
-                time = time / 1000000; //ms
-                Double bandwidth =  bytes/time; //KB/ms
-                //bandwidth = bandwidth / 1024; //KB/ms Già in KB sul DB
-                bandwidth = bandwidth * 1000; //KB/s
-
-                tmp.setBandwidth(bandwidth);
-
-                tmp.setKeyword(rs.getString("Keyword"));
-                results.add(tmp);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return results;
-    }
-
-*/
 
     private static List<MeasureResult> loadAVGBandwidthDataFromDb(String date, String sender) {
         List<MeasureResult> results =  new ArrayList<>();
 
-        try (Connection co = DriverManager.getConnection("jdbc:mysql://131.114.73.3:3306/MECPerf", "MECPerf","password");
+        try (Connection co = DriverManager.getConnection("jdbc:mysql://"+ DBADDRESS +":3306/"
+                                                + DBNAME + "?useSSL=false", DBUSERNAME, DBPASSWORD);
              PreparedStatement ps = co.prepareStatement(SELECT_AVG_MEASURE_BANDWIDTH_TABLE);
         ){
 
@@ -469,6 +354,88 @@ public class Aggregator {
         }
 
         return results;
+    }
+
+
+
+    private static boolean checkArguments(){
+        if (DBADDRESS == null){
+            System.out.println("Error: DBADDRESS cannot be null");
+            return false;
+        }
+        try {
+            if (!(InetAddress.getByName(DBADDRESS) instanceof Inet4Address)) {
+                System.out.println("Error: DBADDRESS is not an IPv4Address");
+                return false;
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        if (DBNAME == null){
+            System.out.println("Error: DBNAME cannot be null");
+            return false;
+        }
+
+        if (DBPASSWORD == null){
+            System.out.println("Error: DBPASSWORD cannot be null");
+            return false;
+        }
+
+        if (DBUSERNAME == null){
+            System.out.println("Error: DBUSERNAME cannot be null");
+            return false;
+        }
+
+
+        //check REMOTE ports
+        if (AGGREGATOR_PORT < 0){
+            System.out.println("Error: AGGREGATOR_PORT cannot be negative");
+            return false;
+        }
+
+        return true;
+    }
+
+
+    private static void printArguments(){
+        System.out.println("Database address: " + DBADDRESS);
+        System.out.println("Database name: " + DBNAME);
+        System.out.println("Database user: " + DBUSERNAME);
+        System.out.println("Database password: " + DBPASSWORD);
+        System.out.println("Aggregator port: " + AGGREGATOR_PORT);
+        System.out.println();
+    }
+
+
+    private static void parseArguments(String[] args){
+        for (int i = 0; i< args.length; i++) {
+
+            if (args[i].equals("-a") || args[i].equals("--database-ip")) {
+                DBADDRESS = args[++i];
+                continue;
+            }
+            if (args[i].equals("-r") || args[i].equals("--database-name")) {
+                DBNAME = args[++i];
+                continue;
+            }
+            if (args[i].equals("-ap") || args[i].equals("--database-user")) {
+                DBUSERNAME = args[++i];
+                continue;
+            }
+
+            if (args[i].equals("-rtp") || args[i].equals("--database-password")) {
+                DBPASSWORD = args[++i];
+                continue;
+            }
+
+            if (args[i].equals("-rup") || args[i].equals("--aggregator-port")) {
+                AGGREGATOR_PORT = Integer.parseInt(args[++i]);
+                continue;
+            }
+
+            System.out.println("Unknown command " + args[i]);
+        }
     }
 
 }
