@@ -25,13 +25,13 @@
 
         <EditTextPreference
             app:key="observer_address"
-            app:defaultValue="131.114.73.2"
+            app:defaultValue=""
             app:title="@string/observer_address_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
             app:key="aggregator_address"
-            app:defaultValue="131.114.73.3"
+            app:defaultValue=""
             app:title="@string/aggregator_address_title"
             app:useSimpleSummaryProvider="true" />
 

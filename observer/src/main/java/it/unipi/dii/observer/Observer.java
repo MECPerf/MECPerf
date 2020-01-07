@@ -811,16 +811,14 @@ public class Observer {
 
 
 
-    private static String cutAddress(String address)
-    {
+    private static String cutAddress(String address){
         address = address.replace("/", "");
         return address.substring(0, address.indexOf(":"));
     }
 
 
 
-    private static String getAddress()
-    {
+    private static String getAddress(){
         Enumeration enumerator = null;
         try {
             enumerator = NetworkInterface.getNetworkInterfaces();
