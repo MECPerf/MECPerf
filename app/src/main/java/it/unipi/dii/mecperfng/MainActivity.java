@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i< numberOfConsecutiveTests;i++) {
                         outcome = MainUtils.tcpBandwidthMeasure(direction, keyword, CMDPORT,
                                                     observerAddress, TCPPORT,
-                                                    tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt);
+                                                    tcp_bandwidth_pktsize, tcp_bandwidth_num_pkt, null);
                         String txt = "TCP bandwidth " + i + ": ";
                         if (outcome != 0) {
                             txt += "FAILED";
@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
-                                udp_bandwidth_pktsize);
+                                udp_bandwidth_pktsize, null);
                         String txt = "UDP bandwidth " + i + ": ";
                         if (outcome != 0){
                             txt += "FAILED";
@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.tcpRTTMeasure(direction, keyword, CMDPORT,
                                 observerAddress, TCPPORT,
-                                tcp_rtt_pktsize, tcp_rtt_num_pack);
+                                tcp_rtt_pktsize, tcp_rtt_num_pack, null);
                         String txt = "TCP RTT " + i + ": ";
                         if (outcome != 0){
                             txt += "FAILED";
@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
                         outcome = MainUtils.udpRTTMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
-                                udp_rtt_pktsize, udp_rtt_num_pack);
+                                udp_rtt_pktsize, udp_rtt_num_pack, null);
                         String txt = "UDP RTT " + i + ": ";
                         if (outcome != 0){
                             txt += "FAILED";

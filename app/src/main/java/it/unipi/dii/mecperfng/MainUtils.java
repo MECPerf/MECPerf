@@ -2,25 +2,18 @@ package it.unipi.dii.mecperfng;
 
 
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
-
 
 import it.unipi.dii.common.Measurements;
 import it.unipi.dii.common.ControlMessages;
