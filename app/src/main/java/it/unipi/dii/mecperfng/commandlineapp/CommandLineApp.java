@@ -11,13 +11,15 @@ public class CommandLineApp {
                        TCPPORT = -1,
                        UDPPORT = -1,
                        pktSizeTCPBandwidth = -1,
-                       pktSizeUDPBandwidth = -1,
+                       pktSizeUDPCapacity = -1,
                        pktSizeTCPLatency = -1,
                        pktSizeUDPLatency = -1,
                        numPktTCPBandwidth = -1,
+                       numTestsUDPCapacity = -1,
                        numPktTCPLatency = -1,
                        numPktUDPLatency = -1,
-                       timerInterval = -1;
+                       timerInterval = -1,
+                       attemptTimer = 30 * 1000;
 
     private static String observerAddress = null,
                           measureType = "all",
@@ -40,10 +42,11 @@ public class CommandLineApp {
         System.out.println("Keyword: " + keyword);
 
         System.out.println("pktSizeTCPBandwidth: " + pktSizeTCPBandwidth);
-        System.out.println("pktSizeUDPBandwidth: " + pktSizeUDPBandwidth);
+        System.out.println("pktSizeUDPCapacity: " + pktSizeUDPCapacity);
         System.out.println("pktSizeTCPLatency: " + pktSizeTCPLatency);
         System.out.println("pktSizeUDPLatency: " + pktSizeUDPLatency);
         System.out.println("numPktTCPBandwidth: " + numPktTCPBandwidth);
+        System.out.println("numTestsUDPCapacity: " + numTestsUDPCapacity);
         System.out.println("numPktTCPLatency: " + numPktTCPLatency);
         System.out.println("numPktUDPLatency: " + numPktUDPLatency);
 
@@ -108,8 +111,12 @@ public class CommandLineApp {
                 pktSizeTCPBandwidth = Integer.parseInt(args[++i]);
                 continue;
             }
-            if (args[i].equals("-sub") || args[i].equals("--packet-size-udp-bandwidth")){
-                pktSizeUDPBandwidth = Integer.parseInt(args[++i]);
+            if (args[i].equals("-suc") || args[i].equals("--packet-size-udp-capacity")){
+                pktSizeUDPCapacity = Integer.parseInt(args[++i]);
+                continue;
+            }
+            if (args[i].equals("-nuc") || args[i].equals("--num-tests-udp-capacity")){
+                numTestsUDPCapacity = Integer.parseInt(args[++i]);
                 continue;
             }
             if (args[i].equals("-ntb") || args[i].equals("--num-packet-tcp-bandwidth")){
@@ -178,7 +185,13 @@ public class CommandLineApp {
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             if (direction.equalsIgnoreCase("sender") ||
@@ -194,15 +207,25 @@ public class CommandLineApp {
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
         if (measureType.equalsIgnoreCase("bandwidthUDP") ||
             measureType.equalsIgnoreCase("all")){
 
-            if (pktSizeUDPBandwidth < 0){
-                System.out.println("Error: pktSizeUDPBandwidth missing");
+            if (pktSizeUDPCapacity < 0){
+                System.out.println("Error: pktSizeUDPCapacity missing");
+                System.exit(1);
+            }
+            if (numTestsUDPCapacity < 0){
+                System.out.println("Error: numTestsUDPCapacity missing");
                 System.exit(1);
             }
 
@@ -210,31 +233,43 @@ public class CommandLineApp {
             if (direction.equalsIgnoreCase("receiver") ||
                 direction.equalsIgnoreCase("all")) {
                 while (true){
-                    System.out.println("Type of measure: UDP bandwidth Receiver (2 packets of " +
-                                       pktSizeUDPBandwidth + "bytes)");
+                    System.out.println("Type of measure: UDP capacity Receiver (" + numTestsUDPCapacity + " packets of " +
+                                       pktSizeUDPCapacity + "bytes)");
 
                     ret = MainUtils.udpBandwidthMeasure("Receiver", keyword, CMDPORT,
                                                         observerAddress, UDPPORT,
-                                                        pktSizeUDPBandwidth, interfaceName);
+                            pktSizeUDPCapacity, interfaceName, numTestsUDPCapacity);
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             if (direction.equalsIgnoreCase("sender") ||
                     direction.equalsIgnoreCase("all")) {
                 while(true){
-                    System.out.println("Type of measure: UDP bandwidth Sender (2 packets of " +
-                                       pktSizeUDPBandwidth + "bytes)");
+                    System.out.println("Type of measure: UDP capacity Sender (" + numTestsUDPCapacity+ " packets of " +
+                            pktSizeUDPCapacity + "bytes)");
 
                     ret = MainUtils.udpBandwidthMeasure("Sender", keyword, CMDPORT,
                                                         observerAddress, UDPPORT,
-                                                        pktSizeUDPBandwidth, interfaceName);
+                            pktSizeUDPCapacity, interfaceName, numTestsUDPCapacity);
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -263,7 +298,13 @@ public class CommandLineApp {
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             if (direction.equalsIgnoreCase("sender") ||
@@ -278,7 +319,13 @@ public class CommandLineApp {
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -307,7 +354,13 @@ public class CommandLineApp {
 
                     if (ret == 0)
                         break;
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             if (direction.equalsIgnoreCase("sender") ||
@@ -323,7 +376,13 @@ public class CommandLineApp {
                     if (ret == 0)
                         break;
 
-                    System.out.println("Error: try again!");
+                    System.out.println("Error: try again in " + attemptTimer/1000 + "seconds");
+
+                    try {
+                        Thread.sleep(attemptTimer);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

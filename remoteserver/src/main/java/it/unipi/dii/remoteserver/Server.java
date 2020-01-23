@@ -7,18 +7,12 @@ package it.unipi.dii.remoteserver;
 
 
 
-
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,8 +29,52 @@ public class Server {
     //command listener, tcp data and udp data ports
     private static int REMOTECMDPORT = -1,
                        REMOTETCPPORT = -1,
-                       REMOTEUDPPORT = -1;
+                       REMOTEUDPPORT = -1,
+                       timeout = 5 * 60 * 1000 ;
 
+    private static ServerSocket cmdListener = null; //socket used to receive commands
+    private static ServerSocket tcpListener = null; //socket used for tcp operations
+    private static DatagramSocket udpListener = null;//socket used for udp operations
+
+    private static void initializeSocket() throws Exception {
+        cmdListener = new ServerSocket(REMOTECMDPORT);
+        tcpListener = new ServerSocket(REMOTETCPPORT);
+        udpListener = new DatagramSocket(REMOTEUDPPORT);
+
+
+        cmdListener.setSoTimeout(timeout);
+        tcpListener.setSoTimeout(timeout);
+        udpListener.setSoTimeout(timeout);
+
+
+        System.out.println("Observer CMD: inizializzato sulla porta " +
+                cmdListener.getLocalPort() + "[Timeout = " + timeout/1000 + "s]");
+        System.out.println("Observer TCP: inizializzato sulla porta " +
+                tcpListener.getLocalPort() + "[Timeout = " + timeout/1000 + "s]");
+        System.out.println("Observer UDP: inizializzato sulla porta " +
+                udpListener.getLocalPort() + "[Timeout = " + timeout/1000 + "s]");
+    }
+
+    private static int restartSockets()  {
+        try{
+
+            if (!udpListener.isClosed())
+                udpListener.close();
+            if (!tcpListener.isClosed())
+                tcpListener.close();
+            if (!cmdListener.isClosed())
+                cmdListener.close();
+
+            initializeSocket();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+
+            System.exit(1);
+        }
+
+        return 0;
+    }
 
     public static void main(String[] args){
         parseArguments(args);
@@ -45,24 +83,11 @@ public class Server {
             System.exit(0);
         }
 
-        ServerSocket cmdListener = null;    //ServerSocket per la ricezione dei comandi
-        ServerSocket tcpListener = null;    //ServerSocket per le misurazioni TCP
-        DatagramSocket udpListener = null;  //ServerSocket per le misurazioni UDP
-        //socket initialization
+           //socket initialization
         try {
-            cmdListener = new ServerSocket(REMOTECMDPORT);
-            tcpListener = new ServerSocket(REMOTETCPPORT);
-            udpListener = new DatagramSocket(REMOTEUDPPORT);
+            initializeSocket();
 
-            System.out.println("Server CMD: inizializzato sulla porta " +
-                               cmdListener.getLocalPort());
-            System.out.println("Server TCP: inizializzato sulla porta " +
-                               tcpListener.getLocalPort());
-            System.out.println("Server UDP: inizializzato sulla porta " +
-                               udpListener.getLocalPort());
-
-
-        } catch (NullPointerException | IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -72,19 +97,35 @@ public class Server {
             String cmd;
             String separator ="#";
 
-            try {
-                controlSocketObserver = new ControlMessages(cmdListener.accept());
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            System.out.println("Wait for a command;");
 
             try {
+                controlSocketObserver = new ControlMessages(cmdListener.accept());
                 cmd = controlSocketObserver.receiveCMD();
             }
-            catch (EOFException | NullPointerException e)
+            catch (Exception e)
             {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, e);
-                controlSocketObserver.closeConnection();
+
+                if (controlSocketObserver != null && !controlSocketObserver.getSocket().isClosed())
+                    controlSocketObserver.closeConnection();
+
+                while (true)
+                {
+                    System.out.println("Restart sockets");
+                    int ret= restartSockets();
+
+                    if (ret == 0)
+                        break;
+
+                    System.out.println("Failed... restart in 30 seconds");
+                    try {
+                        Thread.sleep(30 * 1000);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+
+                }
 
                 continue;
             }
@@ -101,7 +142,6 @@ public class Server {
                     System.out.print("Received command: " + cmdSplitted[0]);
                     System.out.print("\t\t[Packet size: " + tcp_bandwidth_pktsize);
                     System.out.println(", Number of packets: " + Integer.parseInt(cmdSplitted[3]) + "]");
-
 
                     try {
                         Socket tcpReceiverConnectionSocket = tcpListener.accept();
@@ -120,8 +160,25 @@ public class Server {
                         objectOutputStream.close();
 
 
-                    } catch (IOException ex) {
+                    } catch (Exception ex) {
                         ex.printStackTrace();
+
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
                     }
 
                     break;
@@ -143,23 +200,43 @@ public class Server {
                             controlSocketObserver.closeConnection();
                             break;
                         }
-                    } catch (IOException ex) {
+                    } catch (Exception ex) {
+
                         ex.printStackTrace();
+
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
                     }
 
                     break;
                 }
                 case "UDPCapacityPPSender": {
                     //UDP latency test using Packet Pair, MRS has to receive
-                    int udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    int udp_capacity_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    int udp_capacity_num_tests = Integer.parseInt(cmdSplitted[3]);
                     Map<Long, Integer> measureResult = null;
                     System.out.print("Received command: " + cmdSplitted[0]);
-                    System.out.println("\t\t[Packet size: " + udp_bandwidth_pktsize + "]");
+                    System.out.print("\t[ " + udp_capacity_num_tests + " tests of ");
+                    System.out.println(udp_capacity_pktsize + " packet size" + "]");
 
                     try {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.START.toString());
                         measureResult = Measurements.UDPCapacityPPReceiver(udpListener,
-                                                                           udp_bandwidth_pktsize);
+                                                                           udp_capacity_pktsize, udp_capacity_num_tests, controlSocketObserver);
                         if (measureResult == null)
                         {
                             System.out.println("Measure failed");
@@ -179,45 +256,85 @@ public class Server {
                         objectOutputStream.flush();
                         objectOutputStream.close();
                     }
-                    catch(IOException e){
+                    catch(Exception e){
                         e.printStackTrace();
+
+
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e2) {
+                                e2.printStackTrace();
+                            }
+
+                        }
                     }
 
                     break;
                 }
                 case "UDPCapacityPPReceiver": {
                     //UDP Latency test using Packet Pair, MRS has to send
-                    int udp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    int udp_capacity_pktsize = Integer.parseInt(cmdSplitted[2]);
+                    int udp_capacity_num_tests = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command: " + cmdSplitted[0]);
-                    System.out.println("\t\t[Packet size: " + udp_bandwidth_pktsize + "]");
+                    System.out.print("\t[ " + udp_capacity_num_tests + "tests of ");
+                    System.out.println(udp_capacity_pktsize + " packet size" + "]");
+
 
                     //MRS first has to receive a packet from the client to know Client's Address and Port
                     byte[] buf = new byte[1000];
                     DatagramPacket dgp = new DatagramPacket(buf, buf.length);
                     try {
                         udpListener.receive(dgp);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                    }
 
-                    //remote -> observer bandwidth measure
-                    udpListener.connect(dgp.getAddress(), dgp.getPort());
-                    Measurements.UDPCapacityPPSender(udpListener, udp_bandwidth_pktsize);
-                    udpListener.disconnect();
-                    try {
-                        if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
-                                .SUCCEDED.toString()) != 0) {
-                            System.out.println("measure failed");
+                        //remote -> observer bandwidth measure
+                        udpListener.connect(dgp.getAddress(), dgp.getPort());
+                        int ret = Measurements.UDPCapacityPPSender(udpListener, udp_capacity_pktsize, udp_capacity_num_tests, controlSocketObserver);
+                        if (ret < 0) {
+                            System.out.println("Start measure with observer FAILED");
                             controlSocketObserver.closeConnection();
-                            break;
                         }
-                    }catch(EOFException e){
+
+                        udpListener.disconnect();
+
+                            if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
+                                    .SUCCEDED.toString()) != 0) {
+                                System.out.println("measure failed");
+                                controlSocketObserver.closeConnection();
+                                break;
+                            }
+                        }
+                    catch(Exception e){
                         Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, e);
-                        controlSocketObserver.closeConnection();
 
-                        continue;
-                    }
 
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e2) {
+                                e2.printStackTrace();
+                            }
+
+                        }
+
+                            continue;
+                        }
 
                     break;
                 }
@@ -239,7 +356,7 @@ public class Server {
                             break;
                         }
 
-                    } catch (IOException ex) {
+                    } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                     break;
@@ -286,8 +403,26 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
                                 .toString() + '#' + latency);
 
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         ex.printStackTrace();
+
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
                     }
 
 
@@ -315,9 +450,27 @@ public class Server {
                         }
 
 
-                    } catch (IOException ex) {
+                    } catch (Exception ex) {
                         ex.printStackTrace();
+
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
                     }
+
                     break;
                 }
                 case "TCPRTTReceiver": {
@@ -338,8 +491,26 @@ public class Server {
                         controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
                                                       .toString() + '#' + latency);
 
-                    } catch (IOException ex) {
+                    }
+                    catch (Exception ex) {
                         ex.printStackTrace();
+
+                        while (true)
+                        {
+                            System.out.println("Restart sockets");
+                            int ret= restartSockets();
+
+                            if (ret == 0)
+                                break;
+
+                            System.out.println("Failed... restart in 30 seconds");
+                            try {
+                                Thread.sleep(30 * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
                     }
 
 
@@ -347,7 +518,8 @@ public class Server {
                 }
             }
 
-            controlSocketObserver.closeConnection();
+            if (controlSocketObserver != null && controlSocketObserver.getSocket() != null  &&!controlSocketObserver.getSocket().isClosed())
+                controlSocketObserver.closeConnection();
         }
     }
 

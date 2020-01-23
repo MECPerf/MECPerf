@@ -19,8 +19,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
+
+
 public class Measurements {
     private static final long serialVersionUID = 3919700812200232178L;
+    private static final int timer= 2 * 60 * 1000;
 
 
 
@@ -39,7 +42,7 @@ public class Measurements {
         byte[] receiveData = new byte[udp_rtt_pktsize];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length);
-        serverSocket.setSoTimeout(10000); //10s timeout
+        serverSocket.setSoTimeout(timer);//timeout = 30s
         try {
             for (int i = 0; i < udp_rtt_num_pack; i++) {
 
@@ -81,7 +84,7 @@ public class Measurements {
 
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length);
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-        connectionSocket.setSoTimeout(10000);// 10s timeout
+        connectionSocket.setSoTimeout(timer);//timeout = 30sec
 
         long meanValue = 0;
         try {
@@ -125,6 +128,7 @@ public class Measurements {
         long total = 0;
 
         try {
+            socket.setSoTimeout(timer);//timeout = 30s
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
             long lBegin,
@@ -172,6 +176,7 @@ public class Measurements {
         rand.nextBytes(sendData);
 
         try {
+            sock.setSoTimeout(timer);//timeout = 30s
             inputStream = sock.getInputStream();
             outputStream = sock.getOutputStream();
             for (int i = 0; i < tcp_rtt_num_pack; i++) {
@@ -253,6 +258,7 @@ public class Measurements {
         byte[] cbuf = new byte[tcp_bandwidth_pktsize];
 
         try {
+            connectionSocket.setSoTimeout(timer);//timeout = 30s
             isr = connectionSocket.getInputStream();
 
             long last = 0;
@@ -291,21 +297,35 @@ public class Measurements {
      * @param connectionSocket The Socket used for the comunication
      * @param packet_size The size of each packet used
      */
-    public static void UDPCapacityPPSender(DatagramSocket connectionSocket, int packet_size) {
-        byte[] buf = new byte[packet_size];
-        Random rand = new Random();
-        rand.nextBytes(buf);
+    public static int UDPCapacityPPSender(DatagramSocket connectionSocket, int packet_size, int numTest, ControlMessages controlSocket) {
+        //System.out.println(numTest);
+        for (int i = 0; i < numTest; i++) {
+            byte[] buf = new byte[packet_size];
+            Random rand = new Random();
+            rand.nextBytes(buf);
 
-        DatagramPacket packet1 = new DatagramPacket(buf, buf.length);
-        DatagramPacket packet2 = new DatagramPacket(buf, buf.length);
+            DatagramPacket packet1 = new DatagramPacket(buf, buf.length);
+            DatagramPacket packet2 = new DatagramPacket(buf, buf.length);
 
-        //send 2 packets
-        try{
-            connectionSocket.send(packet1);
-            connectionSocket.send(packet2);
-        } catch (IOException e) {
-            e.printStackTrace();
+            //send 2 packets
+            try {
+                String receivedCommand = controlSocket.receiveCMD();
+                if (receivedCommand.compareTo(ControlMessages.Messages.START
+                        .toString()) != 0) {
+                    return -1;
+                }
+
+                connectionSocket.send(packet1);
+                connectionSocket.send(packet2);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+
+                return -1;
+            }
         }
+
+        return 0;
     }
 
 
@@ -318,39 +338,47 @@ public class Measurements {
      * @param pktSize    Amount of data to receive for each comunication
      * @return The latency calculated using the packet pair approach
      */
-    public static Map<Long, Integer> UDPCapacityPPReceiver(DatagramSocket serverSocket, int pktSize) {
-        byte[] receiveData1 = new byte[pktSize];
-        byte[] receiveData2 = new byte[pktSize];
-
-        long firstTime = 0,
-             currentTime,
-             timeNs;
-
-        //wait for first packet on socket
-        DatagramPacket receivePacket1 = new DatagramPacket(receiveData1, receiveData1.length);
-        DatagramPacket receivePacket2 = new DatagramPacket(receiveData2, receiveData2.length);
-
-        try {
-            serverSocket.setSoTimeout(10000);//timeout = 10s
-            serverSocket.receive(receivePacket1);
-            firstTime = System.nanoTime();
-            //receive the second packet
-            serverSocket.receive(receivePacket2);
-        }
-        catch (SocketTimeoutException e){
-            return null;
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-    currentTime = System.nanoTime();
-        timeNs = currentTime - firstTime;
-
-
+    public static Map<Long, Integer> UDPCapacityPPReceiver (DatagramSocket serverSocket, int pktSize, int numTest, ControlMessages controlSocket) {
         Map<Long, Integer> measureResult = new LinkedHashMap<>();
-        measureResult.put(timeNs, pktSize);
+        //System.out.println(numTest);
+
+        for (int i = 0; i < numTest; i++) {
+
+            byte[] receiveData1 = new byte[pktSize];
+            byte[] receiveData2 = new byte[pktSize];
+
+            long firstTime = 0,
+                    currentTime,
+                    timeNs;
+
+            //wait for first packet on socket
+            DatagramPacket receivePacket1 = new DatagramPacket(receiveData1, receiveData1.length);
+            DatagramPacket receivePacket2 = new DatagramPacket(receiveData2, receiveData2.length);
+
+            try {
+                controlSocket.sendCMD(ControlMessages.Messages.START.toString());
+
+                serverSocket.setSoTimeout(timer);//timeout = 2min
+
+                serverSocket.receive(receivePacket1);
+                firstTime = System.nanoTime();
+                //receive the second packet
+                serverSocket.receive(receivePacket2);
+
+                System.out.println("received " + i);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+
+            currentTime = System.nanoTime();
+            timeNs = currentTime - firstTime;
+
+            measureResult.put(timeNs, pktSize);
+
+            System.out.println("put[" + i + "] " + timeNs);
+        }
+        System.out.println("measureResult.size(): " + measureResult.size());
         return measureResult;   //deve essere nello stesso formato del TCP per stare nella stessa tabella, per questo non ritorno "result KB/s"
     }
 }

@@ -63,6 +63,8 @@ public class ControlMessages {
     private void openControlConnection(InetAddress receiverAddress, int receiverPort){
         try {
             this.controlSocket = new Socket(receiverAddress, receiverPort);
+
+            this.controlSocket.setSoTimeout(20000);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -74,6 +76,8 @@ public class ControlMessages {
             this.controlSocket = new Socket();
             this.controlSocket.bind(new InetSocketAddress(sourceAddr, sourcePort));
             this.controlSocket.connect(new InetSocketAddress(receiverAddress, receiverPort));
+
+            this.controlSocket.setSoTimeout(20000);
 
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -94,7 +98,7 @@ public class ControlMessages {
             if (this.dataOutputStream != null)
                 this.dataOutputStream.close();
             if (this.controlSocket != null)
-            this.controlSocket.close();
+                this.controlSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

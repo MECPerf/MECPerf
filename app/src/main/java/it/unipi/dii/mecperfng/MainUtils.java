@@ -2,7 +2,6 @@ package it.unipi.dii.mecperfng;
 
 
 
-import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -21,7 +20,7 @@ import it.unipi.dii.common.ControlMessages;
 
 
 public class MainUtils {
-    private static InetAddress getInterfacesInfo(String targetInterface){
+     private static InetAddress getInterfacesInfo(String targetInterface){
         try {
             Enumeration<NetworkInterface> networkInterfaces =  NetworkInterface.getNetworkInterfaces();
 
@@ -132,7 +131,7 @@ public class MainUtils {
                 controlSocketObserver.closeConnection();
                 return 0;
             }
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
             return -1;
         }
@@ -141,7 +140,7 @@ public class MainUtils {
 
     public static int udpBandwidthMeasure(String direction, String keyword, int commandPort,
                                           String observerAddress, int observerPort,
-                                          int udp_bandwidth_pktsize, String interfaceName) {
+                                          int udp_bandwidth_pktsize, String interfaceName, int num_tests_udp_capacity) {
         try {
             ControlMessages controlSocketObserver;
             DatagramSocket connectionSocket;
@@ -167,15 +166,11 @@ public class MainUtils {
 
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD("UDPCapacityPPSender#" + keyword + "#" +
-                        udp_bandwidth_pktsize);
-                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
-                        .toString()) != 0) {
-                    System.out.println("Start measure with Observer FAILED");
+                        udp_bandwidth_pktsize + "#" + num_tests_udp_capacity);
 
-                    controlSocketObserver.closeConnection();
-                    return -1;
-                }
-                Measurements.UDPCapacityPPSender(connectionSocket, udp_bandwidth_pktsize);
+                int ret = Measurements.UDPCapacityPPSender(connectionSocket, udp_bandwidth_pktsize, num_tests_udp_capacity, controlSocketObserver);
+                if (ret < 0)
+                    return ret;
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
                         .toString()) == 0) {
@@ -183,17 +178,18 @@ public class MainUtils {
                     return 0;
                 }
 
+                System.out.println("complete signal received");
                 controlSocketObserver.closeConnection();
                 return -1;
             } else {
                 controlSocketObserver.sendCMD("UDPCapacityPPReceiver#" + keyword + "#" +
-                        udp_bandwidth_pktsize);
+                        udp_bandwidth_pktsize + "#" + num_tests_udp_capacity);
                 //Client has to send a packet to server to let the server knows Client's IP and Port
                 String outString = "Dummy message";
                 byte[] buf = outString.getBytes();
                 connectionSocket.send(new DatagramPacket(buf, buf.length));
                 Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(
-                        connectionSocket, udp_bandwidth_pktsize);
+                        connectionSocket, udp_bandwidth_pktsize, num_tests_udp_capacity, controlSocketObserver);
                 if (measureResult == null) {
                     System.out.println("Measure filed");
                     controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
@@ -220,7 +216,7 @@ public class MainUtils {
                 controlSocketObserver.closeConnection();
                 return 0;
             }
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
             return -1;
         }
@@ -300,7 +296,7 @@ public class MainUtils {
                 controlSocketObserver.closeConnection();
                 return 0;
             }
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
             return -1;
         }
@@ -395,7 +391,7 @@ public class MainUtils {
                 controlSocketObserver.closeConnection();
                 return 0;
             }
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             return -1;
         }
     }
