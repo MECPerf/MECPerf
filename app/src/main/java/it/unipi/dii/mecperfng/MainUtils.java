@@ -48,6 +48,7 @@ public class MainUtils {
         return null;
     }
 
+
     /*****
      *
      * @param direction
@@ -89,6 +90,8 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD("TCPBandwidthSender#" + keyword + "#" +
                         tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
+                //System.out.println(controlSocketObserver);
+                //System.out.println(controlSocketObserver.getSocket());
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
                         .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
@@ -109,7 +112,7 @@ public class MainUtils {
             } else {
                 controlSocketObserver.sendCMD("TCPBandwidthReceiver#" + keyword +
                         "#" + tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
-                Map<Long, Integer> longIntegerMap = Measurements.TCPBandwidthReceiver(
+                Map<Integer, Long[]> longIntegerMap = Measurements.TCPBandwidthReceiver(
                         communicationSocket, tcp_bandwidth_pktsize);
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
@@ -126,8 +129,8 @@ public class MainUtils {
 
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                 objectOutputStream.writeObject(longIntegerMap);
-
                 objectOutputStream.close();
+
                 controlSocketObserver.closeConnection();
                 return 0;
             }
@@ -136,6 +139,7 @@ public class MainUtils {
             return -1;
         }
     }
+
 
 
     public static int udpBandwidthMeasure(String direction, String keyword, int commandPort,
@@ -188,7 +192,7 @@ public class MainUtils {
                 String outString = "Dummy message";
                 byte[] buf = outString.getBytes();
                 connectionSocket.send(new DatagramPacket(buf, buf.length));
-                Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(
+                Map<Integer, Long[]> measureResult = Measurements.UDPCapacityPPReceiver(
                         connectionSocket, udp_bandwidth_pktsize, num_tests_udp_capacity, controlSocketObserver);
                 if (measureResult == null) {
                     System.out.println("Measure filed");
@@ -221,6 +225,7 @@ public class MainUtils {
             return -1;
         }
     }
+
 
 
     public static int tcpRTTMeasure(String direction, String keyword, int commandPort,
@@ -261,7 +266,7 @@ public class MainUtils {
                 }
 
                 //perform measure
-                double latency = Measurements.TCPRTTSender(communicationSocket, tcp_rtt_pktsize,
+                Map<Integer, Long[]> latency = Measurements.TCPRTTSender(communicationSocket, tcp_rtt_pktsize,
                         tcp_rtt_num_pack);
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
@@ -272,8 +277,13 @@ public class MainUtils {
                     return -1;
                 }
 
-                controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
-                                              .toString() + '#' + latency );
+                //controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                //                              .toString() + '#' + latency );
+
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
+                objectOutputStream.writeObject(latency);
+
+                objectOutputStream.close();
 
                 controlSocketObserver.closeConnection();
                 return 0;
@@ -345,9 +355,9 @@ public class MainUtils {
                 }
 
                 //perform measure
-                double latency = Measurements.UDPRTTSender(udpsocket, udp_rtt_pktsize,
+                Map<Integer, Long[]> latency = Measurements.UDPRTTSender(udpsocket, udp_rtt_pktsize,
                         udp_rtt_num_pack);
-                if (latency == -1) {
+                if (latency == null) {
                     System.out.println("Measure filed");
                     controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
                     controlSocketObserver.closeConnection();
@@ -360,8 +370,11 @@ public class MainUtils {
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
-                controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
-                                              .toString() + '#' + latency);
+                //controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                //                              .toString() + '#' + latency);
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
+                objectOutputStream.writeObject(latency);
+                objectOutputStream.close();
 
                 controlSocketObserver.closeConnection();
                 return 0;
