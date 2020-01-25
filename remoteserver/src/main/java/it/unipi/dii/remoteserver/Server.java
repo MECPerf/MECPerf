@@ -97,7 +97,7 @@ public class Server {
             String cmd;
             String separator ="#";
 
-            System.out.println("Wait for a command;");
+           // System.out.println("Wait for a command;");
 
             try {
                 controlSocketObserver = new ControlMessages(cmdListener.accept());
@@ -131,13 +131,12 @@ public class Server {
             }
 
             String[] cmdSplitted = cmd.split(separator);
-            double latency;
 
             //Start test based on command received
             switch(cmdSplitted[0]) {
                 case "TCPBandwidthSender": {
                     //the observer sends to the remote server
-                    Map<Long, Integer> mappa;
+                    Map<Integer, Long[]> mappa;
                     int tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]);
                     System.out.print("Received command: " + cmdSplitted[0]);
                     System.out.print("\t\t[Packet size: " + tcp_bandwidth_pktsize);
@@ -228,9 +227,9 @@ public class Server {
                     //UDP latency test using Packet Pair, MRS has to receive
                     int udp_capacity_pktsize = Integer.parseInt(cmdSplitted[2]);
                     int udp_capacity_num_tests = Integer.parseInt(cmdSplitted[3]);
-                    Map<Long, Integer> measureResult = null;
+                    Map<Integer, Long[]> measureResult = null;
                     System.out.print("Received command: " + cmdSplitted[0]);
-                    System.out.print("\t[ " + udp_capacity_num_tests + " tests of ");
+                    System.out.print("\t\t[ " + udp_capacity_num_tests + " tests of ");
                     System.out.println(udp_capacity_pktsize + " packet size" + "]");
 
                     try {
@@ -285,7 +284,7 @@ public class Server {
                     int udp_capacity_pktsize = Integer.parseInt(cmdSplitted[2]);
                     int udp_capacity_num_tests = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command: " + cmdSplitted[0]);
-                    System.out.print("\t[ " + udp_capacity_num_tests + "tests of ");
+                    System.out.print("\t\t[ " + udp_capacity_num_tests + "tests of ");
                     System.out.println(udp_capacity_pktsize + " packet size" + "]");
 
 
@@ -387,8 +386,8 @@ public class Server {
 
                         //connecting and actually starting the test
                         udpListener.connect(dgprtt.getAddress(), dgprtt.getPort());
-                        latency = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
-                        if (latency < 0)
+                        Map<Integer, Long[]> latency  = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
+                        if (latency == null)
                         {
                             System.out.println("Measure filed");
                             //controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
@@ -400,8 +399,12 @@ public class Server {
                         udpListener.disconnect();
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
-                        controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
-                                .toString() + '#' + latency);
+                        //controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                         //       .toString() + '#' + latency);
+
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
+                        objectOutputStream.writeObject(latency);
+                        objectOutputStream.close();
 
                     }
                     catch (Exception ex) {
@@ -483,14 +486,16 @@ public class Server {
 
                     try {
                         Socket tcpRTT = tcpListener.accept();
-                        latency = Measurements.TCPRTTSender(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
+                        Map<Integer, Long[]> latency = Measurements.TCPRTTSender(tcpRTT, tcp_rtt_pktsize, tcp_rtt_num_pack);
 
                         controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
                         //send data to Aggregator
-                        controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
-                                                      .toString() + '#' + latency);
-
+                        //controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
+                        //                              .toString() + '#' + latency);
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
+                        objectOutputStream.writeObject(latency);
+                        objectOutputStream.close();
                     }
                     catch (Exception ex) {
                         ex.printStackTrace();

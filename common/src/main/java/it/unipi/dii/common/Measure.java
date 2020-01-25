@@ -20,8 +20,8 @@ public class Measure implements Serializable {
     private int ID;
     private String sender;
     private String receiver;
-    private Map<Long, Integer> bandwidth;
-    private Double latency;
+    private Map<Integer, Long[]> bandwidth;
+    private  Map<Integer, Long[]> latency;
     private String extra;
 
     //personalized settings
@@ -48,9 +48,9 @@ public class Measure implements Serializable {
      * @param latency Latency measured
      * @param "extra" contains Timestamp when we would show Result in App or Keyword in Insert
      */
-    public Measure(String type, String sender,String receiver, Map<Long,Integer> bandwidth,
-                   double latency, String extra, int len_pack, int num_pack, String senderAddress,
-                   String receiverAddress){
+    public Measure(String type, String sender,String receiver, Map<Integer, Long[]>  bandwidth,
+                   Map<Integer, Long[]> latency, String extra, int len_pack, int num_pack,
+                   String senderAddress, String receiverAddress){
         this.type = type;
         this.sender = sender;
         this.receiver = receiver;
@@ -138,19 +138,19 @@ public class Measure implements Serializable {
         this.receiver = receiver;
     }
 
-    public Map<Long, Integer> getBandwidth() {
+    public Map<Integer, Long[]>  getBandwidth() {
         return bandwidth;
     }
 
-    public void setBandwidth(Map<Long, Integer> bandwidth) {
+    public void setBandwidth(Map<Integer, Long[]>  bandwidth) {
         this.bandwidth = bandwidth;
     }
 
-    public Double getLatency() {
+    public  Map<Integer, Long[]> getLatency() {
         return latency;
     }
 
-    public void setLatency(Double latency) {
+    public void setLatency( Map<Integer, Long[]> latency) {
         this.latency = latency;
     }
 

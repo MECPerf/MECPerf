@@ -143,6 +143,8 @@ public class ControlMessages {
         }
         catch (IOException ex) {
             ex.printStackTrace();
+
+            return null;
         }
 
         return receivedCommand;

@@ -23,7 +23,7 @@ import java.util.Random;
 
 public class Measurements {
     private static final long serialVersionUID = 3919700812200232178L;
-    private static final int timer= 2 * 60 * 1000;
+    private static final int timer= 30 * 1000;
 
 
 
@@ -75,7 +75,7 @@ public class Measurements {
      *         measure is returned
      * @throws IOException
      */
-    public static double UDPRTTSender(DatagramSocket connectionSocket, int  udp_rtt_pktsize,
+    public static Map<Integer, Long[]> UDPRTTSender(DatagramSocket connectionSocket, int  udp_rtt_pktsize,
                                       int udp_rtt_num_pack) throws IOException {
         byte[] sendData = new byte[udp_rtt_pktsize];
         byte[] receiveData = new byte[udp_rtt_pktsize];
@@ -84,7 +84,9 @@ public class Measurements {
 
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length);
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-        connectionSocket.setSoTimeout(timer);//timeout = 30sec
+        connectionSocket.setSoTimeout(timer);
+
+        Map<Integer, Long[]> mappa = new LinkedHashMap<>();
 
         long meanValue = 0;
         try {
@@ -93,14 +95,21 @@ public class Measurements {
                 connectionSocket.send(sendPacket);
                 connectionSocket.receive(receivePacket);
                 long endTime = System.currentTimeMillis();
-                meanValue += endTime - startTime;
+                //meanValue += endTime - startTime;
+
+                Long[] mapValue = new Long[1];
+                mapValue[0] = endTime - startTime;
+                //mapValue[1] = meanValue;
+
+                mappa.put(new Integer (i), mapValue);
+
             }
         }
         catch (SocketTimeoutException e){
-            return -1;
+            return null;
         }
 
-        return ((double) meanValue) / udp_rtt_num_pack;
+        return mappa;
     }
 
 
@@ -116,16 +125,17 @@ public class Measurements {
      * @return The mean latency calculated using the Round Trip Time
      * @throws IOException
      */
-    public static double TCPRTTSender(Socket socket, int tcp_rtt_pktsize, int tcp_rtt_num_pack)
+    public static Map<Integer, Long[]> TCPRTTSender(Socket socket, int tcp_rtt_pktsize, int tcp_rtt_num_pack)
                                                                                 throws IOException {
         OutputStream outputStream = null;
         InputStream inputStream = null;
+        Map<Integer, Long[]> mappa = new LinkedHashMap<>();
 
         byte[] sendData = new byte[tcp_rtt_pktsize];
         Random rand = new Random();
         rand.nextBytes(sendData);
 
-        long total = 0;
+        //long total = 0;
 
         try {
             socket.setSoTimeout(timer);//timeout = 30s
@@ -142,7 +152,13 @@ public class Measurements {
                     ret += inputStream.read(sendData);
                 }
                 lEnd = System.currentTimeMillis();
-                total += lEnd - lBegin;
+                //total += lEnd - lBegin;
+
+                Long[] mapValue = new Long[1];
+                mapValue[0] = lEnd - lBegin;
+               // mapValue[1] = lEnd;
+
+                mappa.put(new Integer (i), mapValue);
             }
         } finally {
             if (inputStream != null)
@@ -152,7 +168,7 @@ public class Measurements {
             if (socket != null)
                 socket.close();
         }
-        return ((double) (total)) / tcp_rtt_num_pack;
+        return mappa;
     }
 
 
@@ -179,12 +195,14 @@ public class Measurements {
             sock.setSoTimeout(timer);//timeout = 30s
             inputStream = sock.getInputStream();
             outputStream = sock.getOutputStream();
+           // System.out.print("TCPRTTReceiver: ");
             for (int i = 0; i < tcp_rtt_num_pack; i++) {
                 int ret = 0;
                 while (ret < tcp_rtt_pktsize){
                     ret += inputStream.read(sendData);
                 }
 
+                //System.out.print(" " + i +" ");
                 outputStream.write(sendData, 0, tcp_rtt_pktsize);
             }
         }finally {
@@ -194,6 +212,8 @@ public class Measurements {
                 outputStream.close();
             if (sock != null)
                 sock.close();
+
+            //System.out.print("DONE\n");
         }
     }
 
@@ -249,11 +269,11 @@ public class Measurements {
      * @param tcp_bandwidth_pktsize The size of each TCP packet used
      * @return The map that contain all the timestamps and the amount of data for each packet received
      */
-    public static Map<Long, Integer> TCPBandwidthReceiver(Socket connectionSocket,
+    public static Map<Integer, Long[]>  TCPBandwidthReceiver(Socket connectionSocket,
                                                           int tcp_bandwidth_pktsize) throws IOException {
 
         InputStream isr = null;
-        Map<Long, Integer> mappa = new LinkedHashMap<>();
+        Map<Integer, Long[]> mappa = new LinkedHashMap<>();
         int totalRead;
         byte[] cbuf = new byte[tcp_bandwidth_pktsize];
 
@@ -262,6 +282,7 @@ public class Measurements {
             isr = connectionSocket.getInputStream();
 
             long last = 0;
+            int i = 0;
 
             while ((totalRead = isr.read(cbuf)) != -1) {
 
@@ -271,9 +292,14 @@ public class Measurements {
                 if (diff < 0)
                     System.exit(1);
 
-                mappa.put(actualTime, totalRead);
+                Long[] mapValue = new Long[2];
+                mapValue[0] = actualTime;
+                mapValue[1] = new Long (totalRead);
+
+                mappa.put(new Integer (i), mapValue);
 
                 last = actualTime;
+                i++;
             }
         }
         finally{
@@ -310,6 +336,11 @@ public class Measurements {
             //send 2 packets
             try {
                 String receivedCommand = controlSocket.receiveCMD();
+
+                if (receivedCommand == null) {
+                    System.out.println("Measure failed: received command is null");
+                    return -1;
+                }
                 if (receivedCommand.compareTo(ControlMessages.Messages.START
                         .toString()) != 0) {
                     return -1;
@@ -338,8 +369,8 @@ public class Measurements {
      * @param pktSize    Amount of data to receive for each comunication
      * @return The latency calculated using the packet pair approach
      */
-    public static Map<Long, Integer> UDPCapacityPPReceiver (DatagramSocket serverSocket, int pktSize, int numTest, ControlMessages controlSocket) {
-        Map<Long, Integer> measureResult = new LinkedHashMap<>();
+    public static Map<Integer, Long[]> UDPCapacityPPReceiver (DatagramSocket serverSocket, int pktSize, int numTest, ControlMessages controlSocket) {
+        Map<Integer, Long[]> measureResult = new LinkedHashMap<>();
         //System.out.println(numTest);
 
         for (int i = 0; i < numTest; i++) {
@@ -365,7 +396,7 @@ public class Measurements {
                 //receive the second packet
                 serverSocket.receive(receivePacket2);
 
-                System.out.println("received " + i);
+                //System.out.println("received " + i);
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -374,11 +405,15 @@ public class Measurements {
             currentTime = System.nanoTime();
             timeNs = currentTime - firstTime;
 
-            measureResult.put(timeNs, pktSize);
+            Long[] mapValue = new Long[2];
+            mapValue[0] = timeNs;
+            mapValue[1] = (long)pktSize;
 
-            System.out.println("put[" + i + "] " + timeNs);
+            measureResult.put(i, mapValue);
+
+            //System.out.println("put[" + i + "] " + timeNs);
         }
-        System.out.println("measureResult.size(): " + measureResult.size());
+        //System.out.println("measureResult.size(): " + measureResult.size());
         return measureResult;   //deve essere nello stesso formato del TCP per stare nella stessa tabella, per questo non ritorno "result KB/s"
     }
 }

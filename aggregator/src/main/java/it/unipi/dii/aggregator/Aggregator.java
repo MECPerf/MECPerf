@@ -42,8 +42,8 @@ public class Aggregator {
                                                     +                   "?, ?, ?, ?, ?, ?, ?)",
                                 INSERT_BANDWIDTH_TABLE = "INSERT INTO MECPerf.BandwidthMeasure "
                                                          + " VALUES (?, ?, ?, ?)",
-                                INSERT_LATENCY_TABLE = "INSERT INTO MECPerf.RttMeasure "
-                                                       + " VALUES (?, ?)";
+                                INSERT_LATENCY_TABLE = "INSERT INTO MECPerf.RttMeasure (id, sub_id, latency)"
+                                                       + " VALUES (?, ?, ?)";
 
 
     private static final String SELECT_AVG_MEASURE_BANDWIDTH_TABLE= "SELECT Test.Sender, "
@@ -138,13 +138,33 @@ public class Aggregator {
 
 
 
-    private static void writeToDB_Latency(Double latency, long id, Connection co) throws SQLException {
+    private static void writeToDB_Latency(Map<Integer, Long[]> latency, long id, Connection co) throws SQLException {
 
         try (PreparedStatement ps = co.prepareStatement(INSERT_LATENCY_TABLE);
         ){
-            ps.setInt(1, (int)id);
-            ps.setDouble(2, latency);
-            System.out.println("rows affected: " + ps.executeUpdate());
+
+            Long meanLatency = (long)0;
+
+            for (Map.Entry<Integer, Long[]> entry : latency.entrySet()) {
+                //"INSERT INTO MECPerf.RttMeasure (id, sub_id, latency)"
+
+                meanLatency += entry.getValue()[0];
+
+                //System.out.println(entry.getValue()[0] +" -> " +meanLatency + "\t(" + entry.getKey() +")");
+
+                ps.setInt(1, (int)id);
+                ps.setInt(2, entry.getKey());
+                ps.setDouble(3, entry.getValue()[0] );
+
+                ps.executeUpdate();
+
+            }
+
+
+
+            System.out.println("rows affected: " + latency.size());
+
+
             co.commit();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -161,7 +181,7 @@ public class Aggregator {
 
 
 
-    private static void writeToDB_Bandwidth(Map<Long, Integer> map, long id, Connection co, String protocol) throws SQLException {
+    private static void writeToDB_Bandwidth(Map<Integer, Long[]> map, long id, Connection co, String protocol) throws SQLException {
         try (PreparedStatement ps = co.prepareStatement(INSERT_BANDWIDTH_TABLE);
         ){
             ps.setInt(1, (int)id);
@@ -170,8 +190,9 @@ public class Aggregator {
             long previous = 0;
             System.out.println("PROTOCOL: " + protocol+" MAP_SIZE: " + map.size());
 
-            for (Map.Entry<Long, Integer> entry : map.entrySet()) { //per UDP ha un solo elemento
-                long actualTime = entry.getKey();
+
+            for (Map.Entry<Integer, Long[]> entry : map.entrySet()) { //per UDP ha un solo elemento
+                long actualTime = entry.getValue()[0];
                 long diff = actualTime - previous;
 
                 if (Long.MAX_VALUE < actualTime)
@@ -192,12 +213,13 @@ public class Aggregator {
                     ps.setLong(3, actualTime);
                 else
                     System.exit(1);
-                ps.setDouble(4, (double)entry.getValue()/1024);
+
+                ps.setDouble(4, (double)entry.getValue()[1]/1024);
 
                 if((iteration != 1) || (protocol.equals("UDP")))
                     ps.executeUpdate();
             }
-            System.out.println("rows affected: " + iteration);
+            System.out.println(" writeToDB_Bandwidt rows affected: " + iteration);
 
             co.commit();
         } catch (SQLException e) {

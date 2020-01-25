@@ -43,7 +43,7 @@ public class Observer {
                        OBSCMDPORT = -1,
                        OBSTCPPORT = -1,
                        OBSUDPPORT = -1,
-                       timeout = 5 * 60 * 1000 ;
+                       timeout = 2 * 60 * 1000 ;
 
     private static ServerSocket cmdListener = null; //socket used to receive commands
     private static ServerSocket tcpListener = null; //socket used for tcp operations
@@ -70,6 +70,8 @@ public class Observer {
                 udpListener.getLocalPort() + "[Timeout = " + timeout/1000 + "s]");
     }
 
+
+
     private static int restartSockets()  {
         try{
 
@@ -90,7 +92,6 @@ public class Observer {
 
         return 0;
     }
-
 
 
 
@@ -115,7 +116,7 @@ public class Observer {
         ControlMessages controlSocketRemote = new ControlMessages();
 
         while (true) {
-            System.out.println("\nWaiting for  a command...");
+            //System.out.println("\nWaiting for  a command...");
             ControlMessages controlSocketApp = null;
             String cmd=null;
             try {
@@ -159,7 +160,7 @@ public class Observer {
                     int tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[3]) * tcp_bandwidth_pktsize;
                     System.out.print("Received command : " + cmdSplitted[0]);
-                    System.out.print("\t[Packet size : " + tcp_bandwidth_pktsize);
+                    System.out.print("\t\t[Packet size : " + tcp_bandwidth_pktsize);
                     System.out.println(", Number of packes : " + Integer.parseInt(cmdSplitted[3]) + "]");
 
                     try {
@@ -169,7 +170,7 @@ public class Observer {
 
                         //first measure (client -> observer)
                         controlSocketApp.sendCMD(ControlMessages.Messages.START.toString());
-                        Map<Long, Integer> mappaCO = Measurements.TCPBandwidthReceiver(
+                        Map<Integer, Long[]> mappaCO = Measurements.TCPBandwidthReceiver(
                                                 tcpReceiverConnectionSocket, tcp_bandwidth_pktsize);
 
 
@@ -199,21 +200,21 @@ public class Observer {
 
                         InputStream isr = controlSocketRemote.getSocket().getInputStream();
                         ObjectInputStream mapInputStream = new ObjectInputStream(isr);
-                        Map<Long, Integer> remoteMeasure = (Map<Long, Integer>) mapInputStream.readObject();
+                        Map<Integer, Long[]> remoteMeasure = (Map<Integer, Long[]>) mapInputStream.readObject();
                         isr.close();
                         mapInputStream.close();
 
                         //remote data
                         Measure measureSecondSegment = new Measure("TCPBandwidth",
                                                 "Observer","Server", remoteMeasure,
-                                                -1, cmdSplitted[1], tcp_bandwidth_pktsize,
+                                                null, cmdSplitted[1], tcp_bandwidth_pktsize,
                                                  Integer.parseInt(cmdSplitted[3]), OBSERVERIP,
                                                  cutAddress(controlSocketRemote.getSocket()
                                                          .getRemoteSocketAddress().toString()));
 
                         //observer data
                         Measure measureFirstSegment = new Measure("TCPBandwidth","Client",
-                                "Observer", mappaCO, -1, cmdSplitted[1],
+                                "Observer", mappaCO, null, cmdSplitted[1],
                                 tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[3]),
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                           .toString()), OBSERVERIP);
@@ -221,11 +222,11 @@ public class Observer {
                         sendAggregator(measureFirstSegment, measureSecondSegment);
 
 
-                        System.out.println("results sent to aggregator");
+                        //System.out.println("results sent to aggregator");
 
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
-                        System.out.println("TCPBandwidthSender: completed");
+                        //System.out.println("TCPBandwidthSender: completed");
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -247,11 +248,11 @@ public class Observer {
                     break;
                 }
                 case "TCPBandwidthReceiver": {
-                    Map<Long, Integer> mappaSO = null;
+                    Map<Integer, Long[]> mappaSO = null;
                     int tcp_bandwidth_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_bandwidth_stream = Integer.parseInt(cmdSplitted[3]) * tcp_bandwidth_pktsize;
                     System.out.print("Received command : " + cmdSplitted[0]);
-                    System.out.print("\t[Packet size : " + tcp_bandwidth_pktsize);
+                    System.out.print("\t\t[Packet size : " + tcp_bandwidth_pktsize);
                     System.out.println(", Number of packes : " + Integer.parseInt(cmdSplitted[3]) + "]");
 
                     try {
@@ -285,27 +286,27 @@ public class Observer {
                         //InputStream isr = connectionSocket.getInputStream();
                         InputStream isr = controlSocketApp.getSocket().getInputStream();
                         ObjectInputStream mapInputStream = new ObjectInputStream(isr);
-                        Map<Long, Integer> applicationMeasure = (Map<Long, Integer>) mapInputStream.readObject();
+                        Map<Integer, Long[]> applicationMeasure = (Map<Integer, Long[]>) mapInputStream.readObject();
                         isr.close();
                         mapInputStream.close();
 
 
                         //application data
                         Measure measureFirstSegment = new Measure("TCPBandwidth", "Observer",
-                                "Client", applicationMeasure, -1, cmdSplitted[1],
+                                "Client", applicationMeasure, null, cmdSplitted[1],
                                 tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[3]),
                                 OBSERVERIP, cutAddress(controlSocketApp.getSocket()
                                 .getRemoteSocketAddress().toString()) );
                         //observer data
                         Measure measureSecondSegment = new Measure("TCPBandwidth", "Server",
-                                "Observer", mappaSO, -1, cmdSplitted[1],
+                                "Observer", mappaSO, null, cmdSplitted[1],
                                 tcp_bandwidth_pktsize, Integer.parseInt(cmdSplitted[3]),
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
 
                         sendAggregator(measureFirstSegment, measureSecondSegment);
-                        System.out.println("results sent to aggregator");
-                        System.out.println("TCPBandwidthReceiver: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("TCPBandwidthReceiver: completed");
                     } catch (Exception ex) {
                         ex.printStackTrace();
 
@@ -331,17 +332,17 @@ public class Observer {
                     int udp_capacity_pktsize = Integer.parseInt(cmdSplitted[2]);
                     int udp_capacity_num_tests = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
-                    System.out.print("\t[ " + udp_capacity_num_tests + "tests wof ");
+                    System.out.print("\t\t[ " + udp_capacity_num_tests + "tests wof ");
                     System.out.println(udp_capacity_pktsize + " packet size" + "]");
 
-                    Map<Long, Integer> measureResult = null;
+                    Map<Integer, Long[]>  measureResult = null;
                     try {
                         //first measure (client -> observer)
                         //controlSocketApp.sendCMD(ControlMessages.Messages.START.toString());
                         measureResult = Measurements.UDPCapacityPPReceiver(udpListener,
                                                          udp_capacity_pktsize, udp_capacity_num_tests,
                                                          controlSocketApp);
-                        System.out.println("UDPCapacityPPReceiver returned");
+                        //System.out.println("UDPCapacityPPReceiver returned");
                         if (measureResult == null)
                         {
                             System.out.println("Measure filed");
@@ -392,20 +393,20 @@ public class Observer {
                         //InputStream isr = connectionSocket.getInputStream();
                         InputStream isr = controlSocketRemote.getSocket().getInputStream();
                         ObjectInputStream mapInputStream = new ObjectInputStream(isr);
-                        Map<Long, Integer> remoteMeasure = (Map<Long, Integer>) mapInputStream.readObject();
+                        Map<Integer, Long[]>  remoteMeasure = (Map<Integer, Long[]> ) mapInputStream.readObject();
 
                         mapInputStream.close();
                         isr.close();
 
                         //remote data
                         Measure measureSecondSegment = new Measure("UDPBandwidth",
-                                "Observer","Server",  remoteMeasure, -1,
+                                "Observer","Server",  remoteMeasure, null,
                                 cmdSplitted[1], udp_capacity_pktsize, 2, OBSERVERIP,
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()));
                         //observer data
                         Measure measureFirstSegment = new Measure("UDPBandwidth", "Client",
-                                "Observer", measureResult, -1, cmdSplitted[1],
+                                "Observer", measureResult, null, cmdSplitted[1],
                                 udp_capacity_pktsize,2, cutAddress(controlSocketApp
                                 .getSocket().getRemoteSocketAddress().toString()), OBSERVERIP);
 
@@ -413,8 +414,8 @@ public class Observer {
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
 
-                        System.out.println("results sent to aggregator");
-                        System.out.println("UDPBandwidthSender: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("UDPBandwidthSender: completed");
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -480,7 +481,7 @@ public class Observer {
                         DatagramPacket out = new DatagramPacket(buff, buff.length, InetAddress.getByName(REMOTEIP), REMOTEUDPPORT);
                         udpsocket.send(out);
 
-                        Map<Long, Integer> measureResult = Measurements.UDPCapacityPPReceiver(udpsocket,
+                        Map<Integer, Long[]> measureResult = Measurements.UDPCapacityPPReceiver(udpsocket,
                                                                                  udp_capacity_pktsize, udp_capacity_num_tests, controlSocketRemote);
                         if (measureResult == null)
                         {
@@ -497,30 +498,28 @@ public class Observer {
 
                         String resultApp = controlSocketApp.receiveCMD();
 
-                        //Socket connectionSocket = cmdListener.accept();
-                        //InputStream isr = connectionSocket.getInputStream();
                         ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
-                        Map<Long, Integer> applicationMeasure = (Map<Long, Integer>) mapInputStream.readObject();
+                        Map<Integer, Long[]> applicationMeasure = (Map<Integer, Long[]>) mapInputStream.readObject();
                         //isr.close();
                         mapInputStream.close();
 
                         //application data
                         Measure measureFirstSegment = new Measure("UDPBandwidth","Observer",
-                                "Client", applicationMeasure, -1, cmdSplitted[1],
+                                "Client", applicationMeasure, null, cmdSplitted[1],
                                 udp_capacity_pktsize, 2, OBSERVERIP,
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                         .toString()));
                         //observer data
                         Measure measureSecondSegment = new Measure("UDPBandwidth","Server",
-                                "Observer", measureResult, -1, cmdSplitted[1],
+                                "Observer", measureResult, null, cmdSplitted[1],
                                 udp_capacity_pktsize, 2,
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
 
                         sendAggregator(measureFirstSegment, measureSecondSegment);
 
-                        System.out.println("results sent to aggregator");
-                        System.out.println("UDPCapacityPPReceiver: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("UDPCapacityPPReceiver: completed");
                     } catch (Exception e) {
                         e.printStackTrace();
 
@@ -546,7 +545,7 @@ public class Observer {
                     int udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
-                    System.out.print("\t[Packet size : " + udp_rtt_pktsize);
+                    System.out.print("\t\t\t[Packet size : " + udp_rtt_pktsize);
                     System.out.println(", Number of packes : " + udp_rtt_num_pack + "]");
 
                     try {
@@ -579,9 +578,9 @@ public class Observer {
 
                         DatagramSocket udpsocketmo = new DatagramSocket();
                         udpsocketmo.connect(InetAddress.getByName(REMOTEIP), REMOTEUDPPORT);
-                        double latency = Measurements.UDPRTTSender(udpsocketmo, udp_rtt_pktsize,
+                        Map<Integer, Long[]> latency = Measurements.UDPRTTSender(udpsocketmo, udp_rtt_pktsize,
                                                                    udp_rtt_num_pack);
-                        if (latency == -1)
+                        if (latency == null)
                         {
                             controlSocketRemote.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
@@ -592,12 +591,17 @@ public class Observer {
                         controlSocketRemote.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
 
-                        String[] resultApp = controlSocketApp.receiveCMD().split(separator);
+                        //String[] resultApp = controlSocketApp.receiveCMD().split(separator);
+                        //receive application latency
+                        ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
+                        Map<Integer, Long[]> resultApp = (Map<Integer, Long[]>) mapInputStream.readObject();
+                        mapInputStream.close();
+
 
 
                         //application data
                         Measure measureFirstSegment = new Measure("UDPRTT", "Client",
-                                "Observer", null, Double.parseDouble(resultApp[1]),
+                                "Observer", null, resultApp,
                                 cmdSplitted[1], udp_rtt_pktsize, udp_rtt_num_pack,
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
@@ -611,8 +615,8 @@ public class Observer {
                         sendAggregator(measureFirstSegment, measureSecondSegment);
 
 
-                        System.out.println("results sent to aggregator");
-                        System.out.println("UDPRTTSender: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("UDPRTTSender: completed");
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -636,11 +640,11 @@ public class Observer {
                     break;
                 }
                 case "UDPRTTReceiver": {
-                    double latency;
+                    Map<Integer, Long[]> latency;
                     int udp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
-                    System.out.print("\t[Packet size : " + udp_rtt_pktsize);
+                    System.out.print("\t\t[Packet size : " + udp_rtt_pktsize);
                     System.out.println(", Number of packes : " + udp_rtt_num_pack + "]");
 
                     try {
@@ -655,7 +659,7 @@ public class Observer {
                         udpListener.connect(dgprtt.getAddress(), dgprtt.getPort());
                         latency = Measurements.UDPRTTSender(udpListener, udp_rtt_pktsize, udp_rtt_num_pack);
                         udpListener.disconnect();
-                        if (latency == -1)
+                        if (latency == null)
                         {
                             System.out.println ("Measure failed");
                             //controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
@@ -664,7 +668,7 @@ public class Observer {
                             break;
                         }
 
-                        System.out.println(controlSocketRemote);
+                        //System.out.println(controlSocketRemote);
                         controlSocketRemote.sendCMD(cmd);
 
                         DatagramSocket udpsocketRTT = new DatagramSocket();
@@ -684,12 +688,15 @@ public class Observer {
                             break;
                         }
 
-                        String[] resultRemote = controlSocketRemote.receiveCMD().split(separator);
+                        //String[] resultRemote = controlSocketRemote.receiveCMD().split(separator);
+                        ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketRemote.getSocket().getInputStream());
+                        Map<Integer, Long[]> resultRemote = (Map<Integer, Long[]>) mapInputStream.readObject();
+                        mapInputStream.close();
 
                         //remote data
                         Measure measureSecondSegment = new Measure("UDPRTT",  "Server",
                                 "Observer", null,
-                                Double.parseDouble(resultRemote[1]), cmdSplitted[1], udp_rtt_pktsize,
+                                resultRemote, cmdSplitted[1], udp_rtt_pktsize,
                                 udp_rtt_num_pack, cutAddress(controlSocketRemote.getSocket()
                                 .getRemoteSocketAddress().toString()), OBSERVERIP);
                         //observer data
@@ -702,8 +709,8 @@ public class Observer {
                         sendAggregator(measureFirstSegment, measureSecondSegment);
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
-                        System.out.println("results sent to aggregator");
-                        System.out.println("UDPRTTReceiver: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("UDPRTTReceiver: completed");
                     } catch (Exception ex) {
                         ex.printStackTrace();
 
@@ -725,13 +732,13 @@ public class Observer {
                     break;
                     }
                 case "TCPRTTSender": {
-                    double latency;
+                    Map<Integer, Long[]> latency;
                     //the client start a TCP RTT measure using the observer as receiver
                     //the observer starts a TCP RTT measure using the remote server as receiver
                     int tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
-                    System.out.print("\nReceived command : " + cmdSplitted[0]);
-                    System.out.print("\t[Packet size : " + tcp_rtt_pktsize);
+                    System.out.print("Received command : " + cmdSplitted[0]);
+                    System.out.print("\t\t\t[Packet size : " + tcp_rtt_pktsize);
                     System.out.println(", Number of packes : " + tcp_rtt_num_pack + "]");
 
                     try {
@@ -768,11 +775,15 @@ public class Observer {
                         controlSocketRemote.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
 
-                        String[] resultApp = controlSocketApp.receiveCMD().split(separator);
+                        //String[] resultApp = controlSocketApp.receiveCMD().split(separator);
+                        //receive latency from client application
+                        ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
+                        Map<Integer, Long[]> resultApp = (Map<Integer, Long[]>) mapInputStream.readObject();
+                        mapInputStream.close();
 
                         //application data
                         Measure measureFirstSegment = new Measure("TCPRTT","Client",
-                                "Observer", null, Double.parseDouble(resultApp[1]),
+                                "Observer", null, resultApp,
                                 cmdSplitted[1], tcp_rtt_pktsize, tcp_rtt_num_pack,
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
@@ -784,8 +795,8 @@ public class Observer {
                                         .toString()));
 
                         sendAggregator(measureFirstSegment, measureSecondSegment);
-                        System.out.println("results sent to aggregator");
-                        System.out.println("TCPRTTSender: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("TCPRTTSender: completed");
                     } catch (Exception ex) {
                         ex.printStackTrace();
 
@@ -807,13 +818,13 @@ public class Observer {
                     break;
                 }
                 case "TCPRTTReceiver": {
-                    double latency;
+                    Map<Integer, Long[]> latency;
                     Socket tcpRTT = null;
                     //MO sends metrics client-observer and forwards the command to the server
                     int tcp_rtt_pktsize = Integer.parseInt(cmdSplitted[2]),
                         tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
-                    System.out.print("\nReceived command : " + cmdSplitted[0]);
-                    System.out.print("\t[Packet size : " + tcp_rtt_pktsize);
+                    System.out.print("Received command : " + cmdSplitted[0]);
+                    System.out.print("\t\t[Packet size : " + tcp_rtt_pktsize);
                     System.out.println(", Number of packes : " + tcp_rtt_num_pack + "]");
 
                     try {
@@ -835,12 +846,18 @@ public class Observer {
                             break;
                         }
 
+                        //System.out.println("Wait the remote-side latency");
 
-                        String[] resultRemote = controlSocketRemote.receiveCMD().split(separator);
+
+                        //String[] resultRemote = controlSocketRemote.receiveCMD().split(separator);
+                        //receive latency from remote
+                        ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketRemote.getSocket().getInputStream());
+                        Map<Integer, Long[]> resultRemote = (Map<Integer, Long[]>) mapInputStream.readObject();
+                        mapInputStream.close();
 
                         //remote data
                         Measure measureSecondSegment = new Measure("TCPRTT", "Server",
-                                "Observer", null, Double.parseDouble(resultRemote[1]),
+                                "Observer", null, resultRemote,
                                 cmdSplitted[1], tcp_rtt_pktsize, tcp_rtt_num_pack , "" +
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
@@ -855,8 +872,8 @@ public class Observer {
 
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
-                        System.out.println("results sent to aggregator");
-                        System.out.println("TCPRTTReceiver: completed");
+                        //System.out.println("results sent to aggregator");
+                        //System.out.println("TCPRTTReceiver: completed");
 
                     } catch (Exception ex) {
                         //Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
@@ -879,7 +896,7 @@ public class Observer {
                     break;
                 }
             }
-            System.out.println(controlSocketRemote.getSocket());
+            //System.out.println(controlSocketRemote.getSocket());
             if (controlSocketRemote != null  && controlSocketRemote.getSocket() != null  && !controlSocketRemote.getSocket().isClosed())
                 controlSocketRemote.closeConnection();
 

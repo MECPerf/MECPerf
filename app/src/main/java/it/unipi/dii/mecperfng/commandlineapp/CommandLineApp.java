@@ -19,7 +19,8 @@ public class CommandLineApp {
                        numPktTCPLatency = -1,
                        numPktUDPLatency = -1,
                        timerInterval = -1,
-                       attemptTimer = 30 * 1000;
+                       attemptTimer = 30 * 1000,
+                       MAXATTEMPTNUMBER = 3;
 
     private static String observerAddress = null,
                           measureType = "all",
@@ -49,6 +50,7 @@ public class CommandLineApp {
         System.out.println("numTestsUDPCapacity: " + numTestsUDPCapacity);
         System.out.println("numPktTCPLatency: " + numPktTCPLatency);
         System.out.println("numPktUDPLatency: " + numPktUDPLatency);
+        System.out.println("MAXATTEMPTNUMBER: " + MAXATTEMPTNUMBER);
 
         if (interfaceName != null) {
             System.out.println("interface name: " + interfaceName);
@@ -173,15 +175,27 @@ public class CommandLineApp {
 
             if (direction.equalsIgnoreCase("receiver") ||
                 direction.equalsIgnoreCase("all")) {
+                int remainingAttempt = MAXATTEMPTNUMBER;
+
                 while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
                     System.out.println("Type of measure: TCP bandwidth Receiver(" +
                                        numPktTCPBandwidth + "packets of " + pktSizeTCPBandwidth +
-                                       "bytes)");
+                                       "bytes)\t\t\t[Attempt #" + (MAXATTEMPTNUMBER - remainingAttempt) + "]");
+
 
                     ret = MainUtils.tcpBandwidthMeasure("Receiver", keyword, CMDPORT,
                                                         observerAddress, TCPPORT,
                                                         pktSizeTCPBandwidth, numPktTCPBandwidth,
                                                         interfaceName);
+
+
                     if (ret == 0)
                         break;
 
@@ -196,10 +210,19 @@ public class CommandLineApp {
             }
             if (direction.equalsIgnoreCase("sender") ||
                     direction.equalsIgnoreCase("all")) {
-                while(true){
+                int remainingAttempt= MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
                     System.out.println("Type of measure: TCP bandwidth Sender (" +
                                        numPktTCPBandwidth + "packets of " + pktSizeTCPBandwidth +
-                                       "bytes)");
+                                       "bytes)\t\t\t[Attempt #" + (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret = MainUtils.tcpBandwidthMeasure("Sender", keyword, CMDPORT,
                                                         observerAddress, TCPPORT, pktSizeTCPBandwidth,
@@ -232,9 +255,20 @@ public class CommandLineApp {
 
             if (direction.equalsIgnoreCase("receiver") ||
                 direction.equalsIgnoreCase("all")) {
-                while (true){
-                    System.out.println("Type of measure: UDP capacity Receiver (" + numTestsUDPCapacity + " packets of " +
-                                       pktSizeUDPCapacity + "bytes)");
+                int remainingAttempt= MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
+                    System.out.println("Type of measure: UDP capacity Receiver (" +
+                                       numTestsUDPCapacity + " tests of " + pktSizeUDPCapacity +
+                                       "bytes)\t\t\t[Attempt #" +
+                                       (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret = MainUtils.udpBandwidthMeasure("Receiver", keyword, CMDPORT,
                                                         observerAddress, UDPPORT,
@@ -253,9 +287,20 @@ public class CommandLineApp {
             }
             if (direction.equalsIgnoreCase("sender") ||
                     direction.equalsIgnoreCase("all")) {
-                while(true){
-                    System.out.println("Type of measure: UDP capacity Sender (" + numTestsUDPCapacity+ " packets of " +
-                            pktSizeUDPCapacity + "bytes)");
+                int remainingAttempt= MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
+                    System.out.println("Type of measure: UDP capacity Sender (" +
+                                       numTestsUDPCapacity+ " tests of " + pktSizeUDPCapacity +
+                                       "bytes)\t\t\t\t[Attempt #" +
+                                       (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret = MainUtils.udpBandwidthMeasure("Sender", keyword, CMDPORT,
                                                         observerAddress, UDPPORT,
@@ -288,9 +333,20 @@ public class CommandLineApp {
 
             if (direction.equalsIgnoreCase("receiver") ||
                     direction.equalsIgnoreCase("all")) {
-                while (true){
+                int remainingAttempt= MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
                     System.out.println("Type of measure: TCP RTT Receiver (" + numPktTCPLatency +
-                                       "packets of " + pktSizeTCPLatency + "bytes)");
+                                       "packets of " + pktSizeTCPLatency +
+                                       "bytes)\t\t\t\t\t[Attempt #" +
+                                       (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret =  MainUtils.tcpRTTMeasure("Receiver", keyword, CMDPORT,
                                                    observerAddress, TCPPORT, pktSizeTCPLatency,
@@ -309,9 +365,20 @@ public class CommandLineApp {
             }
             if (direction.equalsIgnoreCase("sender") ||
                     direction.equalsIgnoreCase("all")) {
-                while(true){
+                int remainingAttempt = MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
                     System.out.println("Type of measure: TCP RTT Sender (" + numPktTCPLatency +
-                                       "packets of " + pktSizeTCPLatency + "bytes)");
+                                       "packets of " + pktSizeTCPLatency +
+                                       "bytes)\t\t\t\t\t[Attempt #" +
+                                       (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret =  MainUtils.tcpRTTMeasure("Sender", keyword, CMDPORT,
                                                    observerAddress, TCPPORT, pktSizeTCPLatency,
@@ -343,10 +410,19 @@ public class CommandLineApp {
 
             if (direction.equalsIgnoreCase("receiver") ||
                     direction.equalsIgnoreCase("all")) {
-                while (true){
+                int remainingAttempt = MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
                     System.out.println("Type of measure: UDP RTT Receiver Receiver (" +
                                        numPktUDPLatency + "packets of " + pktSizeUDPLatency +
-                                       "bytes)");
+                            "bytes)\t\t\t[Attempt #" + (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret = MainUtils.udpRTTMeasure("Receiver", keyword, CMDPORT,
                                                   observerAddress, UDPPORT, pktSizeUDPLatency,
@@ -365,10 +441,20 @@ public class CommandLineApp {
             }
             if (direction.equalsIgnoreCase("sender") ||
                     direction.equalsIgnoreCase("all")) {
-                
-                while(true){
+
+                int remainingAttempt= MAXATTEMPTNUMBER;
+
+                while (true) {
+                    if (remainingAttempt < 1)
+                    {
+                        System.out.println("WARNING: too many attempts.");
+                        break;
+                    }
+                    remainingAttempt--;
+
                     System.out.println("Type of measure: UDP RTT Sender (" + numPktUDPLatency +
-                            "packets of " + pktSizeUDPLatency + "bytes)");
+                            "packets of " + pktSizeUDPLatency + "bytes)\t\t\t\t\t[Attempt #" +
+                            (MAXATTEMPTNUMBER - remainingAttempt) + "]");
 
                     ret = MainUtils.udpRTTMeasure("Sender", keyword, CMDPORT,
                                                   observerAddress, UDPPORT,  pktSizeUDPLatency,
