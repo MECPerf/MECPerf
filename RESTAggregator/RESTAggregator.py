@@ -1,7 +1,12 @@
 from flask import Flask, request
 from flask_mysqldb import MySQL
 
+from request_parser import parse_request
+from query_handler import build_bandwidth_query, update_bandwidth, update_latencies
+from API_utils import print_command_list
+
 import json
+import Test
 
 
 
@@ -49,65 +54,70 @@ def create_app():
 
     @app.route('/')
     def index():
-        string = '<List of commands:<br>'
-    
-        string += '<a href="/bandwidth">bandwidth</a> <br>'
-
-        #mobile commands
-        string += '<a href="/get_data_list">get_data_list</a> optional: keyword(default ""), json(default False) <br>'
-        string += '<a href="/get_RTT_data">get_RTT_data</a> required: id, sender<br>'
-        string += '<a href="/get_bandwidth_data">get_bandwidth_data</a> required: id, sender<br>'
-        string += '<a href="/get_AVGBandwidth_data">get_AVGBandwidth_data</a> required: id, sender<br>'
-        return string
+        return print_command_list()
         
 
-    @app.route('/bandwidth', methods=['GET'])
+   
+    @app.route('/get_measures/bandwidth', methods=['GET'])
     def getBandwidth():
         result = ""
 
-        try:
-            keyword = str(request.args.get('keyword'))
-        except KeyError:
-            keyword = ""
-        try:
-            json = str(request.args.get('json'))
-        except KeyError:
-            json = "False"
+        compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction = parse_request(request)
+        json, query, params = build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction)
 
-
-        json, query = build_bandwidth_query(json, keyword)
         cur = mysql.connection.cursor()
-        cur.execute(query, [keyword])
+        cur.execute(query, params)
         queryRes = cur.fetchall()
         cur.close()
+
         
-        result += str(query) + "<br>"
-        result += "json output = " + json + "<br>"
-        result += "keyword \"" + keyword + "\"<br><br>"
-        for row in queryRes:
-            result += str(row).replace("(u'", "").replace("',)", "")
+        print "asked compact " + str(compact)
+        print "json output = " + str(json)
+        print "keyword " + str(keyword)
+        print "keyword LIKE " + str(likeKeyword)
+        print "fromInterval " + str(fromInterval)
+        print "toInterval " + str(toInterval)
+
+        if (compact != "True"):
+            result += "<b>" + str(query) + "</b><br><br>"
+            result += "json output = " + json + "<br>"
+            result += "keyword \"" + keyword + "\"<br>"
+            result += "keyword LIKE " + likeKeyword + "<br>"
+            result += "fromInterval \"" + fromInterval + "\"<br>"
+            result += "toInterval \"" + toInterval + "\"<br><br>"
+
+        if len(queryRes) != 0:
+            result += "["
+            for row in queryRes:
+                result += str(row).replace("('", "").replace("',)", "").replace("}", "},")
+
+            result = result[:-1] + "]"
+        else:
+            result += "<b>0 rows returned </b>"
+            
         return result
 
 
-    def build_bandwidth_query(json, keyword):
-        query = "SELECT "
-        
-        if json == "True" or json == "true":
-            query += "JSON_ARRAYAGG(JSON_OBJECT ('TestNumber', TestNumber, 'ID', ID, 'Timestamp', Timestamp, "
-            query += "'Direction', Direction, 'Commnand', Command, 'SenderIdentity', SenderIdentity, "
-            query += "'ReceiverIdentity', ReceiverIdentity, 'SenderIPv4Address', SenderIPv4Address, "
-            query += "'ReceiverIPv4Address', ReceiverIPv4Address, 'Keyword', Keyword, 'PackSize', PackSize, " 
-            query += "'NumPack', NumPack)) "
-        else:
-            json = str(False)
-            query += "TestNumber, ID, Timestamp, Direction, Command, SenderIdentity, ReceiverIdentity, "
-            query += "SenderIPv4Address, ReceiverIPv4Address, Keyword, PackSize, NumPack "
-
-        query += "FROM Test where Keyword = %s"
-
-        return json, query
 
 
+    ############################################ POST QUERIES #########################################
+    @app.route('/post_measures/insert_<measure_type>', methods=['POST'])
+    def post_measures(measure_type):
+        body = str(request.data)
+        request_body_list = json.loads(body)
+        test = Test.Test(request_body_list)
+
+        if measure_type == "bandwidth_measure":
+            update_bandwidth(test, mysql)
+        if measure_type == "latency_measure":
+            update_latencies(test, mysql)
+
+        return str(measure_type) + str(request_body_list)
+
+    
+
+
+  
     ##################################################### MOBILE QUERIES ################################
     @app.route('/get_data_list', methods=['GET'])
     def get_data_list():
