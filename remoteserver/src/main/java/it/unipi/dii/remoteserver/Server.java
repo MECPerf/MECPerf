@@ -102,6 +102,11 @@ public class Server {
             try {
                 controlSocketObserver = new ControlMessages(cmdListener.accept());
                 cmd = controlSocketObserver.receiveCMD();
+
+                if (cmd == null) {
+                    System.out.println("Error: invalid command");
+                    continue;
+                }
             }
             catch (Exception e)
             {
