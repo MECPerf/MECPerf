@@ -11,9 +11,9 @@ echo "start compiling..."
 
 
 
-javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar $COMMON_PATH/it/unipi/dii/common/Measure.java 
-javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar $COMMON_PATH/it/unipi/dii/common/Measurements.java
-javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar $COMMON_PATH/it/unipi/dii/common/ControlMessages.java
+javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $COMMON_PATH/it/unipi/dii/common/Measure.java 
+javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $COMMON_PATH/it/unipi/dii/common/Measurements.java
+javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $COMMON_PATH/it/unipi/dii/common/ControlMessages.java
 echo "      Common compiled"
 javac -target 7 -source 7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $APPCOMMANDLINE_PATH/it/unipi/dii/mecperfng/MainUtils.java
 echo "      MainUtils compiled"
