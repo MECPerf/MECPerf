@@ -440,7 +440,7 @@ public class Observer {
                     int udp_capacity_pktsize = Integer.parseInt(cmdSplitted[2]),
                         udp_capacity_num_tests = Integer.parseInt(cmdSplitted[3]);;
                     System.out.print("Received command : " + cmdSplitted[0]);
-                    System.out.print("\t[ " + udp_capacity_num_tests + " tests  of ");
+                    System.out.print("\t\t[ " + udp_capacity_num_tests + " tests  of ");
                     System.out.println(udp_capacity_pktsize + " packet size" + "]");
 
                     byte[] buf = new byte[1000];

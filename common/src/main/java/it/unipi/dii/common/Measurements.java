@@ -14,7 +14,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -37,14 +36,18 @@ public class Measurements {
      * @throws IOException
      */
     public static int UDPRTTReceiver(DatagramSocket serverSocket, int  udp_rtt_pktsize,
-                                      int udp_rtt_num_pack) throws IOException {
+                                      int udp_rtt_num_pack) {
         byte[] sendData = new byte[udp_rtt_pktsize];
         byte[] receiveData = new byte[udp_rtt_pktsize];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length);
-        serverSocket.setSoTimeout(timer);//timeout = 30s
+
+
+        int receivedPkt = 0;
         try {
-            for (int i = 0; i < udp_rtt_num_pack; i++) {
+            serverSocket.setSoTimeout(timer);
+
+            for (; receivedPkt < udp_rtt_num_pack; receivedPkt++) {
 
                 serverSocket.receive(receivePacket);
                 InetAddress IPAddress = receivePacket.getAddress();
@@ -54,7 +57,11 @@ public class Measurements {
                 serverSocket.send(sendPacket);
             }
         }
-        catch (SocketTimeoutException e){
+        catch (IOException e){
+            e.printStackTrace();
+            System.out.println("RECEIVED " + receivedPkt + " of " +  udp_rtt_num_pack  +
+                               " packets");
+
             return -1;
         }
 
@@ -73,10 +80,9 @@ public class Measurements {
      * @param udp_rtt_num_pack The number of UDP packets used
      * @return -1 if the timeout expired. Otherwise the mean latency value calculated for a RTT
      *         measure is returned
-     * @throws IOException
      */
-    public static Map<Integer, Long[]> UDPRTTSender(DatagramSocket connectionSocket, int  udp_rtt_pktsize,
-                                      int udp_rtt_num_pack) throws IOException {
+    public static Map<Integer, Long[]> UDPRTTSender(DatagramSocket connectionSocket,
+                                                    int  udp_rtt_pktsize, int udp_rtt_num_pack) {
         byte[] sendData = new byte[udp_rtt_pktsize];
         byte[] receiveData = new byte[udp_rtt_pktsize];
         Random rand = new Random();
@@ -84,28 +90,29 @@ public class Measurements {
 
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length);
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-        connectionSocket.setSoTimeout(timer);
 
         Map<Integer, Long[]> mappa = new LinkedHashMap<>();
 
-        long meanValue = 0;
+        int receivedPkt = 0;
         try {
-            for (int i = 0; i < udp_rtt_num_pack; i++) {
+            connectionSocket.setSoTimeout(timer);
+
+            for (; receivedPkt < udp_rtt_num_pack; receivedPkt++) {
                 long startTime = System.currentTimeMillis();
                 connectionSocket.send(sendPacket);
                 connectionSocket.receive(receivePacket);
                 long endTime = System.currentTimeMillis();
-                //meanValue += endTime - startTime;
 
                 Long[] mapValue = new Long[1];
                 mapValue[0] = endTime - startTime;
-                //mapValue[1] = meanValue;
 
-                mappa.put(new Integer (i), mapValue);
-
+                mappa.put(new Integer (receivedPkt), mapValue);
             }
         }
-        catch (SocketTimeoutException e){
+        catch (IOException e){
+            e.printStackTrace();
+            System.out.println("RECEIVED " + receivedPkt + " of " +  udp_rtt_num_pack  + " packets");
+
             return null;
         }
 
@@ -125,26 +132,26 @@ public class Measurements {
      * @return The mean latency calculated using the Round Trip Time
      * @throws IOException
      */
-    public static Map<Integer, Long[]> TCPRTTSender(Socket socket, int tcp_rtt_pktsize, int tcp_rtt_num_pack)
-                                                                                throws IOException {
-        OutputStream outputStream = null;
-        InputStream inputStream = null;
+    public static Map<Integer, Long[]> TCPRTTSender(Socket socket, int tcp_rtt_pktsize,
+                                                    int tcp_rtt_num_pack) {
+        OutputStream outputStream;
+        InputStream inputStream;
         Map<Integer, Long[]> mappa = new LinkedHashMap<>();
 
         byte[] sendData = new byte[tcp_rtt_pktsize];
         Random rand = new Random();
         rand.nextBytes(sendData);
 
-        //long total = 0;
+        int receivedPkt = 0;
 
         try {
-            socket.setSoTimeout(timer);//timeout = 30s
+            socket.setSoTimeout(timer);
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
             long lBegin,
                  lEnd;
 
-            for (int i = 0; i < tcp_rtt_num_pack; i++) {
+            for (; receivedPkt < tcp_rtt_num_pack; receivedPkt++) {
                 outputStream.write(sendData, 0, tcp_rtt_pktsize);
                 lBegin = System.currentTimeMillis();
                 int ret = 0;
@@ -152,21 +159,27 @@ public class Measurements {
                     ret += inputStream.read(sendData);
                 }
                 lEnd = System.currentTimeMillis();
-                //total += lEnd - lBegin;
 
                 Long[] mapValue = new Long[1];
                 mapValue[0] = lEnd - lBegin;
-               // mapValue[1] = lEnd;
 
-                mappa.put(new Integer (i), mapValue);
+                mappa.put(new Integer (receivedPkt), mapValue);
             }
-        } finally {
+
+
             if (inputStream != null)
                 inputStream.close();
             if (outputStream != null)
                 outputStream.close();
             if (socket != null)
                 socket.close();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+            System.out.println("RECEIVED " + receivedPkt + " of " +  tcp_rtt_num_pack  + " packets");
+
+            return null;
+
         }
         return mappa;
     }
@@ -191,21 +204,23 @@ public class Measurements {
         Random rand = new Random();
         rand.nextBytes(sendData);
 
+        int receivedPkt = 0;
+
         try {
             sock.setSoTimeout(timer);//timeout = 30s
             inputStream = sock.getInputStream();
             outputStream = sock.getOutputStream();
            // System.out.print("TCPRTTReceiver: ");
-            for (int i = 0; i < tcp_rtt_num_pack; i++) {
+            for (; receivedPkt < tcp_rtt_num_pack; receivedPkt++) {
                 int ret = 0;
                 while (ret < tcp_rtt_pktsize){
                     ret += inputStream.read(sendData);
                 }
 
-                //System.out.print(" " + i +" ");
                 outputStream.write(sendData, 0, tcp_rtt_pktsize);
             }
-        }finally {
+
+
             if (inputStream != null)
                 inputStream.close();
             if (outputStream != null)
@@ -213,7 +228,13 @@ public class Measurements {
             if (sock != null)
                 sock.close();
 
-            //System.out.print("DONE\n");
+        }
+
+        catch (IOException e){
+
+            System.out.println("RECEIVED " + receivedPkt + " of " +  tcp_rtt_num_pack  + " packets");
+
+            throw e;
         }
     }
 
@@ -234,6 +255,7 @@ public class Measurements {
         byte[] buffer = new byte[tcp_bandwidth_pktsize];
         Random random = new Random();
         random.nextBytes(buffer);//fill the buffer with random bytes
+        int measureSize = number_of_bytes;
 
         try {
             outputStream = socket.getOutputStream();
@@ -243,17 +265,20 @@ public class Measurements {
                 if (number_of_bytes < tcp_bandwidth_pktsize) {
                     outputStream.write(buffer, 0, number_of_bytes);
                     number_of_bytes = 0;
-                }
-                else {
+                } else {
                     outputStream.write(buffer, 0, tcp_bandwidth_pktsize);
                     number_of_bytes -= tcp_bandwidth_pktsize;
                 }
             }
-        } finally {
-            if(outputStream != null)
+
+
+            if (outputStream != null)
                 outputStream.close();
-            if(socket != null)
+            if (socket != null)
                 socket.close();
+        } catch (IOException e){
+            System.out.println("REMAINING " + number_of_bytes + " of " + measureSize + " bytes");
+            throw e;
         }
     }
 
@@ -276,6 +301,8 @@ public class Measurements {
         Map<Integer, Long[]> mappa = new LinkedHashMap<>();
         int totalRead;
         byte[] cbuf = new byte[tcp_bandwidth_pktsize];
+
+        int receivedBytes = 0;
 
         try {
             connectionSocket.setSoTimeout(timer);//timeout = 30s
@@ -300,15 +327,21 @@ public class Measurements {
 
                 last = actualTime;
                 i++;
+
+                receivedBytes += totalRead;
             }
-        }
-        finally{
+
+
             if (isr != null)
                 isr.close();
             if (connectionSocket != null)
                 connectionSocket.close();
         }
 
+        catch (IOException e){
+            System.out.println("RECEIVED " + receivedBytes + "bytes");
+            throw e;
+        }
 
         return mappa;
     }
@@ -325,7 +358,8 @@ public class Measurements {
      */
     public static int UDPCapacityPPSender(DatagramSocket connectionSocket, int packet_size, int numTest, ControlMessages controlSocket) {
         //System.out.println(numTest);
-        for (int i = 0; i < numTest; i++) {
+        int numberOfTestPerformed = 0;
+        for (; numberOfTestPerformed < numTest; numberOfTestPerformed++) {
             byte[] buf = new byte[packet_size];
             Random rand = new Random();
             rand.nextBytes(buf);
@@ -351,6 +385,7 @@ public class Measurements {
 
             } catch (IOException e) {
                 e.printStackTrace();
+                System.out.println(numberOfTestPerformed + " of " + numTest + "test done");
 
                 return -1;
             }
@@ -371,9 +406,10 @@ public class Measurements {
      */
     public static Map<Integer, Long[]> UDPCapacityPPReceiver (DatagramSocket serverSocket, int pktSize, int numTest, ControlMessages controlSocket) {
         Map<Integer, Long[]> measureResult = new LinkedHashMap<>();
-        //System.out.println(numTest);
 
-        for (int i = 0; i < numTest; i++) {
+        int numberOfTestPerformed = 0;
+
+        for (; numberOfTestPerformed < numTest; numberOfTestPerformed++) {
 
             byte[] receiveData1 = new byte[pktSize];
             byte[] receiveData2 = new byte[pktSize];
@@ -399,6 +435,9 @@ public class Measurements {
                 //System.out.println("received " + i);
             } catch (IOException e) {
                 e.printStackTrace();
+
+                System.out.println(numberOfTestPerformed + " of " + numTest + "test done");
+
                 return null;
             }
 
@@ -409,12 +448,11 @@ public class Measurements {
             mapValue[0] = timeNs;
             mapValue[1] = (long)pktSize;
 
-            measureResult.put(i, mapValue);
+            measureResult.put(numberOfTestPerformed, mapValue);
 
-            //System.out.println("put[" + i + "] " + timeNs);
         }
-        //System.out.println("measureResult.size(): " + measureResult.size());
-        return measureResult;   //deve essere nello stesso formato del TCP per stare nella stessa tabella, per questo non ritorno "result KB/s"
+
+        return measureResult;
     }
 }
 
