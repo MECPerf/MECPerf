@@ -37,6 +37,8 @@ local.properties
 *.png
 *.txt
 *.sh
+*.whl
+*.tmp
 
 RESTAggregator/RESTAggregator.egg-info/*
 RESTAggregator/dist/*
