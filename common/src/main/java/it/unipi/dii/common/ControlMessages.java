@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.Socket;
 import java.util.Objects;
 
@@ -131,6 +130,8 @@ public class ControlMessages {
             inputStream = this.controlSocket.getInputStream();
         } catch (IOException ex) {
             ex.printStackTrace();
+
+            return "";
         }
 
         DataInputStream dataInputStream = new DataInputStream(Objects.requireNonNull(inputStream));
@@ -138,13 +139,10 @@ public class ControlMessages {
             //The command received is composed by "command id-test"
             receivedCommand = dataInputStream.readUTF();
         }
-        catch (EOFException e){
-            throw e;
-        }
-        catch (IOException ex) {
-            ex.printStackTrace();
+        catch (IOException e){
+            e.printStackTrace();
 
-            return null;
+            return "";
         }
 
         return receivedCommand;
