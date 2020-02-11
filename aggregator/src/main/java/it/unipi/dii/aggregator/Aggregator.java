@@ -125,6 +125,17 @@ public class Aggregator {
                 }
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
+
+                try{
+                    if (!welcomeSoket.isClosed())
+                        welcomeSoket.close();
+
+                    welcomeSoket = new ServerSocket(AGGREGATOR_PORT);
+
+                } catch (IOException ex){
+                    ex.printStackTrace();
+                }
+
                 break;
             }
         }
@@ -166,7 +177,7 @@ public class Aggregator {
 
 
             co.commit();
-        } catch (SQLException e) {
+        } catch (SQLException | NullPointerException e) {
             e.printStackTrace();
             if (co != null) {
                 try {
