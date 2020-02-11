@@ -122,9 +122,9 @@ def read_last_test_number(mysql):
 
 
 def read_test_ID(mysql, test_number):
-    query = "SELECT ID FROM MECPerf.Test where TestNumber = %s ORDER BY ID desc limit 1"
+    query = "SELECT ID FROM MECPerf.Test ORDER BY ID desc limit 1"
     cur = mysql.connection.cursor()
-    cur.execute(query, [test_number])
+    cur.execute(query, [])
     query_res = cur.fetchone()
     if len(query_res) == 0:
         cur.close()
@@ -135,17 +135,27 @@ def read_test_ID(mysql, test_number):
 
     
 
-def insert_test_table(cur, actual_test_number, test_info):
-    insert_Test_table_query = "INSERT INTO MECPerf.Test (TestNumber,Timestamp, Direction, Command, " +\
+def insert_test_table(cur, actual_test_number, test_type, test_info):
+    insert_Test_table_query_active = "INSERT INTO MECPerf.Test (TestNumber,Timestamp, Direction, Command, " +\
                                                         " SenderIdentity, ReceiverIdentity, " +\
                                                         " SenderIPv4Address, ReceiverIPv4Address, Keyword, " +\
                                                         " PackSize, NumPack) VALUES (%s, CURRENT_TIMESTAMP," +\
                                                         " %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    insert_Test_table_query_passive = "INSERT INTO MECPerf.PassiveTest (Timestamp, ClientIP, ClientPort, "+\
+                                                        "ServerIP, ServerPort, Keyword, Direction, "+\
+                                                        "Protocol, Mode) VALUES (CURRENT_TIMESTAMP, "+\
+                                                        " %s, %s, %s, %s, %s, %s, %s, %s)"
 
-    cur.execute(insert_Test_table_query, [actual_test_number, test_info['Direction'], test_info['Command'], 
-                                          test_info['SenderIdentity'], test_info['ReceiverIdentity'], 
-                                          test_info['SenderIPv4Address'], test_info['ReceiverIPv4Address'], 
-                                          test_info['Keyword'], test_info['PackSize'], test_info['NumPack']])
+    if test_type == "active":
+        cur.execute(insert_Test_table_query_active, [actual_test_number, test_info['Direction'], 
+                    test_info['Command'], test_info['SenderIdentity'], test_info['ReceiverIdentity'], 
+                    test_info['SenderIPv4Address'], test_info['ReceiverIPv4Address'], test_info['Keyword'], 
+                    test_info['PackSize'], test_info['NumPack']])
+    if test_type == "passive":
+        cur.execute(insert_Test_table_query_passive, [ test_info['ClientIP'], test_info['ClientPort'], 
+                    test_info['ServerIP'], test_info['ServerPort'], test_info['Keyword'], 
+                    test_info['Direction'], test_info['Protocol'], test_info['Mode']])
+
 
 
 
@@ -171,12 +181,12 @@ def insert_latency_table(cur, actual_test_ID, test_values):
 
 
 def update_bandwidth(test, mysql):
-    if test.test_type == "active":
+    if test.type == "active":
         return update_active_bandwidth(test, mysql)
-    elif test.test_type == "passive":
+    elif test.type == "passive":
         return update_passive_bandwidth(test, mysql)
     else:
-        print "\n\n" + FAIL + "ERROR unknown test_type" + ENDC
+        print "\n\n" + FAIL + "ERROR unknown test.type" + ENDC
         return 501
 
                 
@@ -184,12 +194,12 @@ def update_bandwidth(test, mysql):
 
 
 def update_latencies(test, mysql):
-    if test.test_type == "active":
+    if test.test.type == "active":
         return update_active_latencies(test, mysql)
-    elif test.test_type == "passive":
+    elif test.test.type == "passive":
         return update_passive_latencies(test, mysql) 
     else:
-        print "\n\n" + FAIL + "ERROR unknown test_type" + ENDC    
+        print "\n\n" + FAIL + "ERROR unknown test.type" + ENDC    
         return NOT_IMPLEMENTED
 
 
@@ -197,19 +207,18 @@ def update_latencies(test, mysql):
 
 def update_active_bandwidth(test, mysql):
     actual_test_number = read_last_test_number(mysql)
-
     
     mysql.connection.autocommit = False
     try:
         cur = mysql.connection.cursor()
 
         #store first segment measures
-        insert_test_table(cur, actual_test_number, test.test_info_first_segment)
+        insert_test_table(cur, actual_test_number, test.type, test.test_info_first_segment)
         actual_test_ID =read_test_ID(mysql, actual_test_number)
         insert_bandwidth_table(cur, actual_test_ID, test.test_values_first_segment)
 
         #update second segment measures
-        insert_test_table(cur, actual_test_number, test.test_info_second_segment)
+        insert_test_table(cur, actual_test_number, test.type, test.test_info_second_segment)
         actual_test_ID =read_test_ID(mysql, actual_test_number)
         insert_bandwidth_table(cur, actual_test_ID, test.test_values_second_segment)
 
@@ -219,9 +228,9 @@ def update_active_bandwidth(test, mysql):
         cur.close()
     
     except mysql.connection.Error as e:
-        print "Failed to update the database."
+        print FAIL + "Failed to update the database."
         print e
-        print "Execute a roll back"
+        print "Execute a roll back" + ENDC
         mysql.connection.rollback()
         cur.close()
 
@@ -241,12 +250,12 @@ def update_active_latencies(test, mysql):
         cur = mysql.connection.cursor()
 
         #store first segment measures
-        insert_test_table(cur, actual_test_number, test.test_info_first_segment)
+        insert_test_table(cur, actual_test_number, test.type, test.test_info_first_segment)
         actual_test_ID =read_test_ID(mysql, actual_test_number)
         insert_latency_table(cur, actual_test_ID, test.test_values_first_segment)
 
         #update second segment measures
-        insert_test_table(cur, actual_test_number, test.test_info_second_segment)
+        insert_test_table(cur, actual_test_number, test.type, test.test_info_second_segment)
         actual_test_ID =read_test_ID(mysql, actual_test_number)
         insert_latency_table(cur, actual_test_ID, test.test_values_second_segment)
 
@@ -267,11 +276,37 @@ def update_active_latencies(test, mysql):
 
 
 
-
-
 def update_passive_bandwidth(test, mysql):
-    return NOT_IMPLEMENTED
+    print test.info
+    print test.values
 
+
+
+    mysql.connection.autocommit = False
+    try:
+        cur = mysql.connection.cursor()
+
+        insert_test_table(cur, -1, test.type, test.info)
+        actual_test_ID =read_test_ID(mysql, -1)
+
+        #insert_bandwidth_table(cur, actual_test_ID, test.test_values_first_segment)
+
+
+        mysql.connection.commit()
+        mysql.connection.autocommit=True
+        cur.close()
+    
+    except mysql.connection.Error as e:
+        print FAIL + "Failed to update the database."
+        print e
+        print "Execute a roll back" + ENDC
+        mysql.connection.rollback()
+        cur.close()
+
+        return INTERNAL_SERVER_ERROR
+    
+    #return OK
+    return NOT_IMPLEMENTED
 
 
 def update_passive_latencies(test, mysql):
