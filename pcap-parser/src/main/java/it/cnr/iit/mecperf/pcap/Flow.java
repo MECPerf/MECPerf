@@ -7,14 +7,18 @@ import java.util.LinkedHashMap;
 
 public class Flow {
     Quintet<Protocol, String, String, Integer, Integer> fiveTuple;
-    LinkedHashMap<Long, Integer> uplinkBytes;
-    LinkedHashMap<Long, Integer> downlinkBytes;
+    LinkedHashMap<Long, Long> uplinkBytes;
+    LinkedHashMap<Long, Long> downlinkBytes;
     LinkedHashMap<Long, Long> uplinkExpectedAcks;
     LinkedHashMap<Long, Long> downlinkExpectedAcks;
     LinkedHashMap<Long, Long> uplinkRtts;
     LinkedHashMap<Long, Long> downlinkRtts;
     public static final int DIR_UPLINK = 0;
     public static final int DIR_DOWNLINK = 1;
+    public static final String TCP = "tcp";
+    public static final String UDP = "udp";
+    public static final int TYPE_BANDWIDTH = 0;
+    public static final int TYPE_RTT = 1;
 
     public Flow(Quintet<Protocol, String, String, Integer, Integer> fiveTuple) {
         this.fiveTuple = fiveTuple;
@@ -26,7 +30,7 @@ public class Flow {
         this.downlinkRtts = new LinkedHashMap<>();
     }
 
-    public void insertBytes(long timestamp, int numBytes, int direction) {
+    public void insertBytes(long timestamp, long numBytes, int direction) {
         switch (direction) {
             case DIR_UPLINK:
                 uplinkBytes.put(timestamp, numBytes);
@@ -57,7 +61,6 @@ public class Flow {
             switch (direction) {
                 case DIR_UPLINK:
                     if (downlinkExpectedAcks.containsKey(ackNum)) {
-                        System.out.printf("Match trovato con ack: %d\n", ackNum);
                         long rtt = timestamp - downlinkExpectedAcks.get(ackNum);
                         downlinkRtts.put(timestamp, rtt);
                         downlinkExpectedAcks.remove(ackNum);
@@ -65,7 +68,6 @@ public class Flow {
                     break;
                 case DIR_DOWNLINK:
                     if (uplinkExpectedAcks.containsKey(ackNum)) {
-                        System.out.printf("Match trovato con ack: %d\n", ackNum);
                         long rtt = timestamp - uplinkExpectedAcks.get(ackNum);
                         uplinkRtts.put(timestamp, rtt);
                         uplinkExpectedAcks.remove(ackNum);
@@ -75,14 +77,13 @@ public class Flow {
         }
     }
 
-    public LinkedHashMap<Long, Integer> getBytes(int direction) {
-        if (fiveTuple.getValue0() == Protocol.TCP) {
-            if (direction == DIR_UPLINK)
-                return uplinkBytes;
-            else if (direction == DIR_DOWNLINK)
-                return downlinkBytes;
-        }
-        return null;
+    public LinkedHashMap<Long, Long> getBytes(int direction) {
+        if (direction == DIR_UPLINK)
+            return uplinkBytes;
+        else if (direction == DIR_DOWNLINK)
+            return downlinkBytes;
+        else
+            return null;
     }
 
     public LinkedHashMap<Long, Long> getRtts(int direction) {
@@ -92,6 +93,21 @@ public class Flow {
             else if (direction == DIR_DOWNLINK)
                 return downlinkRtts;
         }
+        return null;
+    }
+
+    public MeasurementResult toMeasurementResult(int type) {
+        String protocol;
+        if (fiveTuple.getValue0() == Protocol.TCP)
+            protocol = TCP;
+        else
+            protocol = UDP;
+        if (type == TYPE_BANDWIDTH)
+            return new MeasurementResult(fiveTuple.getValue1(), fiveTuple.getValue3(), fiveTuple.getValue2(),
+                    fiveTuple.getValue4(), "test", protocol, uplinkBytes, downlinkBytes);
+        if (type == TYPE_RTT && fiveTuple.getValue0() == Protocol.TCP)
+            return new MeasurementResult(fiveTuple.getValue1(), fiveTuple.getValue3(), fiveTuple.getValue2(),
+                    fiveTuple.getValue4(), "test", protocol, uplinkRtts, downlinkRtts);
         return null;
     }
 }
