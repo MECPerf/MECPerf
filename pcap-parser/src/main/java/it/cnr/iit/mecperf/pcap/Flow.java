@@ -57,7 +57,6 @@ public class Flow {
             switch (direction) {
                 case DIR_UPLINK:
                     if (downlinkExpectedAcks.containsKey(ackNum)) {
-                        System.out.printf("Match trovato con ack: %d\n", ackNum);
                         long rtt = timestamp - downlinkExpectedAcks.get(ackNum);
                         downlinkRtts.put(timestamp, rtt);
                         downlinkExpectedAcks.remove(ackNum);
@@ -65,7 +64,6 @@ public class Flow {
                     break;
                 case DIR_DOWNLINK:
                     if (uplinkExpectedAcks.containsKey(ackNum)) {
-                        System.out.printf("Match trovato con ack: %d\n", ackNum);
                         long rtt = timestamp - uplinkExpectedAcks.get(ackNum);
                         uplinkRtts.put(timestamp, rtt);
                         uplinkExpectedAcks.remove(ackNum);
