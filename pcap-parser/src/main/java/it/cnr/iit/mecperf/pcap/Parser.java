@@ -27,10 +27,16 @@ public class Parser extends Thread {
     }
 
     public void run() {
+        Logger.info("Parser started");
         while (true) {
             try {
-                Logger.info("Reading file name from queue");
+                Logger.debug("Reading file name from queue");
                 String fileName = toParse.take();
+                Logger.debug("Read file name: {}", fileName);
+                if (fileName.equals("END")) {
+                    toSend.put("END");
+                    break;
+                }
                 Pcap pcap = Pcap.openStream(fileName);
                 pcap.loop(handler);
                 Gson gson = new Gson();

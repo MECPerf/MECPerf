@@ -28,5 +28,6 @@ public class Main {
         Logger.info("Insert pcap file into toParse queue");
         toParse.put("/home/valerio/tcpdump.pcap");
         Logger.info("Inserted");
+        toParse.put("END");
     }
 }
