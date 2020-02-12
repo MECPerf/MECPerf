@@ -74,13 +74,12 @@ public class Flow {
     }
 
     public LinkedHashMap<Long, Integer> getBytes(int direction) {
-        if (fiveTuple.getValue0() == Protocol.TCP) {
-            if (direction == DIR_UPLINK)
-                return uplinkBytes;
-            else if (direction == DIR_DOWNLINK)
-                return downlinkBytes;
-        }
-        return null;
+        if (direction == DIR_UPLINK)
+            return uplinkBytes;
+        else if (direction == DIR_DOWNLINK)
+            return downlinkBytes;
+        else
+            return null;
     }
 
     public LinkedHashMap<Long, Long> getRtts(int direction) {
