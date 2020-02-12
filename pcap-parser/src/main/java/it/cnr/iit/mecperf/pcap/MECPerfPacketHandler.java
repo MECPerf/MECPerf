@@ -9,13 +9,13 @@ import org.javatuples.Quintet;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Set;
 
 public class MECPerfPacketHandler implements PacketHandler {
-    HashSet<Pair<String, Integer>> servers;
+    Set<Pair<String, Integer>> servers;
     HashMap<Quintet<Protocol, String, String, Integer, Integer>, Flow> flows;
 
-    public MECPerfPacketHandler(HashSet<Pair<String, Integer>> servers,
+    public MECPerfPacketHandler(Set<Pair<String, Integer>> servers,
                                 HashMap<Quintet<Protocol, String, String, Integer, Integer>, Flow> flows) {
         this.servers = servers;
         this.flows = flows;
