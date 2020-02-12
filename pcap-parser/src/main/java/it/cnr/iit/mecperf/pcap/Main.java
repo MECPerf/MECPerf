@@ -11,15 +11,13 @@ import org.javatuples.Quintet;
 import org.javatuples.Pair;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         final Pcap pcap = Pcap.openStream("/home/valerio/tcpdump.pcap");
         HashMap<Quintet<Protocol, String, String, Integer, Integer>, Flow> flows = new HashMap<>();
-        HashSet<Pair<String, Integer>> servers = new HashSet<>();
+        Set<Pair<String, Integer>> servers = Collections.synchronizedSet(new HashSet<>());
         servers.add(new Pair<>("23.32.11.57", 443));
 
         pcap.loop(new MECPerfPacketHandler(servers, flows));
