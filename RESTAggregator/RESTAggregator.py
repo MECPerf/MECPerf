@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 from flask_mysqldb import MySQL
 
 from request_parser import parse_request
@@ -89,7 +89,13 @@ def create_app():
         if len(queryRes) != 0:
             result += "["
             for row in queryRes:
-                result += str(row).replace("('", "").replace("',)", "").replace("}", "},")
+                print str(row)
+                print json
+                
+                if json== 'False':
+                    result += str(row) + " <br>"
+                else:
+                    result += str(row[0]).replace("}", "},")
 
             result = result[:-1] + "]"
         else:
@@ -101,26 +107,35 @@ def create_app():
 
 
     ############################################ POST QUERIES #########################################
-    @app.route('/post_measures/insert_<measure_type>', methods=['POST'])
-    def post_measures(measure_type):
+    @app.route('/post_<test_type>_measures/insert_<measure_type>', methods=['POST'])
+    def post_measures(test_type, measure_type):
         body = str(request.data)
+        #print "req"
+        #print request
+        #print "req data"
+        #print len( request.data)
+        #print request.data
+
         request_body_list = json.loads(body)
-        test = Test.Test(request_body_list)
+        test = Test.Test(request_body_list, test_type)
 
         if measure_type == "bandwidth_measure":
-            update_bandwidth(test, mysql)
-        if measure_type == "latency_measure":
-            update_latencies(test, mysql)
+            return_code = update_bandwidth(test, mysql)
+        elif measure_type == "latency_measure":
+            return_code = update_latencies(test, mysql)   
 
-        return str(measure_type) + str(request_body_list)
-
+        print return_code
+        return "", return_code
     
 
 
   
     ##################################################### MOBILE QUERIES ################################
-    @app.route('/get_data_list', methods=['GET'])
-    def get_data_list():
+    @app.route('/<type>/get_data_list', methods=['GET'])
+    def get_data_list(type):
+        if type != "get_measures" and type != "mobile":
+            return "unrecognized request"
+            
         result = ""
 
         query = "SELECT JSON_OBJECT('Timestamp', DATE_FORMAT(Timestamp, '%Y-%m-%d %T'), "
@@ -130,17 +145,17 @@ def create_app():
         query += "'SenderIdentity', SenderIdentity, "
         query += "'ReceiverIdentity', ReceiverIdentity "
         query += " ) FROM MECPerf.Test "
-        query += " GROUP BY ID, Timestamp, Command, Keyword "
         query += " ORDER BY (Timestamp) DESC "
-
 
         cur = mysql.connection.cursor()
         cur.execute(query)
         queryRes = cur.fetchall()
         cur.close()
+    
 
         i = 0
         for row in queryRes:
+            print row
             if i == 0:
                 result += "["
                 i += 1
@@ -150,6 +165,7 @@ def create_app():
             result += str(row[0].encode('utf8'))
         result += "]"
         return result
+
 
 
     @app.route('/get_RTT_data', methods=['GET'])
@@ -194,6 +210,7 @@ def create_app():
         return result
 
 
+
     @app.route('/get_bandwidth_data', methods=['GET'])
     def get_bandwidth_data():
         result = ""
@@ -233,6 +250,7 @@ def create_app():
         result += "]"
         
         return result
+
 
 
     @app.route('/get_AVGbandwidth_data', methods=['GET'])
@@ -277,7 +295,6 @@ def create_app():
 
 
     return app
-
 
 
 

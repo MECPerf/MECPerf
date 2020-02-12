@@ -2,7 +2,7 @@ def parse_request(request):
         try:
             compact = str(request.args.get('compact'))
         except KeyError:
-            compact = "False"
+            compact = False
 
         try:
             keyword = str(request.args.get('keyword'))
@@ -17,7 +17,7 @@ def parse_request(request):
         try:
             json = str(request.args.get('json'))
         except KeyError:
-            json = "False"
+            json = False
 
         try:
             fromInterval = str(request.args.get('from'))
