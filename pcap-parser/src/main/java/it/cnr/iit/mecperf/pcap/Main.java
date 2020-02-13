@@ -6,6 +6,7 @@ import org.javatuples.Pair;
 import org.tinylog.Logger;
 
 import java.io.IOException;
+import java.nio.file.WatchKey;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,11 +24,9 @@ public class Main {
         servers.add(new Pair<>("23.32.11.57", 443));
         Parser parser = new Parser(toParse, toSend, servers);
         Sender sender = new Sender(toSend);
+        Watcher watcher = new Watcher("/home/valerio/test/", toParse);
         parser.start();
         sender.start();
-        Logger.info("Insert pcap file into toParse queue");
-        toParse.put("/home/valerio/tcpdump.pcap");
-        Logger.info("Inserted");
-        toParse.put("END");
+        watcher.start();
     }
 }
