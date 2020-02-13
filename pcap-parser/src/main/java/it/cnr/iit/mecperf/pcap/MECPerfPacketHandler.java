@@ -77,7 +77,7 @@ public class MECPerfPacketHandler implements PacketHandler {
                     flow.insertBytes(arrivalTime, payloadLength, dir);
                     flow.insertExpectedAck(seqNum, arrivalTime, dir);
                     if (ackValid) {
-                        flows.get(fiveTuple).computeRtt(ackNum, arrivalTime, dir);
+                        flow.computeRtt(ackNum, arrivalTime, dir);
                     }
                     flows.put(fiveTuple, flow);
                 }
