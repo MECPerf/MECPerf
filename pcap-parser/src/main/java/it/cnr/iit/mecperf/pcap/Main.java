@@ -59,7 +59,6 @@ public class Main {
 
         BlockingQueue<String> toParse = new LinkedBlockingQueue<>();
         BlockingQueue<String> toSend = new LinkedBlockingQueue<>();
-        // HashMap<Quintet<Protocol, String, String, Integer, Integer>, Flow> flows = new HashMap<>();
         Set<Pair<String, Integer>> servers = parseServers(serverValues);
         Parser parser = new Parser(toParse, toSend, servers);
         Sender sender = new Sender(toSend);
