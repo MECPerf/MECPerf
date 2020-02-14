@@ -1,8 +1,6 @@
 package it.cnr.iit.mecperf.pcap;
 
-import io.pkts.protocol.Protocol;
 import org.apache.commons.cli.*;
-import org.javatuples.Quintet;
 import org.javatuples.Pair;
 import org.tinylog.Logger;
 
@@ -40,6 +38,9 @@ public class Main {
         Option server = new Option("s", "server", true, "Server to be monitored. Syntax is <ip>:<port>");
         server.isRequired();
         options.addOption(server);
+        Option aggregator = new Option("a", "aggregator", true, "Aggregator address. Syntax is <ip>");
+        aggregator.isRequired();
+        options.addOption(aggregator);
 
         CommandLineParser clParser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -55,13 +56,13 @@ public class Main {
 
         String watchDirValue = cmd.getOptionValue("directory");
         String[] serverValues = cmd.getOptionValues("server");
-        Logger.info("Servers are {}", Arrays.asList(serverValues));
+        String aggregatorAddress = cmd.getOptionValue("aggregator");
 
         BlockingQueue<String> toParse = new LinkedBlockingQueue<>();
-        BlockingQueue<String> toSend = new LinkedBlockingQueue<>();
+        BlockingQueue<Pair<Integer, MeasurementResult>> toSend = new LinkedBlockingQueue<>();
         Set<Pair<String, Integer>> servers = parseServers(serverValues);
         Parser parser = new Parser(toParse, toSend, servers);
-        Sender sender = new Sender(toSend);
+        Sender sender = new Sender(toSend, aggregatorAddress);
         Watcher watcher = new Watcher(watchDirValue, toParse);
         parser.start();
         sender.start();
