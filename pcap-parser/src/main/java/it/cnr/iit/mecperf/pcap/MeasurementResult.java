@@ -9,7 +9,7 @@ public class MeasurementResult {
     private int server_port;
     private String service;
     private String protocol;
-    private String mode = "self";
+    private String mode = "mim";
     private LinkedHashMap<Long, Long> uplink;
     private LinkedHashMap<Long, Long> downlink;
 
