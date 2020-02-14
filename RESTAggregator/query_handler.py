@@ -121,7 +121,7 @@ def read_last_test_number(mysql):
     
     
 
-def insert_test_table(cur, actual_test_number, test_type, test_info):
+def insert_test_table(cur, actual_test_number, test_type, test_info, direction = "", measure_type = ""):
     insert_Test_table_query_active = "INSERT INTO MECPerf.Test (TestNumber,Timestamp, Direction, Command, " +\
                                                         " SenderIdentity, ReceiverIdentity, " +\
                                                         " SenderIPv4Address, ReceiverIPv4Address, Keyword, " +\
@@ -129,8 +129,8 @@ def insert_test_table(cur, actual_test_number, test_type, test_info):
                                                         " %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     insert_Test_table_query_passive = "INSERT INTO MECPerf.PassiveTest (Timestamp, ClientIP, ClientPort, "+\
                                                         "ServerIP, ServerPort, Keyword, Direction, "+\
-                                                        "Protocol, Mode) VALUES (CURRENT_TIMESTAMP, "+\
-                                                        " %s, %s, %s, %s, %s, %s, %s, %s)"
+                                                        "Protocol, Mode, Type) VALUES (CURRENT_TIMESTAMP, "+\
+                                                        " %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
     if test_type == "active":
         cur.execute(insert_Test_table_query_active, [actual_test_number, test_info['Direction'], 
@@ -138,16 +138,16 @@ def insert_test_table(cur, actual_test_number, test_type, test_info):
                     test_info['SenderIPv4Address'], test_info['ReceiverIPv4Address'], test_info['Keyword'], 
                     test_info['PackSize'], test_info['NumPack']])
     if test_type == "passive":
-        cur.execute(insert_Test_table_query_passive, [ test_info['ClientIP'], test_info['ClientPort'], 
-                    test_info['ServerIP'], test_info['ServerPort'], test_info['Keyword'], 
-                    test_info['Direction'], test_info['Protocol'], test_info['Mode']])
+        cur.execute(insert_Test_table_query_passive, [ test_info['client_ip'], test_info['client_port'], 
+                    test_info['server_ip'], test_info['server_port'], test_info['service'], 
+                    direction, test_info['protocol'], test_info['mode'], measure_type])
 
 
 
 
 def insert_bandwidth_table(cur, rowID, test_type, test_values):
     insert_BandwidthMeasure_table_active = "INSERT INTO MECPerf.BandwidthMeasure VALUES (%s, %s, %s, %s)"
-    insert_BandwidthMeasure_table_passive = "INSERT INTO MECPerf.PassiveBandwidthMeasure VALUES (%s, %s, %s, %s)"
+    insert_BandwidthMeasure_table_passive = "INSERT INTO MECPerf.PassiveBandwidthMeasure (ID, Timestamp, bytes) VALUES (%s, %s, %s)"
 
     if test_type == "active":
         for i in range(0, len(test_values)):
@@ -156,11 +156,9 @@ def insert_bandwidth_table(cur, rowID, test_type, test_values):
             cur.execute(insert_BandwidthMeasure_table_active, args)
 
     if test_type == "passive":
-        for i in range(0, len(test_values)):
-            args = [rowID, test_values[i]['Timestamp'], long(test_values[i]['nanoTimes']), long(test_values[i]['Bytes'])]
-           
+        for timestamp in test_values:
+            args = [rowID, long(timestamp), int(test_values[timestamp])]           
             cur.execute(insert_BandwidthMeasure_table_passive, args)
-
 
 
 def insert_latency_table(cur, rowID, test_type, test_values):
@@ -173,8 +171,8 @@ def insert_latency_table(cur, rowID, test_type, test_values):
             cur.execute(insert_latency_query_active, args)
 
     if test_type == "passive":
-        for i in range(0, len(test_values)):
-            args = [rowID, test_values[i]['Timestamp'],  long(test_values[i]['latency'])]
+        for timestamp in test_values:
+            args = [rowID, long(timestamp),  long(test_values[timestamp])]
             cur.execute(insert_latency_query_passive, args)
 
 
@@ -277,9 +275,12 @@ def update_passive_bandwidth(test, mysql):
     try:
         cur = mysql.connection.cursor()
 
-        insert_test_table(cur, -1, test.type, test.info)
-        insert_bandwidth_table(cur, cur.lastrowid, test.type, test.values)
-
+        if len(test.uplink) != 0:
+            insert_test_table(cur, -1, test.type, test.info, 'uplink', 'bandwidth')
+            insert_bandwidth_table(cur, cur.lastrowid, test.type, test.uplink)
+        if len(test.downlink) != 0:
+            insert_test_table(cur, -1, test.type, test.info, 'downlink', 'bandwidth')
+            insert_bandwidth_table(cur, cur.lastrowid, test.type, test.downlink)
 
         mysql.connection.commit()
         mysql.connection.autocommit=True
@@ -302,9 +303,13 @@ def update_passive_latencies(test, mysql):
     try:
         cur = mysql.connection.cursor()
 
-        #store first segment measures
-        insert_test_table(cur, -1, test.type, test.info)
-        insert_latency_table(cur, cur.lastrowid, test.type, test.values)
+        if len(test.uplink) != 0:
+            insert_test_table(cur, -1, test.type, test.info, 'uplink', 'latency')
+            insert_latency_table(cur, cur.lastrowid, test.type, test.uplink)
+        if len(test.downlink) != 0:
+            insert_test_table(cur, -1, test.type, test.info, 'downlink', 'latency')
+            insert_latency_table(cur, cur.lastrowid, test.type, test.downlink)
+
 
         mysql.connection.commit()
         mysql.connection.autocommit=True

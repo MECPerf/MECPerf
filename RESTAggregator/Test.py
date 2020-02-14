@@ -1,5 +1,6 @@
 class Test:
     def __init__(self, request, test_type):
+        print request
         self.type = test_type
 
         if self.type == "active":
@@ -13,6 +14,21 @@ class Test:
                 self.test_values_second_segment = request['latency_values_second_segment']
         
         if self.type == "passive":
-            self.info = request['test_info']
-            self.values = request['values']
-     
+            self.info = request
+            try:
+                self.downlink = request['downlink']
+                del self.info['downlink']
+            except KeyError:
+                self.downlink = []
+
+            try:
+                self.uplink = request['uplink'] 
+                del self.info['uplink']
+            except KeyError:
+                self.uplink = []
+
+
+        print request
+            
+            
+           
