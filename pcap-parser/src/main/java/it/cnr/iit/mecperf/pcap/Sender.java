@@ -1,7 +1,6 @@
 package it.cnr.iit.mecperf.pcap;
 
 import com.google.gson.Gson;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -50,12 +49,16 @@ public class Sender extends Thread {
                 Gson gson = new Gson();
                 String reqBody = gson.toJson(toSendMeasurement.getValue1());
                 Logger.info("Sending to {} body {}", url, reqBody);
-                // TODO complete with REST API
-//                HttpPost httpPost = new HttpPost(url);
-//                StringEntity requestEntity = new StringEntity(reqBody, ContentType.APPLICATION_JSON);
-//                httpPost.setEntity(requestEntity);
-//                CloseableHttpResponse httpResponse = httpClient.execute(httpPost);
-            } catch (InterruptedException e) {
+                HttpPost httpPost = new HttpPost(url);
+                StringEntity requestEntity = new StringEntity(reqBody, ContentType.APPLICATION_JSON);
+                httpPost.setEntity(requestEntity);
+                CloseableHttpResponse httpResponse = httpClient.execute(httpPost);
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    Logger.info("Measurement sent with success");
+                } else {
+                    Logger.info("Error in sending measurements: {}", httpResponse.getStatusLine().getStatusCode());
+                }
+            } catch (InterruptedException | IOException e) {
                 Logger.error(e);
             }
         }
