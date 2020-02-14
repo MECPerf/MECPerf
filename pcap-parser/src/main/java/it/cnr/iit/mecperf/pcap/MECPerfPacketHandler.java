@@ -6,6 +6,7 @@ import io.pkts.packet.*;
 import io.pkts.protocol.Protocol;
 import org.javatuples.Pair;
 import org.javatuples.Quintet;
+import org.tinylog.Logger;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -19,6 +20,9 @@ public class MECPerfPacketHandler implements PacketHandler {
                                 HashMap<Quintet<Protocol, String, String, Integer, Integer>, Flow> flows) {
         this.servers = servers;
         this.flows = flows;
+        for (Pair<String, Integer> server : this.servers) {
+            Logger.debug("Looking for server {}:{}", server.getValue0(), server.getValue1());
+        }
     }
 
     private int getDirection(TransportPacket packet) {
@@ -39,10 +43,11 @@ public class MECPerfPacketHandler implements PacketHandler {
         int srcPort = packet.getSourcePort();
         String dstIp = packet.getDestinationIP();
         int dstPort = packet.getDestinationPort();
+        Protocol protocol = packet.getProtocol();
         if (dir == Flow.DIR_DOWNLINK) {
-            return new Quintet<>(Protocol.TCP, dstIp, srcIp, dstPort, srcPort);
+            return new Quintet<>(protocol, dstIp, srcIp, dstPort, srcPort);
         } else if (dir == Flow.DIR_UPLINK) {
-            return new Quintet<>(Protocol.TCP, srcIp, dstIp, srcPort, dstPort);
+            return new Quintet<>(protocol, srcIp, dstIp, srcPort, dstPort);
         }
         return null;
     }
