@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 
 public class Flow {
     Quintet<Protocol, String, String, Integer, Integer> fiveTuple;
+    String service;
     LinkedHashMap<Long, Long> uplinkBytes;
     LinkedHashMap<Long, Long> downlinkBytes;
     LinkedHashMap<Long, Long> uplinkExpectedAcks;
@@ -20,8 +21,9 @@ public class Flow {
     public static final int TYPE_BANDWIDTH = 0;
     public static final int TYPE_RTT = 1;
 
-    public Flow(Quintet<Protocol, String, String, Integer, Integer> fiveTuple) {
+    public Flow(Quintet<Protocol, String, String, Integer, Integer> fiveTuple, String service) {
         this.fiveTuple = fiveTuple;
+        this.service = service;
         this.uplinkBytes = new LinkedHashMap<>();
         this.downlinkBytes = new LinkedHashMap<>();
         this.uplinkExpectedAcks = new LinkedHashMap<>();
@@ -104,10 +106,10 @@ public class Flow {
             protocol = UDP;
         if (type == TYPE_BANDWIDTH)
             return new MeasurementResult(fiveTuple.getValue1(), fiveTuple.getValue3(), fiveTuple.getValue2(),
-                    fiveTuple.getValue4(), "test", protocol, uplinkBytes, downlinkBytes);
+                    fiveTuple.getValue4(), service, protocol, uplinkBytes, downlinkBytes);
         if (type == TYPE_RTT && fiveTuple.getValue0() == Protocol.TCP)
             return new MeasurementResult(fiveTuple.getValue1(), fiveTuple.getValue3(), fiveTuple.getValue2(),
-                    fiveTuple.getValue4(), "test", protocol, uplinkRtts, downlinkRtts);
+                    fiveTuple.getValue4(), service, protocol, uplinkRtts, downlinkRtts);
         return null;
     }
 }

@@ -10,21 +10,22 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Main {
-    public static Set<Pair<String, Integer>> parseServers(String[] serversStrings) {
-        Set<Pair<String, Integer>> servers = Collections.synchronizedSet(new HashSet<>());
+    public static Map<Pair<String, Integer>, String> parseServers(String[] serversStrings) {
+        Map<Pair<String, Integer>, String> servers = Collections.synchronizedMap(new HashMap<>());
         for (String s : serversStrings) {
-            String[] ipPort = s.split(":");
-            if (ipPort.length != 2)
+            String[] ipPortService = s.split(":");
+            if (ipPortService.length != 3)
                 continue;
-            String ip = ipPort[0];
+            String ip = ipPortService[0];
             int port;
             try {
-                port = Integer.parseInt(ipPort[1]);
+                port = Integer.parseInt(ipPortService[1]);
             } catch (NumberFormatException e) {
                 Logger.error(e);
                 continue;
             }
-            servers.add(new Pair<String, Integer>(ip, port));
+            String service = ipPortService[2];
+            servers.put(new Pair<>(ip, port), service);
         }
         return servers;
     }
@@ -35,10 +36,10 @@ public class Main {
         Option watchDir = new Option("d", "directory", true, "Directory to be watched for pcap files");
         watchDir.isRequired();
         options.addOption(watchDir);
-        Option server = new Option("s", "server", true, "Server to be monitored. Syntax is <ip>:<port>");
+        Option server = new Option("s", "server", true, "Server to be monitored. Syntax is <ip>:<port>:<service_name>");
         server.isRequired();
         options.addOption(server);
-        Option aggregator = new Option("a", "aggregator", true, "Aggregator address. Syntax is <ip>");
+        Option aggregator = new Option("a", "aggregator", true, "Aggregator address. Syntax is http://<ip>:<port>");
         aggregator.isRequired();
         options.addOption(aggregator);
 
@@ -60,7 +61,7 @@ public class Main {
 
         BlockingQueue<String> toParse = new LinkedBlockingQueue<>();
         BlockingQueue<Pair<Integer, MeasurementResult>> toSend = new LinkedBlockingQueue<>();
-        Set<Pair<String, Integer>> servers = parseServers(serverValues);
+        Map<Pair<String, Integer>, String> servers = parseServers(serverValues);
         Parser parser = new Parser(toParse, toSend, servers);
         Sender sender = new Sender(toSend, aggregatorAddress);
         Watcher watcher = new Watcher(watchDirValue, toParse);

@@ -1,6 +1,5 @@
 package it.cnr.iit.mecperf.pcap;
 
-import com.google.gson.Gson;
 import io.pkts.Pcap;
 import io.pkts.protocol.Protocol;
 import org.javatuples.Pair;
@@ -9,7 +8,7 @@ import org.tinylog.Logger;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public class Parser extends Thread {
@@ -18,7 +17,7 @@ public class Parser extends Thread {
     private MECPerfPacketHandler handler;
     private HashMap<Quintet<Protocol, String, String, Integer, Integer>, Flow> flows;
 
-    public Parser(BlockingQueue<String> toParse, BlockingQueue<Pair<Integer, MeasurementResult>> toSend, Set<Pair<String, Integer>> servers) {
+    public Parser(BlockingQueue<String> toParse, BlockingQueue<Pair<Integer, MeasurementResult>> toSend, Map<Pair<String, Integer>, String> servers) {
         super();
         this.toParse = toParse;
         this.toSend = toSend;
@@ -39,7 +38,6 @@ public class Parser extends Thread {
                 }
                 Pcap pcap = Pcap.openStream(fileName);
                 pcap.loop(handler);
-                Gson gson = new Gson();
                 for (Quintet<Protocol, String, String, Integer, Integer> fiveTuple : flows.keySet()) {
                     MeasurementResult bw = flows.get(fiveTuple).toMeasurementResult(Flow.TYPE_BANDWIDTH);
                     MeasurementResult rtt = flows.get(fiveTuple).toMeasurementResult(Flow.TYPE_RTT);
