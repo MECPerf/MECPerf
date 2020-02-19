@@ -25,7 +25,7 @@ def parse_reply(jsonData, clientT_observerT, clientT_observerR, observerT_remote
         timestamp = line["Timestamp"]
         timestamp_d = datetime.datetime.strptime(timestamp.replace(".000000", ""), '%Y-%m-%d %H:%M:%S')
 
-        bandwidthbps = float(line["Bandwidth [Mbit/s]"])
+        bandwidthbps = float(line["Bandwidth [bit/s]"])
         bandwidthKbps = bandwidthbps / 1024
         bandwidthMbps = bandwidthKbps / 1024
 

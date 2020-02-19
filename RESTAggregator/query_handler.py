@@ -31,7 +31,7 @@ def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, 
         query += " 'Keyword', Keyword, "
         query += " 'PackSize', PackSize, " 
         query += " 'NumPack', NumPack, "
-        query += " 'Bandwidth [Mbit/s]',  (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(1.0 * nanoTimes / 1000000000))) "
+        query += " 'Bandwidth [bit/s]',  (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(1.0 * nanoTimes / 1000000000))) "
         query += " ) "
     else:
         json = str(False)
