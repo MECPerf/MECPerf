@@ -109,8 +109,15 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>libs/</classpathPrefix>
+                            <mainClass>it.cnr.iit.mecperf.pcap.Main</mainClass>
+                        </manifest>
+                    </archive>
                     <descriptorRefs>
-                        <descriptorRef>jar</descriptorRef>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                 </configuration>
             </plugin>
