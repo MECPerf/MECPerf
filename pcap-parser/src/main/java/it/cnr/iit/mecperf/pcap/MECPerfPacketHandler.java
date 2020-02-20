@@ -32,29 +32,12 @@ public class MECPerfPacketHandler implements PacketHandler {
         String dstIp = packet.getDestinationIP();
         int dstPort = packet.getDestinationPort();
         Protocol protocol = packet.getProtocol();
-        int dir;
-        Quintet<Protocol, String, String, Integer, Integer> fiveTuple;
-        String service;
         if (servers.containsKey(new Pair<>(srcIp, srcPort)))
             return new Triplet<>(Flow.DIR_DOWNLINK, new Quintet<>(protocol, dstIp, srcIp, dstPort, srcPort),
                     servers.get(new Pair<>(srcIp, srcPort)));
         if (servers.containsKey(new Pair<>(dstIp, dstPort)))
             return new Triplet<>(Flow.DIR_UPLINK, new Quintet<>(protocol, srcIp, dstIp, srcPort, dstPort),
                     servers.get(new Pair<>(dstIp, dstPort)));
-        return null;
-    }
-
-    private Quintet<Protocol, String, String, Integer, Integer> getFiveTuple(TransportPacket packet, int dir) {
-        String srcIp = packet.getSourceIP();
-        int srcPort = packet.getSourcePort();
-        String dstIp = packet.getDestinationIP();
-        int dstPort = packet.getDestinationPort();
-        Protocol protocol = packet.getProtocol();
-        if (dir == Flow.DIR_DOWNLINK) {
-            return new Quintet<>(protocol, dstIp, srcIp, dstPort, srcPort);
-        } else if (dir == Flow.DIR_UPLINK) {
-            return new Quintet<>(protocol, srcIp, dstIp, srcPort, dstPort);
-        }
         return null;
     }
 
@@ -70,6 +53,7 @@ public class MECPerfPacketHandler implements PacketHandler {
             TCPPacket tcpPacket = (TCPPacket) packet.getPacket(Protocol.TCP);
             Triplet<Integer, Quintet<Protocol, String, String, Integer, Integer>, String> info = getInfo(tcpPacket);
             if (info != null) {
+                Logger.info("Packet info is not null: dir {} five-tuple {} service {}", info.getValue0(), info.getValue1(), info.getValue2());
                 int dir = info.getValue0();
                 Quintet<Protocol, String, String, Integer, Integer> fiveTuple = info.getValue1();
                 int payloadLength = getPayloadLength(tcpPacket);
@@ -77,6 +61,7 @@ public class MECPerfPacketHandler implements PacketHandler {
                 long ackNum = tcpPacket.getAcknowledgementNumber();
                 boolean ackValid = tcpPacket.isACK();
                 if (flows.containsKey(fiveTuple)) {
+                    Logger.info("Five tuple flow exists: {}", fiveTuple);
                     flows.get(fiveTuple).insertBytes(arrivalTime, payloadLength, dir);
                     if (payloadLength != 0) {
                         flows.get(fiveTuple).insertExpectedAck((seqNum + payloadLength), arrivalTime, dir);
@@ -85,6 +70,7 @@ public class MECPerfPacketHandler implements PacketHandler {
                         flows.get(fiveTuple).computeRtt(ackNum, arrivalTime, dir);
                     }
                 } else {
+                    Logger.info("Create five tuple flow: {}", fiveTuple);
                     Flow flow = new Flow(fiveTuple, info.getValue2());
                     flow.insertBytes(arrivalTime, payloadLength, dir);
                     flow.insertExpectedAck(seqNum, arrivalTime, dir);
@@ -98,12 +84,15 @@ public class MECPerfPacketHandler implements PacketHandler {
             UDPPacket udpPacket = (UDPPacket) packet.getPacket(Protocol.UDP);
             Triplet<Integer, Quintet<Protocol, String, String, Integer, Integer>, String> info = getInfo(udpPacket);
             if (info != null) {
+                Logger.info("Packet info is not null");
                 int dir = info.getValue0();
                 Quintet<Protocol, String, String, Integer, Integer> fiveTuple = info.getValue1();
                 int payloadLength = getPayloadLength(udpPacket);
                 if (flows.containsKey(fiveTuple)) {
+                    Logger.info("Five tuple flow exists: {}", fiveTuple);
                     flows.get(fiveTuple).insertBytes(arrivalTime, payloadLength, dir);
                 } else {
+                    Logger.info("Create five tuple flow: {}", fiveTuple);
                     Flow flow = new Flow(fiveTuple, info.getValue2());
                     flow.insertBytes(arrivalTime, payloadLength, dir);
                     flows.put(fiveTuple, flow);
