@@ -6,7 +6,7 @@ import errno
 
 
 
-def checkplot(directory):
+def checkdir(directory):
     try:
         os.makedirs(directory)
     except OSError as e:
@@ -121,4 +121,19 @@ def computeyvalues_groupedbyweekdayandintervals(points, day, start_intervals, st
         ret.append(np.mean(y_values[str(start_intervals[i]) + "-" + str(stop_intervals[i])]))
 
     #print ret
+    return ret
+
+
+def compute_bandwidthhistogram(segment, noise):
+    ret = []
+    for value in segment:
+        
+        if value.noise != noise:
+            #print str(value.y) + " - " + str(value.y) + " CONTINUE"
+            continue
+
+        #print value.y
+        ret.append(value.y)
+
+
     return ret

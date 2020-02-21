@@ -3,9 +3,10 @@ import requests
 import ConfigParser
 import json
 import colors
+import copy
 
 from Measure import Measure
-from bandwidth_plot import simplebandwidth_lineplot, bandwidth_grouped
+from bandwidth_plot import simplebandwidth_lineplot, bandwidth_grouped, bandwidth_raw
 
 
 
@@ -69,6 +70,8 @@ def send_request(request_params, url):
     print colors.GREEN + "[GET] " + str(url) + " with params " + str(request_params) +\
           colors.RESET
 
+    print colors.FAIL + str (request_params) + colors.RESET
+
     #print r.text
     if  len(r.text) == 1 or "0 rows" in r.text:
         print "empty reply"
@@ -81,7 +84,8 @@ def send_request(request_params, url):
 
 
 
-def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, config_parser):  
+def create_request (PARAMS, BASE_URL, config_parser, starting_time_intervals_list,
+                    duration_m, dates_list):
     clientT_observerT = []
     clientT_observerR = []
     observerT_remoteR = []
@@ -92,9 +96,6 @@ def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, c
     dates_list = dates.split(",")
     starting_time_intervals_list = starting_time_intervals.split(",")
 
-    PARAMS=BASE_PARAMS
-    PARAMS["command"]= command
-    PARAMS["direction"] = direction
 
     for day in dates_list:
         for i in range (0, len(starting_time_intervals_list)):
@@ -111,9 +112,44 @@ def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, c
             if jsonData != None:
                 labels = parse_reply(jsonData, clientT_observerT, clientT_observerR, observerT_remoteR)
 
-    title = str(PARAMS["command"]) + " - " + PARAMS["direction"]
+    return clientT_observerT, clientT_observerR, observerT_remoteR, labels
+    
 
+def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, config_parser):  
+    PARAMS = copy.deepcopy(BASE_PARAMS)
+    PARAMS["command"] = command
+    PARAMS["direction"] = direction
+
+    print BASE_PARAMS
+
+    starting_time_intervals = config_parser.get("experiment_params", "starting_time_intervals")
+    duration_m = config_parser.get("experiment_params", "duration_m")
+    dates = config_parser.get("experiment_params", "dates")
+    dates_list = dates.split(",")
+    starting_time_intervals_list = starting_time_intervals.split(",")
+
+    '''
+    clientT_observerT, clientT_observerR, observerT_remoteR, labels = create_request (PARAMS, BASE_URL, 
+                                                                                config_parser, 
+                                                                                starting_time_intervals_list, 
+                                                                                duration_m, dates_list)
+    '''
+    title = str(PARAMS["command"]) + " - " + PARAMS["direction"]
+    '''
 
     simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_remoteR, title, labels)
     bandwidth_grouped(starting_time_intervals_list, duration_m, clientT_observerT, clientT_observerR, 
                       observerT_remoteR, title, labels, dates_list)
+
+
+    '''
+    if PARAMS["command"] == "UDPBandwidth":
+        PARAMS["group_by"] = "false"
+
+        clientT_observerT_rawdata, clientT_observerR_rawdata, observerT_remoteR_rawdata, labels = create_request (PARAMS, BASE_URL, 
+                                                                            config_parser, starting_time_intervals_list, duration_m,
+                                                                            dates_list)
+
+        bandwidth_raw(clientT_observerT_rawdata, clientT_observerR_rawdata, observerT_remoteR_rawdata, 
+                        title)
+            

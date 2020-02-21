@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 import matplotlib.text as txt
 import numpy as np
 import random
@@ -6,8 +7,8 @@ import colors
 
 from datetime import time, datetime, timedelta, date
 from Measure import Measure
-from bandwidth_plot_utils import checkplot, plotline_simplebandwidth, computeBandwidth_groupedbyday
-from bandwidth_plot_utils import computeyvalues_groupedbyweekdayandintervals
+from bandwidth_plot_utils import checkdir, plotline_simplebandwidth, computeBandwidth_groupedbyday
+from bandwidth_plot_utils import computeyvalues_groupedbyweekdayandintervals, compute_bandwidthhistogram
 
 
 
@@ -29,7 +30,7 @@ def simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_rem
     plt.gcf().autofmt_xdate()
 
 
-    checkplot("bandwidth/simple/")
+    checkdir("bandwidth/simple/")
     plt.savefig("bandwidth/simple/" + title + ".png")
 
     plt.close()
@@ -149,9 +150,9 @@ def bandwidth_groupedbyday(clientT_observerT, clientT_observerR, observerT_remot
     box = ax.get_position()
     # Shrink current axis's height by 10% on the bottom
     ax.set_position([box.x0, box.y0 + box.height * 0.1,  box.width, box.height * 0.9])
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), fancybox=True, shadow=True, ncol = 3, facecolor = "white")   
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), fancybox=True, shadow=True, ncol = 1, facecolor = "white")   
 
-    checkplot("bandwidth/grouped_barplot/by_day/")
+    checkdir("bandwidth/grouped_barplot/by_day/")
     plt.savefig("bandwidth/grouped_barplot/by_day/" + title + ".png", dpi = 500)
     plt.close()
 
@@ -193,7 +194,73 @@ def bandwidth_groupedbyweekdayandintervals(start_time, stop_time, segment, title
 
     plt.legend()
 
-    checkplot("bandwidth/grouped_barplot/by_week_day_and_intervals/")
+    checkdir("bandwidth/grouped_barplot/by_week_day_and_intervals/")
     plt.savefig("bandwidth/grouped_barplot/by_week_day_and_intervals/" + title + ".png", dpi = 500)
     
     plt.close()
+
+
+
+def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR, 
+                      title):
+
+    for i in range (0, 51, 10):
+        bandwidth_histogram(clientT_observerT, str(i) + "M",  
+                            "client-observer(nitos)" + title + str(i) + "M Noise", 
+                            "client -> Observer(Nitos)", colors.OBSERVER_CLIENT_TESTBED)
+        bandwidth_histogram(clientT_observerR, str(i) + "M",  
+                            "client-observer(unipi)" + title + str(i) + "M Noise", 
+                            "client -> Observer(Unipi))", colors.OBSERVER_CLIENT_UNIPI)
+        bandwidth_histogram(observerT_remoteR, str(i) + "M",  
+                            "observer-remote" + title + str(i) + "M Noise", 
+                            "Observer -> Remote", colors.NITOS_REMOTE)
+
+
+
+
+def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_number = 1000, maxbin_number = 1001, step = 10):
+    assert minbin_number <= maxbin_number
+    assert step > 0
+
+    basedir = "bandwidth/bandwidth_histogram/"
+    if "TCPBandwidth" in title:
+        basedir = basedir + "TCPBandwidth"
+    elif "UDPBandwidth" in title:
+        basedir = basedir + "UDPBandwidth"
+    else:
+        exit(-1)
+
+    if "Upstream" in title:
+        basedir = basedir + "Upstream/"
+    elif "Downstream" in title:
+        basedir = basedir + "Downstream/"
+    else:
+        exit(-1)
+
+    x = compute_bandwidthhistogram(segment, noise)
+    maxx = max (max(x), 100)
+    ##maxx = 500
+    plt.xlim(0, maxx)
+
+    for i in range (minbin_number, maxbin_number, step):
+        plt.ylabel("Number of occurrences")
+        plt.xlabel("Mbps \nNumber of bins = " + str(i))
+        plt.title(title)
+
+        binsize = maxx/i
+        binslist = []
+        p = binsize/2
+        while (p < maxx):
+            binslist.append(p)
+            p = p + binsize
+
+    
+        print "plotting"  + basedir + title + "(" + str(i) + "bins).png"
+        print "\t\tlen(x)"  + str(len(x))
+        
+        plt.hist(x, bins=binslist, color = histcolor)
+        checkdir(basedir)
+        plt.savefig(basedir + title + "(" + str(i) + "bins).png", dpi = 500)
+        
+        plt.close()
+    

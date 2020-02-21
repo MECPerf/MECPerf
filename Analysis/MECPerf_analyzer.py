@@ -31,6 +31,7 @@ if __name__ ==  "__main__":
     print "\n\n"
         
     #active uplink/downlink bandwidth measures
+    print BASE_PARAMS
     analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, 'Upstream', "TCPBandwidth", config_parser)
     analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, 'Downstream', "TCPBandwidth", config_parser)
 
