@@ -13,7 +13,7 @@ INTERNAL_SERVER_ERROR = 500
 NOT_IMPLEMENTED = 501
 OK = 200
 
-def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction):
+def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by):
     params = []
     query = "SELECT "
     
@@ -31,7 +31,10 @@ def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, 
         query += " 'Keyword', Keyword, "
         query += " 'PackSize', PackSize, " 
         query += " 'NumPack', NumPack, "
-        query += " 'Bandwidth [bit/s]',  (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(1.0 * nanoTimes / 1000000000))) "
+        if group_by ==True:
+            query += " 'Bandwidth [bit/s]',  (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(1.0 * nanoTimes / 1000000000))) "
+        else:
+            query += " 'Bandwidth [bit/s]',  (1.0 * (kBytes * 1024 * 8)/(1.0 * 1.0 * nanoTimes / 1000000000)) "
         query += " ) "
     else:
         json = str(False)
@@ -99,7 +102,8 @@ def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, 
         query += " Direction = %s"
         params.append(direction)
 
-    query += " GROUP BY Test.ID"
+    if group_by == True:
+        query += " GROUP BY Test.ID"
 
 
 

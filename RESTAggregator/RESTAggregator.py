@@ -62,8 +62,8 @@ def create_app():
     def getBandwidth():
         result = ""
 
-        compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction = parse_request(request)
-        json, query, params = build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction)
+        compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, group_by = parse_request(request)
+        json, query, params = build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by)
 
         cur = mysql.connection.cursor()
         cur.execute(query, params)
@@ -77,15 +77,16 @@ def create_app():
         print "keyword LIKE " + str(likeKeyword)
         print "fromInterval " + str(fromInterval)
         print "toInterval " + str(toInterval)
+        print "group_by " + str(group_by)
 
         if (compact != "True"):
             result += "<b>" + str(query) + "</b><br><br>"
-            result += "json output = " + json + "<br>"
+            result += "json " + json + "<br>"
             result += "keyword \"" + keyword + "\"<br>"
-            result += "keyword LIKE " + likeKeyword + "<br>"
+            result += "likeKeyword " + likeKeyword + "<br>"
             result += "fromInterval \"" + fromInterval + "\"<br>"
-            result += "toInterval \"" + toInterval + "\"<br><br>"
-
+            result += "toInterval \"" + toInterval + "\"<br>"
+            result += "group_by \"" + str(group_by) + "\"<br><br>"
         if len(queryRes) != 0:
             result += "["
             for row in queryRes:

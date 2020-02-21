@@ -1,4 +1,5 @@
 def parse_request(request):
+        group_by = True
         try:
             compact = str(request.args.get('compact'))
         except KeyError:
@@ -37,5 +38,17 @@ def parse_request(request):
         except KeyError:
             direction = "None"
 
-        return compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction
+        try:
+            val = str(request.args.get('group_by'))
+
+            print val
+
+            if "true" == val or "True" == val:
+                group_by = True
+            if "false" == val or "False" == val:
+                group_by = False
+        except KeyError:
+            group_by = True
+
+        return compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, group_by
         
