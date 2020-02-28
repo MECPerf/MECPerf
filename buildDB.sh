@@ -19,7 +19,7 @@ CREATE DATABASE  IF NOT EXISTS MECPerf;
 exit
 EOF1
 
-mysql --user=root --password=$MYSQL_ROOT_PASSWORD  $DB_NAME < MECPerf.sql
+mysql --user=root --password=$MYSQL_ROOT_PASSWORD  $DB_NAME < MECPerfSchema.sql
 
 mysql --user=root --password=$MYSQL_ROOT_PASSWORD << EOF3
 USE MECPerf;
