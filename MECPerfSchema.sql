@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.7.28, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)
 --
 -- Host: localhost    Database: MECPerf
 -- ------------------------------------------------------
--- Server version	5.7.28-0ubuntu0.18.04.4
+-- Server version	5.7.29-0ubuntu0.18.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -15,11 +15,10 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
-
-
 --
 -- Table structure for table `BandwidthMeasure`
 --
+
 DROP TABLE IF EXISTS `BandwidthMeasure`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -33,26 +32,80 @@ CREATE TABLE `BandwidthMeasure` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `PassiveBandwidthMeasure`
+--
 
+DROP TABLE IF EXISTS `PassiveBandwidthMeasure`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PassiveBandwidthMeasure` (
+  `ID` int(11) NOT NULL,
+  `Timestamp` bigint(22) NOT NULL,
+  `Bytes` int(11) NOT NULL,
+  PRIMARY KEY (`ID`,`Timestamp`),
+  CONSTRAINT `PassiveBandwidthMeasure_ibfk_1` FOREIGN KEY (`ID`) REFERENCES `PassiveTest` (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PassiveRttMeasure`
+--
+
+DROP TABLE IF EXISTS `PassiveRttMeasure`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PassiveRttMeasure` (
+  `ID` int(11) NOT NULL,
+  `Timestamp` bigint(22) NOT NULL,
+  `latency` double unsigned NOT NULL,
+  PRIMARY KEY (`ID`,`Timestamp`),
+  CONSTRAINT `PassiveRttMeasure_ibfk_1` FOREIGN KEY (`ID`) REFERENCES `PassiveTest` (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PassiveTest`
+--
+
+DROP TABLE IF EXISTS `PassiveTest`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PassiveTest` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `Timestamp` datetime NOT NULL,
+  `ClientIP` varchar(15) NOT NULL,
+  `ClientPort` int(11) NOT NULL,
+  `ServerIP` varchar(15) NOT NULL,
+  `ServerPort` int(11) NOT NULL,
+  `Keyword` varchar(512) DEFAULT NULL,
+  `Direction` varchar(45) NOT NULL,
+  `Protocol` varchar(45) NOT NULL,
+  `Mode` varchar(45) NOT NULL,
+  `Type` varchar(45) NOT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=213 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `RttMeasure`
 --
+
 DROP TABLE IF EXISTS `RttMeasure`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `RttMeasure` (
-  `id` int(11) unsigned NOT NULL,
+  `id` int(11) NOT NULL,
   `latency` double unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `sub_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`,`sub_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
-
 
 --
 -- Table structure for table `Test`
 --
+
 DROP TABLE IF EXISTS `Test`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -66,11 +119,11 @@ CREATE TABLE `Test` (
   `ReceiverIdentity` varchar(45) NOT NULL,
   `SenderIPv4Address` varchar(15) NOT NULL,
   `ReceiverIPv4Address` varchar(15) NOT NULL,
-  `Keyword` varchar(45) NOT NULL,
+  `Keyword` varchar(512) DEFAULT NULL,
   `PackSize` int(11) NOT NULL,
   `NumPack` int(11) NOT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=17297 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=60389 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -82,4 +135,4 @@ CREATE TABLE `Test` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-11-19  9:34:35
+-- Dump completed on 2020-02-29 14:17:36
