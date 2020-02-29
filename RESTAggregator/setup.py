@@ -13,5 +13,7 @@ setup(
     install_requires=[
         'flask',
         'flask-mysqldb',
+	'mysqlclient',
+	'waitress',
     ],
 )
