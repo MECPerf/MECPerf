@@ -1,0 +1,1564 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 8,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 7,
+      "panels": [],
+      "title": "Bandwidth",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "alignAsTable": false,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(nanoTimes / 1000000000))) AS \"Client -> NITOSObserver\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'TCPBandwidth' AND Keyword LIKE \"%local%\") \nGROUP BY Test.ID \nORDER BY time desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(nanoTimes / 1000000000))) AS \"NITOSObserver -> Remote Server\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Server' AND Command = 'TCPBandwidth' AND Keyword LIKE \"%local%\") \nGROUP BY Test.ID \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(nanoTimes / 1000000000))) AS \"Client -> UNIPIObserver\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'TCPBandwidth' AND Keyword LIKE \"%remote%\" ) \nGROUP BY Test.ID \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "TCP Bandwidth Uplink ",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "bps",
+          "label": "",
+          "logBase": 10,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "hiddenSeries": false,
+      "id": 9,
+      "legend": {
+        "alignAsTable": false,
+        "avg": true,
+        "current": true,
+        "hideZero": false,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 3,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(nanoTimes / 1000000000))) AS \"NITOSObserver -> Client\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'TCPBandwidth' AND Keyword LIKE \"%local%\") \nGROUP BY Test.ID \nORDER BY time desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(nanoTimes / 1000000000))) AS \"Remote Server -> NITOSObserver\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Server' AND ReceiverIdentity = 'Observer' AND Command = 'TCPBandwidth' AND Keyword LIKE \"%local%\") \nGROUP BY Test.ID \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(nanoTimes / 1000000000))) AS \"UNIPIObserver -> Client\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'TCPBandwidth' AND Keyword LIKE \"%remote%\") \nGROUP BY Test.ID \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "TCP Bandwidth Downlink",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "bps",
+          "label": "",
+          "logBase": 10,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 11,
+      "legend": {
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (kBytes * 1024 * 8)/(1.0 * nanoTimes / 1000000000)) AS \"Client -> NITOSObserver\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'UDPBandwidth' AND Keyword LIKE \"%local%\") \nORDER BY time desc\n",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 *(kBytes * 1024 * 8)/(1.0 * nanoTimes / 1000000000)) AS \"NITOSObserver -> Remote Server\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Server' AND Command = 'UDPBandwidth' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (kBytes * 1024 * 8)/(1.0 * nanoTimes / 1000000000)) AS \"Client -> UNIPIObserver\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'UDPBandwidth' AND Keyword LIKE \"%remote%\") \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "UDP Bandwidth Uplink ",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "bps",
+          "label": null,
+          "logBase": 10,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "hiddenSeries": false,
+      "id": 10,
+      "legend": {
+        "alignAsTable": false,
+        "avg": true,
+        "current": true,
+        "hideZero": false,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * ((kBytes * 1024 * 8))/(1.0 * nanoTimes / 1000000000)) AS \"NITOSObserver -> Client\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'UDPBandwidth' AND Keyword LIKE '%local%') \nORDER BY time desc\n",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (kBytes * 1024 * 8)/(1.0 * nanoTimes / 1000000000)) AS \"Remote Server -> NITOSObserver\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Server' AND ReceiverIdentity = 'Observer' AND Command = 'UDPBandwidth' AND Keyword LIKE '%local%') \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       (1.0 * (kBytes * 1024 * 8)/(1.0 * nanoTimes / 1000000000)) AS \"UNIPIObserver -> Client\"\nFROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'UDPBandwidth' AND Keyword LIKE \"%remote%\") \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "UDP Bandwidth Downlink",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "bps",
+          "label": null,
+          "logBase": 10,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 2,
+      "panels": [],
+      "title": "RTT",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "hiddenSeries": false,
+      "id": 4,
+      "legend": {
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"Client -> NITOSObserver\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'TCPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"NITOSObserver -> Server\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Server' AND Command = 'TCPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"Client -> UNIPIObserver\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'TCPRTT' AND Keyword LIKE \"%remote%\") \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "TCP RTT Uplink ",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "hiddenSeries": false,
+      "id": 5,
+      "legend": {
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"NITOSObserver -> Client\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'TCPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"Server -> NITOSObserver\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID\nWHERE (SenderIdentity = 'Server' AND ReceiverIdentity = 'Observer' AND Command = 'TCPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"UNIPIObserver -> Client\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'TCPRTT' AND Keyword LIKE \"%remote%\") \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "TCP RTT Downlink",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "legend": {
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"Client -> NITOSObserver\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'UDPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"NITOSObserver -> Server\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID\nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Server' AND Command = 'UDPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"Client -> UNIPIObserver\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Client' AND ReceiverIdentity = 'Observer' AND Command = 'UDPRTT' AND Keyword LIKE \"%remote%\") \nORDER BY time desc",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "UDP RTT Uplink ",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "ms",
+          "label": "",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "decimals": null,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 0,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "hiddenSeries": false,
+      "id": 13,
+      "legend": {
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "$__interval",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"NITOSObserver -> Client\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'UDPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "count"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"Server -> NITOSObserver\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID\nWHERE (SenderIdentity = 'Server' AND ReceiverIdentity = 'Observer' AND Command = 'UDPRTT' AND Keyword LIKE \"%local%\") \nORDER BY time desc",
+          "refId": "B",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "time",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT Timestamp AS \"time\",\n       latency AS \"UNIPIObserver -> Client\"\nFROM Test INNER join RttMeasure ON Test.ID = RttMeasure.ID \nWHERE (SenderIdentity = 'Observer' AND ReceiverIdentity = 'Client' AND Command = 'UDPRTT' AND Keyword LIKE \"%remote%\") \nORDER BY time ",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "TestNumber"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "Test",
+          "timeColumn": "Timestamp",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "UDP RTT Downlink",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 20,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-12h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "NITOS_realtime",
+  "uid": "vKXGDePWz",
+  "version": 29
+}
