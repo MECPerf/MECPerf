@@ -169,8 +169,12 @@ def create_app():
 
 
 
-    @app.route('/get_RTT_data', methods=['GET'])
-    def get_RTT_data():
+
+    @app.route('/<type>/get_RTT_data', methods=['GET'])
+    def get_RTT_data(type):
+        if type != "get_measures" and type != "mobile":
+            return "unrecognized request"
+        
         result = ""
 
         try:
@@ -212,8 +216,12 @@ def create_app():
 
 
 
-    @app.route('/get_bandwidth_data', methods=['GET'])
-    def get_bandwidth_data():
+
+    @app.route('/<type>/get_bandwidth_data', methods=['GET'])
+    def get_bandwidth_data(type):
+        if type != "get_measures" and type != "mobile":
+            return "unrecognized request"
+            
         result = ""
 
         try:
@@ -254,8 +262,11 @@ def create_app():
 
 
 
-    @app.route('/get_AVGbandwidth_data', methods=['GET'])
-    def get_AVGbandwidth_data():
+    @app.route('/<type>/get_AVGbandwidth_data', methods=['GET'])
+    def get_AVGbandwidth_data(type):
+        if type != "get_measures" and type != "mobile":
+            return "unrecognized request"
+
         result = ""
 
         try:
