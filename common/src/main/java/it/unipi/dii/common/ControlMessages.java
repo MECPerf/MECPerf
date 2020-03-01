@@ -28,6 +28,7 @@ public class ControlMessages {
     }
     private Socket controlSocket = null;
     private DataOutputStream dataOutputStream = null;
+    private final int controlSocketTimeOut = 20000;
 
 
 
@@ -63,7 +64,7 @@ public class ControlMessages {
         try {
             this.controlSocket = new Socket(receiverAddress, receiverPort);
 
-            this.controlSocket.setSoTimeout(20000);
+            this.controlSocket.setSoTimeout(controlSocketTimeOut);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -76,7 +77,7 @@ public class ControlMessages {
             this.controlSocket.bind(new InetSocketAddress(sourceAddr, sourcePort));
             this.controlSocket.connect(new InetSocketAddress(receiverAddress, receiverPort));
 
-            this.controlSocket.setSoTimeout(20000);
+            this.controlSocket.setSoTimeout(controlSocketTimeOut);
 
         } catch (IOException ioe) {
             ioe.printStackTrace();
