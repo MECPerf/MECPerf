@@ -7,7 +7,6 @@ The use of this code is permitted by BSD licenses
 
 
 
-
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
@@ -39,9 +38,6 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-
-import it.unipi.dii.common.Measure;
 
 
 
@@ -303,7 +299,7 @@ public class ResultsActivity extends AppCompatActivity {
         RequestQueue requestQueue = Volley.newRequestQueue(this);  // this = context
 
 
-        final String url = "http://" + aggregatorIP + ":5001/get_data_list";
+        final String url = "http://" + aggregatorIP + ":5001/mobile/get_data_list";
         RequestFuture<String> future = RequestFuture.newFuture();
         StringRequest request = new StringRequest(Request.Method.GET, url, future, future) ;
         requestQueue.add(request);

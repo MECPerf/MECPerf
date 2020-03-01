@@ -189,7 +189,6 @@ public class BandwidthActivity extends AppCompatActivity {
                     if(args[1].equals("TCP")){
                         results_AVG = getBandwidthFromDb(args[3], args[2], true);
 
-
                         //SHOW DIAGRAM
                         tcpDiagramBtn=(Button)findViewById(R.id.tcp_bandwidth_diagram);
 
@@ -295,10 +294,10 @@ public class BandwidthActivity extends AppCompatActivity {
             Log.d("TEST", "TYPE NULL");
             return;
         }
+
+        measureListView.setEnabled(true);
         if(type.equals("UDP")){
             Log.d("TEST", "UDP");
-            measureListView.setEnabled(false);
-
             tcpDiagramBtn.setEnabled(false);
             tcpDiagramBtn.setVisibility(View.INVISIBLE);
 
@@ -310,7 +309,6 @@ public class BandwidthActivity extends AppCompatActivity {
 
         }else if (type.equals("TCP")){
             Log.d("TEST", "TCP");
-            measureListView.setEnabled(true);
             tcpDiagramBtn.setEnabled(true);
             tcpDiagramBtn.setVisibility(View.VISIBLE);
 
@@ -334,10 +332,10 @@ public class BandwidthActivity extends AppCompatActivity {
                response,
                url ;
         if (average)
-            url = "http://" + aggregatorIP + ":5001/get_AVGbandwidth_data?id=" + ID +
+            url = "http://" + aggregatorIP + ":5001/mobile/get_AVGbandwidth_data?id=" + ID +
                     "&sender=" + sender;
         else
-            url = "http://" + aggregatorIP + ":5001/get_bandwidth_data?id=" + ID +
+            url = "http://" + aggregatorIP + ":5001/mobile/get_bandwidth_data?id=" + ID +
                     "&sender=" + sender;
         Log.d("URL", url);
 
@@ -360,6 +358,8 @@ public class BandwidthActivity extends AppCompatActivity {
             Log.d("BandwidthActivity Response", response);
             Log.d("BandwidthActivity Response", "length: " + jsonArray.length());
             Log.d("BandwidthActivity Response", "average: " + average);
+            Log.d("BandwidthActivity Response:", "json array = " + jsonArray);
+
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 MeasureResult tmp = new MeasureResult();
@@ -385,13 +385,15 @@ public class BandwidthActivity extends AppCompatActivity {
                 results.add(tmp);
 
 
-                Log.d("BandwidthActivity Respons:", "tmp" + tmp.getSender());
+                Log.d("BandwidthActivity Response:", "tmp " + tmp.getSender());
             }
         }
         catch (JSONException e){
                 e.printStackTrace();
                 return null;
             }
+
+        Log.d("BandwidthActivity Response:", "results " + results);
 
         return results;
     }

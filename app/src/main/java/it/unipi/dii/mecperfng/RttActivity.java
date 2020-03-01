@@ -1,12 +1,11 @@
 package it.unipi.dii.mecperfng;
 
+
+
 /*
 This code was implemented by Enrico Alberti.
 The use of this code is permitted by BSD licenses
  */
-
-
-
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -21,20 +20,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -42,8 +34,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.MeasureResult;
+
+
 
 public class RttActivity extends AppCompatActivity {
     private SharedPreferences sp;
@@ -143,7 +136,7 @@ public class RttActivity extends AppCompatActivity {
     protected List<MeasureResult> getRttFromDb(String ID, String sender) {
         String response = "",
                aggregatorIP = sp.getString("aggregator_address", "NA"),
-               url = "http://" + aggregatorIP + ":5001/get_RTT_data?id=" + ID + "&sender=" + sender;
+               url = "http://" + aggregatorIP + ":5001/mobile/get_RTT_data?id=" + ID + "&sender=" + sender;
         ;
 
         Log.d("URL", url);

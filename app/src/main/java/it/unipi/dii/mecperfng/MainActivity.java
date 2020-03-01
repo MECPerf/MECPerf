@@ -30,7 +30,6 @@ import android.widget.Toast;
 
 
 
-
 public class MainActivity extends AppCompatActivity
                           implements NavigationView.OnNavigationItemSelectedListener {
     private static final int REQUEST_INTERNET = 1;
@@ -41,9 +40,9 @@ public class MainActivity extends AppCompatActivity
     private static final int TCPPORT = 6791;//6788
     private static final int UDPPORT = 6790;//6787
     private static final int AGGRPORT = 6766;
+    private static final int NUMTEST_UDP_CAPACITY = 25; //TODO remove
     private AsyncCMD mAsyncTask = null;
     private SharedPreferences sp;
-
 
 
 
@@ -103,9 +102,10 @@ public class MainActivity extends AppCompatActivity
                             "pack_size_UDP_BANDWIDTH", "1024"));
 
                     for (int i = 0; i < numberOfConsecutiveTests; i++) {
+
                         outcome = MainUtils.udpBandwidthMeasure(direction, keyword, CMDPORT,
                                 observerAddress, UDPPORT,
-                                udp_bandwidth_pktsize, null);
+                                udp_bandwidth_pktsize, null, NUMTEST_UDP_CAPACITY);
                         String txt = "UDP bandwidth " + i + ": ";
                         if (outcome != 0){
                             txt += "FAILED";
