@@ -67,9 +67,9 @@ def computeBandwidth_groupedbyday(points, dates, noise):
         ret_y.append(mean)
         error_y.append(error)
 
-    print ret_x 
-    print ret_y
-    print error_y
+    #print ret_x 
+    #print ret_y
+    #print error_y
 
     return ret_x, ret_y, error_y
 
@@ -127,13 +127,12 @@ def computeyvalues_groupedbyweekdayandintervals(points, day, start_intervals, st
 def compute_bandwidthhistogram(segment, noise):
     ret = []
     for value in segment:
-        
         if value.noise != noise:
             #print str(value.y) + " - " + str(value.y) + " CONTINUE"
             continue
 
-        #print value.y
+        #print str(value.noise) + "==" + str(value.noise)
         ret.append(value.y)
 
-
+    #print ret
     return ret

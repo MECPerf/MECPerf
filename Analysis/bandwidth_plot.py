@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 import matplotlib.text as txt
+import math
 import numpy as np
 import random
 import colors
@@ -38,12 +39,15 @@ def simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_rem
 
 
 def bandwidth_grouped(start_intervals, duration_min, clientT_observerT, clientT_observerR, observerT_remoteR, 
-                      title, labels, dates):
+                      title, labels, dates, config_parser):
     start_time = []
     stop_time = []
     xlabels = []
 
-    
+    start_noise = int(config_parser.get("active_experiment_params", "start_noise"))
+    stop_noise = int(config_parser.get("active_experiment_params", "stop_noise"))
+    step_noise = int(config_parser.get("active_experiment_params", "step_noise"))
+
     for i in start_intervals:
         x = i.split(":")
         start = time(int(x[0]), int( x[1]), int(x[2]))
@@ -54,9 +58,9 @@ def bandwidth_grouped(start_intervals, duration_min, clientT_observerT, clientT_
         xlabels.append(str(start))
 
     bandwidth_groupedbyday (None, None, observerT_remoteR, title , ["", "", labels[2]], dates, "0M")
-
-    for i in range (0, 51, 10):
     
+
+    for i in range (start_noise, stop_noise + 1, step_noise):    
         bandwidth_groupedbyday (clientT_observerT, clientT_observerR, observerT_remoteR, 
                                 title + str(i) + "M Noise" , labels, dates, str(i) + "M")
 
@@ -201,19 +205,37 @@ def bandwidth_groupedbyweekdayandintervals(start_time, stop_time, segment, title
 
 
 
-def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR, 
-                      title):
+def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,  observerR_remoteR,
+                      title, config_parser):
+    start_noise = int(config_parser.get("active_experiment_params", "start_noise"))
+    stop_noise = int(config_parser.get("active_experiment_params", "stop_noise"))
+    step_noise = int(config_parser.get("active_experiment_params", "step_noise"))
 
-    for i in range (0, 51, 10):
-        bandwidth_histogram(clientT_observerT, str(i) + "M",  
+    for i in range (start_noise, stop_noise + 1, step_noise):
+        if len(clientT_observerT) != 0:
+            bandwidth_histogram(clientT_observerT, str(i) + "M",  
                             "client-observer(nitos)" + title + str(i) + "M Noise", 
                             "client -> Observer(Nitos)", colors.OBSERVER_CLIENT_TESTBED)
-        bandwidth_histogram(clientT_observerR, str(i) + "M",  
+        else:
+            colors.WARNING + "len(clientT_observerT) is 0"
+        if len(clientT_observerR) != 0:
+            bandwidth_histogram(clientT_observerR, str(i) + "M",  
                             "client-observer(unipi)" + title + str(i) + "M Noise", 
                             "client -> Observer(Unipi))", colors.OBSERVER_CLIENT_UNIPI)
-        bandwidth_histogram(observerT_remoteR, str(i) + "M",  
+        else:
+            colors.WARNING + "len(clientT_observerR) is 0"
+        if len(observerT_remoteR) != 0:
+            bandwidth_histogram(observerT_remoteR, str(i) + "M",  
                             "observer-remote" + title + str(i) + "M Noise", 
                             "Observer -> Remote", colors.NITOS_REMOTE)
+        else:
+            colors.WARNING + "len(observerT_remoteR) is 0"
+        if len(observerR_remoteR) != 0:
+            bandwidth_histogram(observerR_remoteR, str(i) + "M",  
+                            "observer-remote" + title + str(i) + "M Noise", 
+                            "Observer -> Remote", colors.NITOS_REMOTE)
+        else:
+            colors.WARNING + "len(observerR_remoteR) is 0"
 
 
 
@@ -221,6 +243,8 @@ def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,
 def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_number = 1000, maxbin_number = 1001, step = 10):
     assert minbin_number <= maxbin_number
     assert step > 0
+
+    print "bandwidth histogram: noise = " + str(noise) 
 
     basedir = "bandwidth/bandwidth_histogram/"
     if "TCPBandwidth" in title:
@@ -238,8 +262,16 @@ def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_n
         exit(-1)
 
     x = compute_bandwidthhistogram(segment, noise)
-    maxx = max (max(x), 100)
-    ##maxx = 500
+    if len(x) == 0:
+        print colors.WARNING + "\t\tempty set. returning" + colors.RESET
+        return
+
+    
+    x.sort(reverse = True)
+    print "max x" +  str(x[0])
+    maxx = x[3] + 1
+    print "maxx" +  str(maxx)
+
     plt.xlim(0, maxx)
 
     for i in range (minbin_number, maxbin_number, step):
@@ -247,13 +279,17 @@ def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_n
         plt.xlabel("Mbps \nNumber of bins = " + str(i))
         plt.title(title)
 
-        binsize = maxx/i
+
+        binsize = 1.0 * maxx/i
+        print binsize
         binslist = []
         p = binsize/2
+
+
         while (p < maxx):
             binslist.append(p)
             p = p + binsize
-
+            #print str(p) +" of " + str(maxx)
     
         print "plotting"  + basedir + title + "(" + str(i) + "bins).png"
         print "\t\tlen(x)"  + str(len(x))
