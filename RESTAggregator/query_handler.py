@@ -13,7 +13,7 @@ INTERNAL_SERVER_ERROR = 500
 NOT_IMPLEMENTED = 501
 OK = 200
 
-def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by):
+def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by):
     params = []
     query = "SELECT "
     
@@ -109,6 +109,93 @@ def build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, 
 
     return json, query, params
 
+
+
+def build_passive_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, direction, group_by):
+    params = []
+    query = "SELECT "
+    
+    if json == "True" or json == "true":
+        query += " JSON_OBJECT ( "
+        query += " 'ID', PassiveTest.ID,"
+        query += " 'ClientIP', ClientIP, "
+        query += " 'ClientPort', ClientPort, "
+        query += " 'ServerIP', ServerIP, "
+        query += " 'ServerPort', ServerPort, "
+        query += " 'Keyword', Keyword, "
+        query += " 'Direction', Direction, "
+        query += " 'Protocol', Protocol, "
+        query += " 'Mode', Mode,  "
+        query += " 'Type', Type, "
+        query += " 'Timestamp', PassiveBandwidthMeasure.Timestamp,"
+        query += " 'Bytes', Bytes "
+        #if group_by ==True:
+        #    query += " 'Bandwidth [bit/s]',  (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(1.0 * nanoTimes / 1000000000))) "
+        #else:
+        #    query += " 'Bandwidth [bit/s]',  (1.0 * (kBytes * 1024 * 8)/(1.0 * 1.0 * nanoTimes / 1000000000)) "
+        query += " ) "
+    else:
+        json = str(False)
+        query += "PassiveTest.ID, Direction, Mode, ClientIP, ClientPort, ServerIP, ServerPort, "
+        query += " Keyword, Type, PassiveBandwidthMeasure.Timestamp, Bytes "
+
+    whereClause = False
+    query += "FROM PassiveTest INNER JOIN PassiveBandwidthMeasure ON PassiveTest.ID = PassiveBandwidthMeasure.id "
+
+    
+    if (keyword != "None"):
+        query += " where Keyword = %s"
+        params.append(keyword)
+        whereClause = True
+
+    if (likeKeyword != "None"):
+        if (whereClause == False):
+            query += " where "
+            whereClause = True
+        else:
+            query += " AND "
+
+        query += " Keyword LIKE %s"
+
+        likeKeyword = "%" + likeKeyword + "%"
+        params.append(likeKeyword)
+
+    if (fromInterval != "None"):
+        if (whereClause == False):
+            query += " where "
+            whereClause = True
+        else:
+            query += " AND "
+
+        query += " Timestamp > %s"
+        params.append(fromInterval)
+
+    if (toInterval != "None"):
+        if (whereClause == False):
+            query += " where "
+            whereClause = True
+        else:
+            query += " AND "
+
+        query += "Timestamp < %s"
+        params.append(toInterval)
+    
+    if (direction != "None"):
+        if (whereClause == False):
+            query += " where "
+            whereClause = True
+        else:
+            query += " AND "
+
+        query += " Direction = %s"
+        params.append(direction)
+
+    #if group_by == True:
+    #    query += " GROUP BY PassiveTest.ID"
+
+
+
+    return json, query, params
 
 
 def read_last_test_number(mysql):

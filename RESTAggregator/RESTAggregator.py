@@ -2,7 +2,7 @@ from flask import Flask, request, Response
 from flask_mysqldb import MySQL
 
 from request_parser import parse_request
-from query_handler import build_bandwidth_query, update_bandwidth, update_latencies
+from query_handler import build_active_bandwidth_query,build_passive_bandwidth_query, update_bandwidth, update_latencies
 from API_utils import print_command_list
 
 import json
@@ -52,24 +52,28 @@ def create_app():
     mysql = init_server( app)
 
 
+
     @app.route('/')
     def index():
         return print_command_list()
         
 
    
-    @app.route('/get_measures/bandwidth', methods=['GET'])
-    def getBandwidth():
+    @app.route('/get_<measure_type>_measures/bandwidth', methods=['GET'])
+    def getBandwidth(measure_type):
         result = ""
-
         compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, group_by = parse_request(request)
-        json, query, params = build_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by)
+
+        if measure_type == "active":
+            json, query, params = build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by)
+        if measure_type == "passive":
+            json, query, params = build_passive_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, direction, group_by)
+        
 
         cur = mysql.connection.cursor()
         cur.execute(query, params)
         queryRes = cur.fetchall()
         cur.close()
-
         
         print "asked compact " + str(compact)
         print "json output = " + str(json)
