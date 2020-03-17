@@ -39,6 +39,7 @@ local.properties
 *.sh
 *.whl
 *.tmp
+*.classpath
 
 RESTAggregator/RESTAggregator.egg-info/*
 RESTAggregator/dist/*
