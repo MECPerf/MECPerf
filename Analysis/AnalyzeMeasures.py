@@ -4,13 +4,16 @@ import ConfigParser
 import json
 import colors
 import copy
+import sys
+import time
 
 from Measure import Measure
 from bandwidth_plot import simplebandwidth_lineplot, bandwidth_grouped, bandwidth_raw
 
 
 
-def parse_reply(jsonData, clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR):
+
+def parse_activebandwidthreply(jsonData, clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR):
     bucket = ""
 
     for line in jsonData:
@@ -54,17 +57,74 @@ def parse_reply(jsonData, clientT_observerT, clientT_observerR, observerT_remote
 
     
 
-    #return labels
+def parse_passivebandwidthreply(jsonData, measure, clientT_observerT, clientT_observerR, config_parser, filename):
+
+    if "self" in measure:
+        clientT_observerT, clientT_observerR = parse_selfmeasurements(jsonData, clientT_observerT, 
+                                                                      clientT_observerR, config_parser, filename)
+    elif "mim"  in measure:
+        clientT_observerT, clientT_observerR = parse_mimmeasurements(jsonData, clientT_observerT, 
+                                                                     clientT_observerR, config_parser, filename)
+    else:
+        print colors.FAIL + "unknown method " + str(measure)
+        sys.exit(1)
+
+
+    return clientT_observerT, clientT_observerR                                                       
+    
+
         
+def parse_selfmeasurements(jsonData, clientT_observerT, clientT_observerR, config_parser, filename):
+    nitosclient_subnetaddr = config_parser.get('passive_experiment_params', "nitosclient_subnetaddr")
+    nitosserver_subnetaddr = config_parser.get('passive_experiment_params', "nitosserver_subnetaddr")
+    unipiserver_subnetaddr = config_parser.get('passive_experiment_params', "unipiserver_subnetaddr")
+
+    for line in jsonData: 
+        try:
+            #assert line['ClientIP'][:len(nitosclient_subnetaddr)] == nitosclient_subnetaddr
+            assert line['ServerIP'][:len(nitosserver_subnetaddr)] == nitosserver_subnetaddr or line['ServerIP'][:len(unipiserver_subnetaddr)] == unipiserver_subnetaddr
+        except:
+            print line
+            sys.exit(1)
+            
+        timestamp = line["Date"]
+        timestamp_d = datetime.datetime.strptime(timestamp.replace(".000000", ""), '%Y-%m-%d %H:%M:%S')
+        bandwidthKbps = float(line["Kbps"])
+        bandwidthMbps = bandwidthKbps / 1024
+
+        noise = line['Keyword'].split("_noise")[1].replace("M", "")
+        measure = Measure(timestamp_d, bandwidthMbps, noise, filename)
+      
+
+        if line['ServerIP'][:len(nitosserver_subnetaddr)] == nitosserver_subnetaddr:
+            #the dash server is inside the testbed
+            clientT_observerT.append(measure)
+        elif line['ServerIP'][:len(unipiserver_subnetaddr)] == unipiserver_subnetaddr:
+            #the unipi dash server
+            clientT_observerR.append(measure)
+        else:
+            print colors.FAIL + "unknown server " + str(line['ServerIP'])
+            sys.exit(1)
+
+    return clientT_observerT, clientT_observerR
+        
+
+
+def parse_mimmeasurements(jsonData, clientT_observerT, clientT_observerR, config_parser, filename):
+
+    print colors.WARNING + "parse_mimmeasurements: TODO" + colors.RESET
+
+    return clientT_observerT, clientT_observerR
+    
 
 
 def send_request(request_params, url):
     r = requests.get(url = url, params = request_params) 
-    print colors.GREEN + "[GET] " + str(url) + " with params " + str(request_params) +\
-          colors.RESET
+    print colors.GREEN + "[GET] " + str(url) + " with params " + str(request_params) + colors.RESET
 
     #print r.text
     if  len(r.text) == 1 or "0 rows" in r.text:
+        #print r.text
         print "empty reply"
         return None
     
@@ -74,46 +134,65 @@ def send_request(request_params, url):
 
         return jsonData
     except ValueError:
-        print r.text
+        #print r.text
         sys.exit(1)
 
 
-def create_request (PARAMS, BASE_URL, config_parser, starting_time_intervals_list, duration_m, dates_list):
+
+def create_request (PARAMS, BASE_URL, measure, config_parser, starting_time_intervals_list, duration_m, dates_list):
     clientT_observerT = []
     clientT_observerR = []
     observerT_remoteR = []
     observerR_remoteR = []
 
-    starting_time_intervals = config_parser.get("active_experiment_params", "starting_time_intervals")
-    duration_m = config_parser.get("active_experiment_params", "duration_m")
-    dates = config_parser.get("active_experiment_params", "dates")
-    dates_list = dates.split(",")
-    starting_time_intervals_list = starting_time_intervals.split(",")
-
-
     for day in dates_list:
-        for i in range (0, len(starting_time_intervals_list)):
-            start_time = day.strip() + "-" + starting_time_intervals_list[i].strip()
-            start_time_d = datetime.datetime.strptime(start_time, '%Y-%m-%d-%H:%M:%S')
-            end_time_d = start_time_d + datetime.timedelta(minutes = int(duration_m))
-            end_time = end_time_d.strftime('%Y-%m-%d-%H:%M:%S')
+        if starting_time_intervals_list != None and duration_m != None:
+            for i in range (0, len(starting_time_intervals_list)):
+                start_time = day.strip() + "-" + starting_time_intervals_list[i].strip()
+                start_time_d = datetime.datetime.strptime(start_time, '%Y-%m-%d-%H:%M:%S')
+                end_time_d = start_time_d + datetime.timedelta(minutes = int(duration_m))
+                end_time = end_time_d.strftime('%Y-%m-%d-%H:%M:%S')
 
+                print start_time
+                print end_time
+                PARAMS["from"] = start_time
+                PARAMS["to"] =  end_time
+    
+                jsonData = send_request(PARAMS, BASE_URL + measure)
+
+                if jsonData != None:
+                    parse_activebandwidthreply(jsonData, clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR)
+                
+        elif starting_time_intervals_list == None and duration_m == None:
+            start_time = day.strip() + "-00:00:00"
+            end_time = day.strip() + "-23:59:59"
+
+            print start_time
+            print end_time
             PARAMS["from"] = start_time
             PARAMS["to"] =  end_time
- 
-            jsonData = send_request(PARAMS, BASE_URL + "/get_active_measures/bandwidth")
+            jsonData = send_request(PARAMS, BASE_URL + measure)
 
             if jsonData != None:
-                parse_reply(jsonData, clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR)
+                clientT_observerT, clientT_observerR = parse_passivebandwidthreply(jsonData, measure, 
+                                                                        clientT_observerT, clientT_observerR, 
+                                                                        config_parser, PARAMS["dashfilename"])
+                #print clientT_observerT
+                print len(clientT_observerT)
+                print len(clientT_observerR)
+        
 
     return clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR
+
     
 
-
-def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, config_parser):  
+def analyze_activebandwidthmeasures(BASE_URL, direction, command, config_parser):  
     labels= []  
 
-    PARAMS = copy.deepcopy(BASE_PARAMS)
+    PARAMS = {}
+    PARAMS["compact"] = True
+    PARAMS["json"] = True
+    PARAMS["likeKeyword"] ='experiment_active_'
     PARAMS["command"] = command
     PARAMS["direction"] = direction
     title = str(PARAMS["command"]) + " - " + PARAMS["direction"]
@@ -129,7 +208,7 @@ def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, c
         labels.append("Remote(unipi) -> Observer (Nitos)")
         labels.append("Remote(unipi) -> Observer (unipi)")
 
-    print BASE_PARAMS
+    print PARAMS
 
     starting_time_intervals = config_parser.get("active_experiment_params", "starting_time_intervals")
     duration_m = config_parser.get("active_experiment_params", "duration_m")
@@ -138,10 +217,74 @@ def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, c
     starting_time_intervals_list = starting_time_intervals.split(",")
 
     
-    clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR = create_request (PARAMS, BASE_URL, 
+    clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR = create_request (PARAMS, BASE_URL, "/get_active_measures/bandwidth",
                                                                                 config_parser, 
                                                                                 starting_time_intervals_list, 
                                                                                 duration_m, dates_list)
+    
+    simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_remoteR, title, labels)
+    bandwidth_grouped(starting_time_intervals_list, duration_m, clientT_observerT, clientT_observerR, 
+                      observerT_remoteR, title, labels, dates_list, config_parser)
+    
+    if PARAMS["command"] == "UDPBandwidth":
+        print "UDPBandwidth"
+        PARAMS["group_by"] = "false"
+
+        clientT_observerT_rawdata, clientT_observerR_rawdata, observerT_remoteR_rawdata, observerR_remoteR_rawdata = create_request (PARAMS, 
+                                            BASE_URL, "/get_active_measures/bandwidth", config_parser, 
+                                            starting_time_intervals_list, duration_m, dates_list)
+
+        bandwidth_raw(clientT_observerT_rawdata, clientT_observerR_rawdata, observerT_remoteR_rawdata, 
+                      observerR_remoteR_rawdata, title, config_parser)
+            
+            
+
+def analyze_passivebandwidthmeasures(BASE_URL, direction, measuretype, protocol, config_parser):  
+    labels= []  
+
+    PARAMS = {}
+    PARAMS["json"] = True
+    PARAMS["compact"] = True
+    PARAMS["likeKeyword"] ='experiment_passive_'
+    PARAMS["type"] = measuretype
+    PARAMS["direction"] = direction
+    PARAMS["protocol"] = protocol
+    title = str(PARAMS["protocol"]) + str(PARAMS["type"]) + " - " + PARAMS["direction"]
+    
+    if direction == "uplink":
+        labels.append("Client -> Observer (Nitos)")
+        labels.append("Client -> Observer (unipi)")
+        labels.append("Observer (Nitos) -> Remote(unipi)")
+        labels.append("Observer (unipi) -> Remote(unipi)")
+    elif direction == "downlink":
+        labels.append("Observer (Nitos) -> Client")
+        labels.append("Observer (unipi) -> Client")
+        labels.append("Remote(unipi) -> Observer (Nitos)")
+        labels.append("Remote(unipi) -> Observer (unipi)")
+
+    print PARAMS
+
+    dates = config_parser.get("passive_experiment_params", "dates")
+    dates_list = dates.split(",")    
+
+    dashfileslist = config_parser.get('passive_experiment_params', "dashfiles").split(",")
+    print dashfileslist
+    print dashfileslist[0]
+
+    for filename in dashfileslist:
+
+        PARAMS["dashfilename"] = filename.strip()
+        clientT_observerT_mim, clientT_observerR_mim, observerT_remoteR_mim, observerR_remoteR_mim = create_request (PARAMS, 
+                                                    BASE_URL, "/get_passive_mim_measures/bandwidth", 
+                                                    config_parser, None, None, dates_list)
+        clientT_observerT_self, clientT_observerR_self, observerT_remoteR_self, observerR_remoteR_self = create_request (PARAMS, 
+                                                    BASE_URL, "/get_passive_self_measures/bandwidth",
+                                                    config_parser, None, None, dates_list)
+
+
+
+
+    '''
     
     simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_remoteR, title, labels)
     bandwidth_grouped(starting_time_intervals_list, duration_m, clientT_observerT, clientT_observerR, 
@@ -157,4 +300,4 @@ def analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, direction, command, c
 
         bandwidth_raw(clientT_observerT_rawdata, clientT_observerR_rawdata, observerT_remoteR_rawdata, observerR_remoteR_rawdata,
                         title, config_parser)
-            
+    '''   

@@ -4,12 +4,11 @@ import colors
 import sys
 import distutils.util
 
-from AnalyzeMeasures import analyze_activebandwidthmeasures
+from AnalyzeMeasures import analyze_activebandwidthmeasures, analyze_passivebandwidthmeasures
 
 
 
 BASE_URL = ""
-BASE_PARAMS = {'compact':True, 'json':True, "likeKeyword":'experiment_active_'}
         
  
 
@@ -26,7 +25,7 @@ if __name__ ==  "__main__":
       if distutils.util.strtobool(config_parser.get('experiment_params', "analyze_active_data")) == True:
             print "\n\n"
             print "###########################################################################################"
-            print colors.BLUE + "EXPERIMENT CONF:"
+            print colors.BLUE + "ACTIVE EXPERIMENT CONF:"
             print "BASE_URL: " + BASE_URL
             print "dates: " + config_parser.get("active_experiment_params", "dates") 
             print "starting hours " + config_parser.get("active_experiment_params", "starting_time_intervals") + " [ " +\
@@ -35,11 +34,28 @@ if __name__ ==  "__main__":
             print "\n\n"
                   
             #active uplink/downlink bandwidth measures
-            analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, 'Upstream', "TCPBandwidth", config_parser)
-            analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, 'Downstream', "TCPBandwidth", config_parser)
+            analyze_activebandwidthmeasures(BASE_URL, 'Upstream', "TCPBandwidth", config_parser)
+            analyze_activebandwidthmeasures(BASE_URL, 'Downstream', "TCPBandwidth", config_parser)
 
-            analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, 'Upstream', "UDPBandwidth", config_parser)
-            analyze_activebandwidthmeasures(BASE_PARAMS, BASE_URL, 'Downstream', "UDPBandwidth", config_parser)
+            analyze_activebandwidthmeasures(BASE_URL, 'Upstream', "UDPBandwidth", config_parser)
+            analyze_activebandwidthmeasures(BASE_URL, 'Downstream', "UDPBandwidth", config_parser)
 
-      #passive measurements
+      if distutils.util.strtobool(config_parser.get('experiment_params', "analyze_passive_data")) == True:
+            #passive measurements
+
+            print "\n\n"
+            print "###########################################################################################"
+            print colors.BLUE + "PASSIVE EXPERIMENT CONF:"
+            print "BASE_URL: " + BASE_URL
+            print "dates: " + config_parser.get("passive_experiment_params", "dates") + colors.RESET
+            
+            print "###########################################################################################"
+            print "\n\n"
+
+            analyze_passivebandwidthmeasures(BASE_URL, 'downlink', "bandwidth", "tcp", config_parser)
+
+                  
+
+     
+
         
