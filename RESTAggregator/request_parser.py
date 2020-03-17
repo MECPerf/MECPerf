@@ -37,6 +37,10 @@ def parse_request(request):
             direction = str(request.args.get('direction'))
         except KeyError:
             direction = "None"
+        try:
+            dashfilename = str(request.args.get('dashfilename'))
+        except KeyError:
+            dashfilename = "None"
 
         try:
             val = str(request.args.get('group_by'))
@@ -50,5 +54,5 @@ def parse_request(request):
         except KeyError:
             group_by = True
 
-        return compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, group_by
+        return compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, dashfilename, group_by
         

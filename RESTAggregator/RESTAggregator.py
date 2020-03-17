@@ -62,12 +62,15 @@ def create_app():
     @app.route('/get_<measure_type>_measures/bandwidth', methods=['GET'])
     def getBandwidth(measure_type):
         result = ""
-        compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, group_by = parse_request(request)
+        compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, dashfilename, group_by = parse_request(request)
 
         if measure_type == "active":
-            json, query, params = build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, command, direction, group_by)
-        if measure_type == "passive":
-            json, query, params = build_passive_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, direction, group_by)
+            json, query, params = build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, 
+                                                               toInterval, command, direction, group_by)
+        if measure_type == "passive_self" or measure_type == "passive_mim":
+            json, query, params = build_passive_bandwidth_query(measure_type.replace("passive_", ""), 
+                                                                json, keyword, likeKeyword, fromInterval, 
+                                                                toInterval, direction, dashfilename)
         
 
         cur = mysql.connection.cursor()
@@ -94,8 +97,8 @@ def create_app():
         if len(queryRes) != 0:
             result += "["
             for row in queryRes:
-                print str(row)
-                print json
+                #print str(row)
+                #print json
                 
                 if json== 'False':
                     result += str(row) + " <br>"

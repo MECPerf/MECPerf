@@ -111,13 +111,14 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
 
 
 
-def build_passive_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInterval, direction, group_by):
+def build_passive_bandwidth_query(mode, json, keyword, likeKeyword, fromInterval, toInterval, direction, dashfilename):
     params = []
     query = "SELECT "
     
     if json == "True" or json == "true":
         query += " JSON_OBJECT ( "
-        query += " 'ID', PassiveTest.ID,"
+        query += " 'ID', PassiveTest.ID," 
+        query += " 'Date', PassiveTest.Timestamp,"       
         query += " 'ClientIP', ClientIP, "
         query += " 'ClientPort', ClientPort, "
         query += " 'ServerIP', ServerIP, "
@@ -128,74 +129,50 @@ def build_passive_bandwidth_query(json, keyword, likeKeyword, fromInterval, toIn
         query += " 'Mode', Mode,  "
         query += " 'Type', Type, "
         query += " 'Timestamp', PassiveBandwidthMeasure.Timestamp,"
-        query += " 'Bytes', Bytes "
-        #if group_by ==True:
-        #    query += " 'Bandwidth [bit/s]',  (1.0 * (SUM(kBytes * 1024 * 8))/(1.0 * SUM(1.0 * nanoTimes / 1000000000))) "
-        #else:
-        #    query += " 'Bandwidth [bit/s]',  (1.0 * (kBytes * 1024 * 8)/(1.0 * 1.0 * nanoTimes / 1000000000)) "
+        if mode == "self":
+            query += " 'Kbps', Bytes "
+        elif mode == "mim":
+            query += " 'Bytes', Bytes "
         query += " ) "
     else:
         json = str(False)
-        query += "PassiveTest.ID, Direction, Mode, ClientIP, ClientPort, ServerIP, ServerPort, "
-        query += " Keyword, Type, PassiveBandwidthMeasure.Timestamp, Bytes "
-
-    whereClause = False
-    query += "FROM PassiveTest INNER JOIN PassiveBandwidthMeasure ON PassiveTest.ID = PassiveBandwidthMeasure.id "
+        query += "PassiveTest.ID, ClientIP, ClientPort, ServerIP, ServerPort, Keyword, Direction, Protocol, "
+        query += " Mode, Type, PassiveBandwidthMeasure.Timestamp, Bytes "
 
     
+    query += "FROM PassiveTest INNER JOIN PassiveBandwidthMeasure "
+    query += "ON PassiveTest.ID = PassiveBandwidthMeasure.id "
+    query += "WHERE Mode = %s "
+    params.append(mode)
+    
     if (keyword != "None"):
-        query += " where Keyword = %s"
+        query += "AND Keyword = %s "
         params.append(keyword)
-        whereClause = True
 
     if (likeKeyword != "None"):
-        if (whereClause == False):
-            query += " where "
-            whereClause = True
-        else:
-            query += " AND "
+        query += "AND Keyword LIKE %s "
+        params.append("%" + likeKeyword + "%")
 
-        query += " Keyword LIKE %s"
-
-        likeKeyword = "%" + likeKeyword + "%"
-        params.append(likeKeyword)
+    if (dashfilename != "None"):
+        print dashfilename
+        query += "AND Keyword LIKE %s "
+        params.append("%" + dashfilename + "%")
 
     if (fromInterval != "None"):
-        if (whereClause == False):
-            query += " where "
-            whereClause = True
-        else:
-            query += " AND "
-
-        query += " Timestamp > %s"
+        query += "AND PassiveTest.Timestamp > %s "
         params.append(fromInterval)
 
     if (toInterval != "None"):
-        if (whereClause == False):
-            query += " where "
-            whereClause = True
-        else:
-            query += " AND "
-
-        query += "Timestamp < %s"
+        query += "AND PassiveTest.Timestamp < %s "
         params.append(toInterval)
     
     if (direction != "None"):
-        if (whereClause == False):
-            query += " where "
-            whereClause = True
-        else:
-            query += " AND "
-
-        query += " Direction = %s"
+        query += "AND Direction = %s "
         params.append(direction)
 
-    #if group_by == True:
-    #    query += " GROUP BY PassiveTest.ID"
-
-
-
+    print query
     return json, query, params
+
 
 
 def read_last_test_number(mysql):
