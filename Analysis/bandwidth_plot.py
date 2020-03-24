@@ -37,6 +37,28 @@ def simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_rem
     plt.close()
 
 
+def passivebandwidth_lineplot(clientT_observerT, clientT_observerR, title, labels, dashfilelist, noise):
+    plt.xlabel("Time")
+    plt.ylabel("Bandwidth Mbps")
+    plt.title(title)
+
+    for filename in dashfilelist:
+        plotline_simplebandwidth(plt, clientT_observerT, 'o', labels[0] + filename, filename, int(noise))
+        plotline_simplebandwidth(plt, clientT_observerR, '+',  labels[1] + filename, filename, int(noise))
+
+        print filename.strip() + " plotted (noise = " + str(noise) + ")"
+        
+
+    plt.legend()   
+    plt.gcf().autofmt_xdate()
+
+
+    checkdir("passivebandwidth/simple/")
+    plt.savefig("passivebandwidth/simple/" + title + ".png")
+
+    plt.close()
+
+
 
 def bandwidth_grouped(start_intervals, duration_min, clientT_observerT, clientT_observerR, observerT_remoteR, 
                       title, labels, dates, config_parser):

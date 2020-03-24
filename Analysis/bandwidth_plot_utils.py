@@ -15,14 +15,21 @@ def checkdir(directory):
 
 
 
-def plotline_simplebandwidth(plt, points, s, label):
+def plotline_simplebandwidth(plt, points, s, label, filename = None, noise=None):
     x_values = []
     y_values = []
-    for i in range (0, len(points)):
-        x_values.append(points[i].x)
-        y_values.append(points[i].y)
 
+    
+    for i in range (0, len(points)):     
+        if filename == None or (points[i].dashfilename == filename.strip() and int(noise) == int(points[i].noise)):
+            x_values.append(points[i].x)
+            y_values.append(points[i].y)
+            print "point: " + str(noise) + str(points[i].noise)
+        
     plt.plot(x_values, y_values, s, label = label)
+
+
+    
 
 
 

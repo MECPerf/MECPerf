@@ -47,7 +47,8 @@ if __name__ ==  "__main__":
             print "###########################################################################################"
             print colors.BLUE + "PASSIVE EXPERIMENT CONF:"
             print "BASE_URL: " + BASE_URL
-            print "dates: " + config_parser.get("passive_experiment_params", "dates") + colors.RESET
+            print "from " + config_parser.get("passive_experiment_params", "from") + " to " + \
+                  config_parser.get("passive_experiment_params", "to") + colors.RESET
             
             print "###########################################################################################"
             print "\n\n"
