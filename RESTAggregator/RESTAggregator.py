@@ -2,7 +2,7 @@ from flask import Flask, request, Response
 from flask_mysqldb import MySQL
 
 from request_parser import parse_request
-from query_handler import build_active_bandwidth_query,build_passive_bandwidth_query, update_bandwidth, update_latencies
+from query_handler import build_active_bandwidth_query, build_passive_bandwidth_query, update_bandwidth, update_latencies
 from API_utils import print_command_list
 
 import json
@@ -62,15 +62,20 @@ def create_app():
     @app.route('/get_<measure_type>_measures/bandwidth', methods=['GET'])
     def getBandwidth(measure_type):
         result = ""
-        compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, dashfilename, group_by = parse_request(request)
+        queryparameters = parse_request(request)
 
         if measure_type == "active":
-            json, query, params = build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, 
-                                                               toInterval, command, direction, group_by)
+            json, query, params = build_active_bandwidth_query(queryparameters["json"], queryparameters["keyword"], 
+                                                               queryparameters["likeKeyword"], queryparameters["fromInterval"], 
+                                                               queryparameters["toInterval"], queryparameters["command"], 
+                                                               queryparameters["direction"], queryparameters["group_by"])
         if measure_type == "passive_self" or measure_type == "passive_mim":
             json, query, params = build_passive_bandwidth_query(measure_type.replace("passive_", ""), 
-                                                                json, keyword, likeKeyword, fromInterval, 
-                                                                toInterval, direction, dashfilename)
+                                                                queryparameters["json"], queryparameters["keyword"], 
+                                                                queryparameters["likeKeyword"], queryparameters["fromInterval"], 
+                                                                queryparameters["toInterval"], queryparameters["direction"], 
+                                                                queryparameters["dashfilename"], queryparameters["numberofclients"], 
+                                                                queryparameters["limit"],queryparameters["offset"])
         
 
         cur = mysql.connection.cursor()
@@ -78,29 +83,26 @@ def create_app():
         queryRes = cur.fetchall()
         cur.close()
         
-        print "asked compact " + str(compact)
+        print "asked compact " + str(queryparameters["compact"])
         print "json output = " + str(json)
-        print "keyword " + str(keyword)
-        print "keyword LIKE " + str(likeKeyword)
-        print "fromInterval " + str(fromInterval)
-        print "toInterval " + str(toInterval)
-        print "group_by " + str(group_by)
+        print "keyword " + str(queryparameters["keyword"])
+        print "keyword LIKE " + str(queryparameters["likeKeyword"])
+        print "fromInterval " + str(queryparameters["fromInterval"])
+        print "toInterval " + str(queryparameters["toInterval"])
+        print "group_by " + str(queryparameters["group_by"])
 
-        if (compact != "True"):
+        if (queryparameters["compact"] != "True"):
             result += "<b>" + str(query) + "</b><br><br>"
             result += "json " + json + "<br>"
-            result += "keyword \"" + keyword + "\"<br>"
-            result += "likeKeyword " + likeKeyword + "<br>"
-            result += "fromInterval \"" + fromInterval + "\"<br>"
-            result += "toInterval \"" + toInterval + "\"<br>"
-            result += "group_by \"" + str(group_by) + "\"<br><br>"
+            result += "keyword \"" + queryparameters["keyword"] + "\"<br>"
+            result += "likeKeyword " + queryparameters["likeKeyword"] + "<br>"
+            result += "fromInterval \"" + queryparameters["fromInterval"] + "\"<br>"
+            result += "toInterval \"" + queryparameters["toInterval"] + "\"<br>"
+            result += "group_by \"" + str(queryparameters["group_by"]) + "\"<br><br>"
         if len(queryRes) != 0:
             result += "["
-            for row in queryRes:
-                #print str(row)
-                #print json
-                
-                if json== 'False':
+            for row in queryRes:                
+                if queryparameters["json"]== 'False':
                     result += str(row) + " <br>"
                 else:
                     result += str(row[0]).replace("}", "},")

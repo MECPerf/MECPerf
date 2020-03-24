@@ -45,12 +45,12 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
     query += "FROM Test INNER JOIN BandwidthMeasure ON Test.ID = BandwidthMeasure.id "
 
     
-    if (keyword != "None"):
+    if (keyword != None):
         query += " where Keyword = %s"
         params.append(keyword)
         whereClause = True
 
-    if (likeKeyword != "None"):
+    if (likeKeyword != None):
         if (whereClause == False):
             query += " where "
             whereClause = True
@@ -62,7 +62,7 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
         likeKeyword = "%" + likeKeyword + "%"
         params.append(likeKeyword)
 
-    if (fromInterval != "None"):
+    if (fromInterval != None):
         if (whereClause == False):
             query += " where "
             whereClause = True
@@ -72,7 +72,7 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
         query += " Timestamp > %s"
         params.append(fromInterval)
 
-    if (toInterval != "None"):
+    if (toInterval != None):
         if (whereClause == False):
             query += " where "
             whereClause = True
@@ -82,7 +82,7 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
         query += "Timestamp < %s"
         params.append(toInterval)
     
-    if (command != "None"):
+    if (command != None):
         if (whereClause == False):
             query += " where "
             whereClause = True
@@ -92,7 +92,7 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
         query += "Command = %s"
         params.append(command)
     
-    if (direction != "None"):
+    if (direction != None):
         if (whereClause == False):
             query += " where "
             whereClause = True
@@ -111,7 +111,8 @@ def build_active_bandwidth_query(json, keyword, likeKeyword, fromInterval, toInt
 
 
 
-def build_passive_bandwidth_query(mode, json, keyword, likeKeyword, fromInterval, toInterval, direction, dashfilename):
+def build_passive_bandwidth_query(mode, json, keyword, likeKeyword, fromInterval, toInterval, direction, 
+                                  dashfilename, numberofclients, limit, offset):
     params = []
     query = "SELECT "
     
@@ -145,30 +146,46 @@ def build_passive_bandwidth_query(mode, json, keyword, likeKeyword, fromInterval
     query += "WHERE Mode = %s "
     params.append(mode)
     
-    if (keyword != "None"):
+    if (keyword != None):
         query += "AND Keyword = %s "
         params.append(keyword)
 
-    if (likeKeyword != "None"):
+    if (likeKeyword != None):
         query += "AND Keyword LIKE %s "
         params.append("%" + likeKeyword + "%")
 
-    if (dashfilename != "None"):
+    if (dashfilename != None):
         print dashfilename
         query += "AND Keyword LIKE %s "
         params.append("%" + dashfilename + "%")
 
-    if (fromInterval != "None"):
+    if (numberofclients != None):
+        print numberofclients
+        query += "AND Keyword LIKE %s "
+        params.append("%" + numberofclients + "client%")
+
+    if (fromInterval != None):
         query += "AND PassiveTest.Timestamp > %s "
         params.append(fromInterval)
 
-    if (toInterval != "None"):
+    if (toInterval != None):
         query += "AND PassiveTest.Timestamp < %s "
         params.append(toInterval)
     
-    if (direction != "None"):
+    if (direction != None):
         query += "AND Direction = %s "
         params.append(direction)
+    
+    if limit != None:
+        print type(limit)
+        query += "LIMIT %s "
+        params.append(int(limit))
+        
+        if offset != None:
+            print type(offset)
+            query += "OFFSET %s "
+            params.append(int(offset))
+
 
     print query
     return json, query, params

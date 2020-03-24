@@ -1,58 +1,71 @@
 def parse_request(request):
-        group_by = True
+        PARAMETERS = {}
+        PARAMETERS["group_by"] = True
         try:
-            compact = str(request.args.get('compact'))
+            PARAMETERS["compact"] = request.args.get('compact')
         except KeyError:
-            compact = False
+            PARAMETERS["compact"] = False
 
         try:
-            keyword = str(request.args.get('keyword'))
+            PARAMETERS["keyword"] = request.args.get('keyword')
         except KeyError:
-            keyword = "None"
+            PARAMETERS["keyword"] = None
 
         try:
-            likeKeyword = str(request.args.get('likeKeyword'))
+            PARAMETERS["likeKeyword"] = request.args.get('likeKeyword')
         except KeyError:
-            LikeKeyword = "None"
+            PARAMETERS["LikeKeyword"] = None
 
         try:
-            json = str(request.args.get('json'))
+            PARAMETERS["json"] = str(request.args.get('json'))
         except KeyError:
-            json = False
+            PARAMETERS["json"] = False
 
         try:
-            fromInterval = str(request.args.get('from'))
+            PARAMETERS["fromInterval"] = request.args.get('from')
         except KeyError:
-            fromInterval = "None"
+            PARAMETERS["fromInterval"] = None
 
         try:
-            toInterval = str(request.args.get('to'))
+            PARAMETERS["toInterval"] = request.args.get('to')
         except KeyError:
-            toInterval = "None"
+            PARAMETERS["toInterval"] = None
         try:
-            command = str(request.args.get('command'))
+            PARAMETERS["command"] = request.args.get('command')
         except KeyError:
-            command = "None"
+            PARAMETERS["command"] = None
         try:
-            direction = str(request.args.get('direction'))
+            PARAMETERS["direction"] = request.args.get('direction')
         except KeyError:
-            direction = "None"
+            PARAMETERS["direction"] = None
         try:
-            dashfilename = str(request.args.get('dashfilename'))
+            PARAMETERS["dashfilename"] = request.args.get('dashfilename')
         except KeyError:
-            dashfilename = "None"
+            PARAMETERS["dashfilename"] = None
+        try:
+            PARAMETERS["numberofclients"] = request.args.get('clientnumber')
+        except KeyError:
+            PARAMETERS["numberofclients"] = None
+        try:
+            PARAMETERS["limit"] = request.args.get('limit')    
+        except KeyError:
+            PARAMETERS["limit"] = None
+        try:
+            PARAMETERS["offset"] = request.args.get('offset')    
+        except KeyError:
+            PARAMETERS["offset"] = None
+
+
 
         try:
             val = str(request.args.get('group_by'))
 
-            print val
-
             if "true" == val or "True" == val:
-                group_by = True
+                PARAMETERS["group_by"] = True
             if "false" == val or "False" == val:
-                group_by = False
+                PARAMETERS["group_by"] = False
         except KeyError:
-            group_by = True
+            PARAMETERS["group_by"] = True
 
-        return compact, keyword, likeKeyword, json, fromInterval, toInterval, command, direction, dashfilename, group_by
+        return PARAMETERS
         
