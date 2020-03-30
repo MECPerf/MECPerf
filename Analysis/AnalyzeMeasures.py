@@ -8,7 +8,7 @@ import sys
 import time
 
 from Measure import Measure, PassiveMeasure
-from bandwidth_plot import simplebandwidth_lineplot, passivebandwidth_lineplot, bandwidth_grouped, bandwidth_raw
+from bandwidth_plot import simplebandwidth_lineplot, passivebandwidth_lineplot, bandwidth_grouped, bandwidth_raw, bandwidthboxplot_noiseandfilegrouped
 
 
 
@@ -280,6 +280,7 @@ def analyze_activebandwidthmeasures(BASE_URL, direction, command, config_parser)
             
 
 def analyze_passivebandwidthmeasures(BASE_URL, direction, measuretype, protocol, config_parser):  
+    
     labels= []  
 
     PARAMS = {}
@@ -325,6 +326,18 @@ def analyze_passivebandwidthmeasures(BASE_URL, direction, measuretype, protocol,
         passivebandwidth_lineplot(clientT_observerT_self, clientT_observerR_self, title + "-self_" + str(noise) + "M", labels, 
                                     dashfileslist, int(noise))
 
+        for dashfile in dashfileslist:
+            dashfile = dashfile.strip()
+            title_mim = title + "-mim_" + str(noise) + "M_" + str(dashfile)
+            title_self = title + "-self_" + str(noise) + "M_" + str(dashfile)
+            bandwidthboxplot_noiseandfilegrouped(clientT_observerT_mim, title_mim + "Client -> Server T", dashfile, 
+                                     clientnumberlist, noise)
+            bandwidthboxplot_noiseandfilegrouped(clientT_observerR_mim, title_mim + "Client -> Server R", dashfile, 
+                                     clientnumberlist, noise)
+            bandwidthboxplot_noiseandfilegrouped(clientT_observerT_self, title_self + "Client -> Server T", dashfile, 
+                                     clientnumberlist, noise)
+            bandwidthboxplot_noiseandfilegrouped(clientT_observerR_self, title_self + "Client -> Server R", dashfile, 
+                                     clientnumberlist, noise)
 
 
 

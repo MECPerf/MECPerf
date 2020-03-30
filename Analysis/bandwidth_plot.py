@@ -9,7 +9,7 @@ import colors
 from datetime import time, datetime, timedelta, date
 from Measure import Measure
 from bandwidth_plot_utils import checkdir, plotline_simplebandwidth, computeBandwidth_groupedbyday
-from bandwidth_plot_utils import computeyvalues_groupedbyweekdayandintervals, compute_bandwidthhistogram
+from bandwidth_plot_utils import computeyvalues_groupedbyweekdayandintervals, compute_bandwidthhistogram, processvalues_noiseandfilegroupedboxplot
 
 
 
@@ -321,4 +321,76 @@ def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_n
         plt.savefig(basedir + title + "(" + str(i) + "bins).png", dpi = 500)
         
         plt.close()
+
+
+
+def bandwidthboxplot_noiseandfilegrouped(client_server, title, dashfilename, clientnumberlist, noise):
+    if len(client_server) == 0:
+        print colors.WARNING + "Missing data" + colors.RESET
+        return
+
+
+    fig = plt.figure()
+    ax = plt.axes()
+
+    values = processvalues_noiseandfilegroupedboxplot(client_server, dashfilename, clientnumberlist, int(noise))
+    if len(values) == 0:
+        print colors.WARNING + "No data for file " + dashfilename + " with " + noise + "M noise" + colors.RESET
+        plt.close()
+        return
+
+    xlabels = []
+    xlabelspos = []
+
+    #plot
+    i = 1
+    #print values
+    for key, value in values.items():
+        #value = [[client 1 measures], [client n measures], ..., [client n measures] for a given experiment
+        pos = []
+        for k in range (0, len(value)):
+            pos.append(i + k)
+
+        #print value
+        bp = ax.boxplot(value, positions = pos, widths = 0.6, patch_artist=True, medianprops={"color":"black"})
+        j=0
+        for box in bp["boxes"]:
+            while  j < len(value) and len(value[j]) != 0:
+                #skip empty sets of measures 
+                j += 1
+        
+            if j < len(value):
+                plt.setp(box, facecolor=colors.BOXPLOT_COLORS[j], edgecolor='black')
+                j += 1
+
+        xlabels.append(key)
+        xlabelspos.append(1.0*i + (1.0*len(value)/2) -1)
+        print xlabels
+        print xlabelspos
+        i += k + 2
+
+
+    # set axes limits and labels
+    plt.xlim(0,i - 1)
+    #plt.ylim(0,9)
+    ax.set_xticklabels(xlabels)
+    ax.set_xticks(xlabelspos)
+    plt.title(title)
+
+
+    #add legend
+    legend = []
+    for i in range (0, len(clientnumberlist)):
+        legend.append("Number of clients = " + str(i + 1))
+    leg=ax.legend(legend, loc="best", frameon=True)
+    i=0
+    for item in leg.legendHandles:
+        item.set_color(colors.BOXPLOT_COLORS[i])
+        item.set_linewidth(2.0)
+        i += 1
     
+    checkdir("passivebandwidth/boxplot/")
+    plt.savefig("passivebandwidth/boxplot/" + title + ".png")
+    plt.show()
+
+    plt.close()

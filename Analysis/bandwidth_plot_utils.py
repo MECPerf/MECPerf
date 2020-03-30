@@ -1,4 +1,5 @@
 from datetime import datetime, time, date
+from collections import OrderedDict
 import numpy as np
 import scipy.stats
 import os
@@ -24,12 +25,11 @@ def plotline_simplebandwidth(plt, points, s, label, filename = None, noise=None)
         if filename == None or (points[i].dashfilename == filename.strip() and int(noise) == int(points[i].noise)):
             x_values.append(points[i].x)
             y_values.append(points[i].y)
-            print "point: " + str(noise) + str(points[i].noise)
+            #print "point: " + str(noise) + str(points[i].noise)
         
     plt.plot(x_values, y_values, s, label = label)
 
 
-    
 
 
 
@@ -82,8 +82,6 @@ def computeBandwidth_groupedbyday(points, dates, noise):
 
 
 
-
-
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)
     n = len(a)
@@ -131,6 +129,7 @@ def computeyvalues_groupedbyweekdayandintervals(points, day, start_intervals, st
     return ret
 
 
+
 def compute_bandwidthhistogram(segment, noise):
     ret = []
     for value in segment:
@@ -143,3 +142,32 @@ def compute_bandwidthhistogram(segment, noise):
 
     #print ret
     return ret
+
+
+def processvalues_noiseandfilegroupedboxplot(client_server, dashfilename, clientnumberlist, noise):
+    assert len(client_server) != 0
+    assert len(client_server) != 0
+
+    print dashfilename
+    print clientnumberlist
+
+    values = OrderedDict()
+    
+    for measure in client_server:        
+        if int(measure.noise) != int(noise):
+            continue
+        if str(measure.dashfilename.strip()) != str(dashfilename.strip()):
+            continue
+
+        #print str(measure.dashfilename.strip()) + "-" + str(dashfilename.strip())
+        #print str (measure.noise) + "-" + str(noise)
+
+        if values.get(measure.startexperiment_timestamp, None) == None:
+            values[measure.startexperiment_timestamp] = [[] for k in range(len(clientnumberlist))]
+            print measure.startexperiment_timestamp
+            print len(values[measure.startexperiment_timestamp])
+
+        values[measure.startexperiment_timestamp][int(measure.numberofclients) - 1].append(measure.y)
+
+    
+    return values
