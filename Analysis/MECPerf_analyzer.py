@@ -4,7 +4,7 @@ import colors
 import sys
 import distutils.util
 
-from AnalyzeMeasures import analyze_activebandwidthmeasures, analyze_passivebandwidthmeasures
+from AnalyzeMeasures import analyze_activebandwidthmeasures
 
 
 
@@ -39,24 +39,5 @@ if __name__ ==  "__main__":
 
             analyze_activebandwidthmeasures(BASE_URL, 'Upstream', "UDPBandwidth", config_parser)
             analyze_activebandwidthmeasures(BASE_URL, 'Downstream', "UDPBandwidth", config_parser)
-
-      if distutils.util.strtobool(config_parser.get('experiment_params', "analyze_passive_data")) == True:
-            #passive measurements
-
-            print "\n\n"
-            print "###########################################################################################"
-            print colors.BLUE + "PASSIVE EXPERIMENT CONF:"
-            print "BASE_URL: " + BASE_URL
-            print "from " + config_parser.get("passive_experiment_params", "from") + " to " + \
-                  config_parser.get("passive_experiment_params", "to") + colors.RESET
-            
-            print "###########################################################################################"
-            print "\n\n"
-
-            analyze_passivebandwidthmeasures(BASE_URL, 'downlink', "bandwidth", "tcp", config_parser)
-
-                  
-
-     
 
         

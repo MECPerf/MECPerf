@@ -10,6 +10,9 @@ from datetime import time, datetime, timedelta, date
 from Measure import Measure
 from bandwidth_plot_utils import checkdir, plotline_simplebandwidth, computeBandwidth_groupedbyday
 from bandwidth_plot_utils import computeyvalues_groupedbyweekdayandintervals, compute_bandwidthhistogram, processvalues_noiseandfilegroupedboxplot
+from matplotlib.backends.backend_pdf import PdfPages
+from scipy.signal import find_peaks
+
 
 
 
@@ -33,28 +36,6 @@ def simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_rem
 
     checkdir("bandwidth/simple/")
     plt.savefig("bandwidth/simple/" + title + ".png")
-
-    plt.close()
-
-
-def passivebandwidth_lineplot(clientT_observerT, clientT_observerR, title, labels, dashfilelist, noise):
-    plt.xlabel("Time")
-    plt.ylabel("Bandwidth Mbps")
-    plt.title(title)
-
-    for filename in dashfilelist:
-        plotline_simplebandwidth(plt, clientT_observerT, 'o', labels[0] + filename, filename, int(noise))
-        plotline_simplebandwidth(plt, clientT_observerR, '+',  labels[1] + filename, filename, int(noise))
-
-        print filename.strip() + " plotted (noise = " + str(noise) + ")"
-        
-
-    plt.legend()   
-    plt.gcf().autofmt_xdate()
-
-
-    checkdir("passivebandwidth/simple/")
-    plt.savefig("passivebandwidth/simple/" + title + ".png")
 
     plt.close()
 
@@ -105,13 +86,13 @@ def bandwidth_groupedbyday(clientT_observerT, clientT_observerR, observerT_remot
     totalbarwidth = 0.0
     lastx = []
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(15,6))
     ax = fig.add_subplot(111)
 
     plt.xlabel("Days")
     xtickslabels = None
     plt.ylabel("Bandwidth Mbps")
-    plt.title(title)
+    #plt.title(title)
    
 
     if clientT_observerT != None:
@@ -143,7 +124,7 @@ def bandwidth_groupedbyday(clientT_observerT, clientT_observerR, observerT_remot
 
         if xtickslabels == None:
             xtickslabels = observer_remote_labels
-
+    
     if clientT_observerT != None and clientT_observerR != None and observerT_remoteR != None:
         assert len(client_observer_testbed_y) == len(client_observer_unipi_y)
         assert len(client_observer_unipi_y) == len(observer_remote_y)
@@ -158,9 +139,11 @@ def bandwidth_groupedbyday(clientT_observerT, clientT_observerR, observerT_remot
     if clientT_observerT != None:
         ax.bar(client_observer_testbed_x, client_observer_testbed_y, yerr = client_observer_testbed_error, 
                 width= barwidth, label = labels[0], color = colors.OBSERVER_CLIENT_TESTBED)
+
     if clientT_observerR != None:    
         ax.bar(client_observer_unipi_x, client_observer_unipi_y, yerr = client_observer_unipi_error, 
                 width= barwidth, label = labels[1], color = colors.OBSERVER_CLIENT_UNIPI) 
+
     if observerT_remoteR != None:
         ax.bar(observer_remote_x, observer_remote_y, yerr=observer_remote_error, width= barwidth, 
                 label = labels[2], color = colors.NITOS_REMOTE)
@@ -176,10 +159,16 @@ def bandwidth_groupedbyday(clientT_observerT, clientT_observerR, observerT_remot
     box = ax.get_position()
     # Shrink current axis's height by 10% on the bottom
     ax.set_position([box.x0, box.y0 + box.height * 0.1,  box.width, box.height * 0.9])
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), fancybox=True, shadow=True, ncol = 1, facecolor = "white")   
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.08), ncol = 3, facecolor = "white")   
 
     checkdir("bandwidth/grouped_barplot/by_day/")
-    plt.savefig("bandwidth/grouped_barplot/by_day/" + title + ".png", dpi = 500)
+   
+
+    pdfpage = PdfPages("bandwidth/grouped_barplot/by_day/" + title + ".pdf")
+    pdfpage.savefig( bbox_inches="tight")
+    pdfpage.close()
+
+    plt.savefig("bandwidth/grouped_barplot/by_day/" + title + ".png")
     plt.close()
 
 
@@ -235,36 +224,41 @@ def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,  obse
 
     for i in range (start_noise, stop_noise + 1, step_noise):
         if len(clientT_observerT) != 0:
+            ylim = 10000
+            xlim = 1200
             bandwidth_histogram(clientT_observerT, str(i) + "M",  
                             "client-observer(nitos)" + title + str(i) + "M Noise", 
-                            "client -> Observer(Nitos)", colors.OBSERVER_CLIENT_TESTBED)
+                            "client -> Observer(Nitos)", colors.OBSERVER_CLIENT_TESTBED, xlim, ylim)
         else:
             colors.WARNING + "len(clientT_observerT) is 0"
         if len(clientT_observerR) != 0:
+            ylim = 10000
+            xlim = 1200
             bandwidth_histogram(clientT_observerR, str(i) + "M",  
                             "client-observer(unipi)" + title + str(i) + "M Noise", 
-                            "client -> Observer(Unipi))", colors.OBSERVER_CLIENT_UNIPI)
+                            "client -> Observer(Unipi))", colors.OBSERVER_CLIENT_UNIPI, xlim, ylim)
         else:
             colors.WARNING + "len(clientT_observerR) is 0"
         if len(observerT_remoteR) != 0:
+            ylim = 10000
+            xlim = 1200
             bandwidth_histogram(observerT_remoteR, str(i) + "M",  
                             "observer-remote" + title + str(i) + "M Noise", 
-                            "Observer -> Remote", colors.NITOS_REMOTE)
+                            "Observer -> Remote", colors.NITOS_REMOTE, xlim, ylim)
         else:
             colors.WARNING + "len(observerT_remoteR) is 0"
-        if len(observerR_remoteR) != 0:
-            bandwidth_histogram(observerR_remoteR, str(i) + "M",  
-                            "observer-remote" + title + str(i) + "M Noise", 
-                            "Observer -> Remote", colors.NITOS_REMOTE)
-        else:
-            colors.WARNING + "len(observerR_remoteR) is 0"
+        #if len(observerR_remoteR) != 0:
+        #    bandwidth_histogram(observerR_remoteR, str(i) + "M",  
+        #                    "observer-remote" + title + str(i) + "M Noise", 
+        #                    "Observer -> Remote", colors.NITOS_REMOTE)
+        #else:
+        #    colors.WARNING + "len(observerR_remoteR) is 0"
 
 
 
 
-def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_number = 1000, maxbin_number = 1001, step = 10):
-    assert minbin_number <= maxbin_number
-    assert step > 0
+def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, xlim, ylim):
+    
 
     print "bandwidth histogram: noise = " + str(noise) 
 
@@ -283,114 +277,69 @@ def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, minbin_n
     else:
         exit(-1)
 
+    checkdir(basedir)
+
+    print len(segment)
+
     x = compute_bandwidthhistogram(segment, noise)
+    print len(x)
+
     if len(x) == 0:
         print colors.WARNING + "\t\tempty set. returning" + colors.RESET
         return
 
+    plt.figure(figsize=(15,6))
+
+    plt.xlim(0, xlim)
+    plt.ylim(0, ylim)
+    plt.xticks(np.arange(0, xlim, step = 50))
+    plt.yticks(np.arange(0, ylim, step=500))
+
+    plt.ylabel("Number of occurrences")
+    plt.xlabel("Mbps ")
+    #plt.title(title + "mean: " + str(sum(x)/len(x)) + "-" + str(len(x)))
+
+    print "plotting"  + basedir + title + ".png"
+    count, division, patches = plt.hist(x, bins="sqrt", color = histcolor, edgecolor= "black")
+    writehistdata(count, division, sum(x)/len(x), len(x), patches, basedir, title + ".txt", xlim, ylim)
+
+
+    peaks, _ = find_peaks(np.concatenate(([0], count, [0]), axis=None), threshold=(sum(x)/len(x)/100*5))
+    for i in range(0, len(peaks)):
+        peaks[i] -= 1
     
-    x.sort(reverse = True)
-    print "max x" +  str(x[0])
-    maxx = x[3] + 1
-    print "maxx" +  str(maxx)
-
-    plt.xlim(0, maxx)
-
-    for i in range (minbin_number, maxbin_number, step):
-        plt.ylabel("Number of occurrences")
-        plt.xlabel("Mbps \nNumber of bins = " + str(i))
-        plt.title(title)
-
-
-        binsize = 1.0 * maxx/i
-        print binsize
-        binslist = []
-        p = binsize/2
-
-
-        while (p < maxx):
-            binslist.append(p)
-            p = p + binsize
-            #print str(p) +" of " + str(maxx)
+    for i in range(0, len(peaks)):
+        linexpos = division[peaks[i]] + (( 1.0 *division[peaks[i] + 1] - division[peaks[i]])/2)
+        plt.scatter(linexpos, count[peaks[i]] + 150, color = "red", marker="v")
+        
     
-        print "plotting"  + basedir + title + "(" + str(i) + "bins).png"
-        print "\t\tlen(x)"  + str(len(x))
-        
-        plt.hist(x, bins=binslist, color = histcolor)
-        checkdir(basedir)
-        plt.savefig(basedir + title + "(" + str(i) + "bins).png", dpi = 500)
-        
-        plt.close()
-
-
-
-def bandwidthboxplot_noiseandfilegrouped(client_server, title, dashfilename, clientnumberlist, noise):
-    if len(client_server) == 0:
-        print colors.WARNING + "Missing data" + colors.RESET
-        return
-
-
-    fig = plt.figure()
-    ax = plt.axes()
-
-    values = processvalues_noiseandfilegroupedboxplot(client_server, dashfilename, clientnumberlist, int(noise))
-    if len(values) == 0:
-        print colors.WARNING + "No data for file " + dashfilename + " with " + noise + "M noise" + colors.RESET
-        plt.close()
-        return
-
-    xlabels = []
-    xlabelspos = []
-
-    #plot
-    i = 1
-    #print values
-    for key, value in values.items():
-        #value = [[client 1 measures], [client n measures], ..., [client n measures] for a given experiment
-        pos = []
-        for k in range (0, len(value)):
-            pos.append(i + k)
-
-        #print value
-        bp = ax.boxplot(value, positions = pos, widths = 0.6, patch_artist=True, medianprops={"color":"black"})
-        j=0
-        for box in bp["boxes"]:
-            while  j < len(value) and len(value[j]) != 0:
-                #skip empty sets of measures 
-                j += 1
-        
-            if j < len(value):
-                plt.setp(box, facecolor=colors.BOXPLOT_COLORS[j], edgecolor='black')
-                j += 1
-
-        xlabels.append(key)
-        xlabelspos.append(1.0*i + (1.0*len(value)/2) -1)
-        print xlabels
-        print xlabelspos
-        i += k + 2
-
-
-    # set axes limits and labels
-    plt.xlim(0,i - 1)
-    #plt.ylim(0,9)
-    ax.set_xticklabels(xlabels)
-    ax.set_xticks(xlabelspos)
-    plt.title(title)
-
-
-    #add legend
-    legend = []
-    for i in range (0, len(clientnumberlist)):
-        legend.append("Number of clients = " + str(i + 1))
-    leg=ax.legend(legend, loc="best", frameon=True)
-    i=0
-    for item in leg.legendHandles:
-        item.set_color(colors.BOXPLOT_COLORS[i])
-        item.set_linewidth(2.0)
-        i += 1
     
-    checkdir("passivebandwidth/boxplot/")
-    plt.savefig("passivebandwidth/boxplot/" + title + ".png")
-    plt.show()
+    pdfpage = PdfPages(basedir + title + ".pdf")
+    pdfpage.savefig( bbox_inches="tight")
+    pdfpage.close()
+
+    print "mean: " + str(sum(x)/len(x))
+    plt.savefig(basedir + title + ".png")
 
     plt.close()
+
+
+def writehistdata(count, positions, mean, vectorlen, patches, dirname, filename, xlim, ylim):
+    with open(dirname + filename, "w") as outputfile:
+        outputfile.write("mean: \t" + str(mean) + "\n")
+        outputfile.write("count: \t" + str(count) + "\n")
+        outputfile.write("bins position: \t" + str(positions) + "\n\n")
+
+        with open(dirname + "log", "a") as logfile:
+            for i in range(0, len(positions) - 1):
+                outputfile.write(str(i) + ": " + str(count[i]) + "[" + str(positions[i]) + ", " + \
+                                str(positions[i + 1])+ "]\n")
+
+            if (count[i]> ylim):
+                logfile.write(filename + ":\t" + str(count[i])  + "elements with y belonging to [0, " + \
+                              str(ylim) + "]\n")
+
+            if (positions[i]> xlim):
+                logfile.write(filename + ":\t" + str(count[i]) + "occurrences at [" + str(positions[i]) + \
+                              ", " + str(positions[i+1]) + " with x belonging to [0, " + str(xlim) + "]\n")
+   

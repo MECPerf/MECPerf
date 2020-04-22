@@ -74,10 +74,6 @@ def computeBandwidth_groupedbyday(points, dates, noise):
         ret_y.append(mean)
         error_y.append(error)
 
-    #print ret_x 
-    #print ret_y
-    #print error_y
-
     return ret_x, ret_y, error_y
 
 
@@ -85,6 +81,9 @@ def computeBandwidth_groupedbyday(points, dates, noise):
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)
     n = len(a)
+    
+    if n <= 1:
+        return np.mean(a), 0
     m, se = np.mean(a), scipy.stats.sem(a)
 
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
@@ -147,13 +146,12 @@ def compute_bandwidthhistogram(segment, noise):
 def processvalues_noiseandfilegroupedboxplot(client_server, dashfilename, clientnumberlist, noise):
     assert len(client_server) != 0
     assert len(client_server) != 0
-
-    print dashfilename
-    print clientnumberlist
-
+    
     values = OrderedDict()
     
     for measure in client_server:        
+        
+
         if int(measure.noise) != int(noise):
             continue
         if str(measure.dashfilename.strip()) != str(dashfilename.strip()):
@@ -163,11 +161,15 @@ def processvalues_noiseandfilegroupedboxplot(client_server, dashfilename, client
         #print str (measure.noise) + "-" + str(noise)
 
         if values.get(measure.startexperiment_timestamp, None) == None:
-            values[measure.startexperiment_timestamp] = [[] for k in range(len(clientnumberlist))]
+            values[measure.startexperiment_timestamp] = [[] for k in range(0, len(clientnumberlist))]
             print measure.startexperiment_timestamp
             print len(values[measure.startexperiment_timestamp])
 
-        values[measure.startexperiment_timestamp][int(measure.numberofclients) - 1].append(measure.y)
+        values[measure.startexperiment_timestamp][clientnumberlist.index(int(measure.numberofclients))].append(measure.y)
+        #values[measure.startexperiment_timestamp][int(measure.numberofclients)-1].append(measure.y)
+        
+ 
+
 
     
     return values
