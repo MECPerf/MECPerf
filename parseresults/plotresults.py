@@ -10,15 +10,21 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 
 from readcsv import readvalues_activelatencyboxplot, readvalues_activebandwidthboxplot
-from readcsv import readvalues_activebandwidthlineplot, readvalues_noisegrouped
+from readcsv import readvalues_activebandwidthlineplot, readvalues_noisegrouped_self, readvalues_noisemim
 
 
 
 BOXPLOT_COLORS=['#F8B195', "#355C7D", '#C06C84', '#F67280', '#99B898', '#A8E6CE', '#E84A5F', '#A7226E', 
-                '#F7DB4F', "#FC913A", "#1bdc9d", "#9c5a4c", "#9c4c84", "#4c999c"]
+                '#F7DB4F', "#FC913A", "#1bdc9d", "#9c5a4c", "#9c4c84", "#4c999c", '#F8B195', "#355C7D", 
+                '#C06C84', '#F67280', '#99B898', '#A8E6CE', '#F8B195', "#355C7D", '#C06C84', '#F67280', 
+                '#99B898', '#A8E6CE', '#F8B195', "#355C7D", '#C06C84', '#F67280', '#99B898', '#A8E6CE', 
+                '#F8B195', "#355C7D", '#C06C84', '#F67280', '#99B898', '#A8E6CE']
 WARNING = '\033[93m'
 FAIL = '\033[91m'
 RESET = '\033[0m'
+LEGENDYPOS_1LINE = 1.07
+LEGENDYPOS_2LINE = 1.12
+LEGENDYPOS_4LINE = 1.21
 #matplotlib.interactive(True)
 
 
@@ -33,8 +39,8 @@ def createfolder(directoryname):
 
 
 
-def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped=False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber").split(",")
+def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped, ncol, legendypos):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
      
@@ -47,7 +53,7 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
         if edgeserver and not segmentgrouped:
             title += "-edge"
         elif not edgeserver and not segmentgrouped:
-            title += "-remote"
+            title += "-cloud"
 
         for noise in noiselist:
             values[noise] =[]
@@ -59,7 +65,7 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
                              + config_parser.get("experiment_conf", "from_passive") + "-" \
                              + config_parser.get("experiment_conf", "to_passive") + ".csv"
 
-                    values[noise].append(readvalues_noisegrouped(config_parser, int(clientnumber), noise, 
+                    values[noise].append(readvalues_noisegrouped_self(config_parser, int(clientnumber), noise, 
                                                                         filename, edgeserver, connectiontype)) 
             elif segmentgrouped:
                 for clientnumber in clientnumberlist:
@@ -68,9 +74,9 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
                              + config_parser.get("experiment_conf", "from_passive") + "-" \
                              + config_parser.get("experiment_conf", "to_passive") + ".csv"
                 
-                    values[noise].append(readvalues_noisegrouped(config_parser, int(clientnumber), noise, 
+                    values[noise].append(readvalues_noisegrouped_self(config_parser, int(clientnumber), noise, 
                                                                     filename, True, connectiontype))
-                    values[noise].append(readvalues_noisegrouped(config_parser, int(clientnumber), noise, 
+                    values[noise].append(readvalues_noisegrouped_self(config_parser, int(clientnumber), noise, 
                                                                     filename, False, connectiontype))
                 
 
@@ -81,8 +87,12 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
         if segmentgrouped:
             folderpath = "bandwidthplot/noiseandsegmentgrouped/" + connectiontype + "/"
             for i in range (0, len(clientnumberlist)):
-                legendlabels.append("Number of clients = " + str(clientnumberlist[i]) + "_edge")
-                legendlabels.append("Number of clients = " + str(clientnumberlist[i]) + "_remote")
+                if i == 0:
+                    legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
+                    legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+                else:
+                    legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
+                    legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
 
                    
         if len(values) == 0:
@@ -92,7 +102,62 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
         #print folderpath
         createfolder(folderpath)
         ylabel = "Bandwidth (Mbps)"
-        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel)
+        xlabel = "CrossTraffic (Mbps)"
+
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+
+
+
+
+
+def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectiontype, ncol, legendypos):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    folderpath = "bandwidthplot/fileandsegmentgrouped/mim" + connectiontype + "/"
+    ylabel = "Bandwidth (Mbps)"
+    xlabel = "CrossTraffic (Mbps)"
+
+    createfolder(folderpath)
+     
+    values = OrderedDict()
+
+    for noise in noiselist:
+        title = mode + "-" + direction + "-" + connectiontype + "-bandwidth-" + noise 
+
+        legendlabels = []
+
+        for dashfile in dashfileslist:
+            values[dashfile] =[]
+
+            for clientnumber in clientnumberlist:
+                filename = "csv/passive/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-" \
+                         + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_"  \
+                         + config_parser.get("experiment_conf", "from_passive") + "-" \
+                         + config_parser.get("experiment_conf", "to_passive") + ".csv"
+            
+                values[dashfile].append(readvalues_noisemim(config_parser, filename, connectiontype,
+                                                            "edge", noise))  
+                values[dashfile].append(readvalues_noisemim(config_parser, filename, connectiontype,
+                                                            "remote", noise))       
+        for i in range (0, len(clientnumberlist)):
+            if i == 0:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+            else:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
+                   
+        if len(values) == 0:
+            print WARNING + "No data for file " + dashfile + RESET
+            continue
+        
+        ylim = 50
+        showfliers = False
+
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
+
+
 
 
 
@@ -108,21 +173,22 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
     title = direction + "-" + connectiontype
     folderpath = "latency/active/boxplot_command/" + connectiontype + "/"
     ylabel = "Latency (ms)"
+    xlabel = "CrossTraffic (Mbps)"
     legendlabels = []
     if direction == "Upstream":
-        legendlabels.append("TCPRTT: Client -> Observer (Nitos)")
-        legendlabels.append("UDPRTT: Client -> Observer (Nitos)")
-        legendlabels.append("TCPRTT: Client -> Observer (Unipi)")
-        legendlabels.append("UDPRTT: Client -> Observer (Unipi)")
-        legendlabels.append("TCPRTT: Observer (Nitos) -> Remote server (Unipi)")
-        legendlabels.append("UDPRTT: Observer (Nitos) -> Remote server (Unipi)")
+        legendlabels.append("TCPRTT: Access -> MEC")
+        legendlabels.append("UDPRTT: Access -> MEC")
+        legendlabels.append("TCPRTT: Access -> Cloud")
+        legendlabels.append("UDPRTT: Access -> Cloud")
+        legendlabels.append("TCPRTT: MEC -> Cloud")
+        legendlabels.append("UDPRTT: MEC -> Cloud")
     elif direction == "Downstream":
-        legendlabels.append("TCPRTT: Observer (Nitos) -> Client")
-        legendlabels.append("UDPRTT: Observer (Nitos) -> Client")
-        legendlabels.append("TCPRTT: Observer (Unipi) -> Client")
-        legendlabels.append("UDPRTT: Observer (Unipi) -> Client")
-        legendlabels.append("TCPRTT: Remote server (Unipi) -> Observer (Nitos)")
-        legendlabels.append("UDPRTT: Remote server (Unipi) -> Observer (Nitos)")
+        legendlabels.append("TCPRTT: MEC -> Access")
+        legendlabels.append("UDPRTT: MEC -> Access")
+        legendlabels.append("TCPRTT: Cloud -> Access")
+        legendlabels.append("UDPRTT: Cloud -> Access")
+        legendlabels.append("TCPRTT: Cloud -> MEC")
+        legendlabels.append("UDPRTT: Cloud -> MEC")
     else:
         print "unknown direction"
         sys.exti(0)
@@ -162,14 +228,13 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
 
     createfolder(folderpath)
 
-    
-    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel)
+
+    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel)
 
     ylim += 300
     show_fliers = True
-    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_fliers)
+    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers)
     
-
 
 
 def bandwidthboxplot_active_conntypegrouped(config_parser, command, direction, ylim):
@@ -181,21 +246,22 @@ def bandwidthboxplot_active_conntypegrouped(config_parser, command, direction, y
     title = command + "-" + direction
     folderpath = "bandwidth/active/boxplot_conntype/"
     ylabel = "Bandwidth (Mbps)"
+    xlabel = "CrossTraffic (Mbps)"
     legendlabels = []
     if direction == "Upstream":
-        legendlabels.append("wifi: Client -> Observer (Nitos)")
-        legendlabels.append("lte: Client -> Observer (Nitos)")
-        legendlabels.append("wifi: Client -> Observer (Unipi)")
-        legendlabels.append("lte: Client -> Observer (Unipi)")
-        legendlabels.append("wifi: Observer (Nitos) -> Remote server (Unipi)")
-        legendlabels.append("lte: Observer (Nitos) -> Remote server (Unipi)")
+        legendlabels.append("Wi-Fi: Access -> MEC")
+        legendlabels.append("LTE: Access -> MEC")
+        legendlabels.append("Wi-Fi: Access -> Cloud")
+        legendlabels.append("LTE: Access -> Cloud")
+        legendlabels.append("Wi-Fi: MEC -> Cloud")
+        legendlabels.append("LTE: MEC -> Cloud")
     elif direction == "Downstream":
-        legendlabels.append("wifi: Observer (Nitos) -> Client")
-        legendlabels.append("lte: Observer (Nitos) -> Client")
-        legendlabels.append("wifi: Observer (Unipi) -> Client")
-        legendlabels.append("lte: Observer (Unipi) -> Client")
-        legendlabels.append("wifi: Remote server (Unipi) -> Observer (Nitos)")
-        legendlabels.append("lte: Remote server (Unipi) -> Observer (Nitos)")
+        legendlabels.append("Wi-Fi: MEC -> Access")
+        legendlabels.append("LTE: MEC -> Access")
+        legendlabels.append("Wi-Fi: Cloud -> Access")
+        legendlabels.append("LTE: Cloud -> Access")
+        legendlabels.append("Wi-Fi: Cloud -> MEC")
+        legendlabels.append("LTE: Cloud -> MEC")
     else:
         print "unknown direction"
         sys.exti(0)
@@ -235,12 +301,13 @@ def bandwidthboxplot_active_conntypegrouped(config_parser, command, direction, y
 
     createfolder(folderpath)
 
-    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel)
+    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel)
 
     ylim += 300
     show_fliers = True
-    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_fliers)
-    
+    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers)
+
+
 
 def latencyboxplot_active(config_parser, command, direction, connectiontype, ylim):
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
@@ -254,17 +321,18 @@ def latencyboxplot_active(config_parser, command, direction, connectiontype, yli
 
     title = command + "-" + direction + "-" + connectiontype
     ylabel = "Latency (ms)"
+    xlabel = "CrossTraffic (Mbps)"
 
 
     legendlabels = []
     if direction == "Upstream":
-        legendlabels.append("Client -> Observer (Nitos)")
-        legendlabels.append("Client -> Observer (Unipi)")
-        legendlabels.append("Observer (Nitos) -> Remote server (Unipi)")
+        legendlabels.append("Access -> MEC")
+        legendlabels.append("Access -> Cloud")
+        legendlabels.append("MEC -> Cloud")
     elif direction == "Downstream":
-        legendlabels.append("Observer (Nitos) -> Client")
-        legendlabels.append("Observer (Unipi) -> Client")
-        legendlabels.append("Remote server (Unipi) -> Observer (Nitos)")
+        legendlabels.append("MEC -> Access")
+        legendlabels.append("Cloud -> Access")
+        legendlabels.append("Cloud -> MEC")
     else:
         print "unknown direction"
         sys.exti(0)
@@ -287,14 +355,17 @@ def latencyboxplot_active(config_parser, command, direction, connectiontype, yli
         return
 
     createfolder(folderpath)
-
-    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel)
+    show_fliers = False
+    ncolumn = 3
+    legendypos = LEGENDYPOS_1LINE
+    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel, show_fliers, ncolumn, 
+                legendypos)
 
     ylim += 300
     show_fliers = True
-    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_fliers)
+    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers, ncolumn, 
+                legendypos)
     
-
 
 
 def bandwidthboxplot_active(config_parser, command, direction, connectiontype, ylim):
@@ -308,17 +379,18 @@ def bandwidthboxplot_active(config_parser, command, direction, connectiontype, y
     title = command + "-" + direction + "-" + connectiontype
     folderpath = "bandwidth/active/boxplot/" + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
+    xlabel = "CrossTraffic (Mbps)"
 
 
     legendlabels = []
     if direction == "Upstream":
-        legendlabels.append("Client -> Observer (Nitos)")
-        legendlabels.append("Client -> Observer (Unipi)")
-        legendlabels.append("Observer (Nitos) -> Remote server (Unipi)")
+        legendlabels.append("Access -> MEC")
+        legendlabels.append("Access -> Cloud")
+        legendlabels.append("MEC -> Cloud")
     elif direction == "Downstream":
-        legendlabels.append("Observer (Nitos) -> Client")
-        legendlabels.append("Observer (Unipi) -> Client")
-        legendlabels.append("Remote server (Unipi) -> Observer (Nitos)")
+        legendlabels.append("MEC -> Access")
+        legendlabels.append("Cloud -> Access")
+        legendlabels.append("Cloud -> MEC")
     else:
         print "unknown direction"
         sys.exti(0)
@@ -342,24 +414,27 @@ def bandwidthboxplot_active(config_parser, command, direction, connectiontype, y
     createfolder(folderpath)
 
     #draw plot without fliers
-    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel)
+    show_fliers = False
+    ncol = 3
+    legendypos = LEGENDYPOS_1LINE
+
+    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel, show_fliers, ncol, legendypos)
 
     #drawplot with fliers
     ylim += 300
     show_fliers = True
-    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_fliers)
+
+    drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers, ncol, legendypos)
     
 
 
-
-
-
-def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connectiontype):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber").split(",")
+def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connectiontype, ncol, legendypos, ylim = 50):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
     folderpath = "bandwidthplot/fileandsegmentgrouped/" + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
+    xlabel = "CrossTraffic (Mbps)"
 
     createfolder(folderpath)
      
@@ -379,27 +454,131 @@ def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connecti
                          + config_parser.get("experiment_conf", "from_passive") + "-" \
                          + config_parser.get("experiment_conf", "to_passive") + ".csv"
             
-                values[dashfile].append(readvalues_noisegrouped(config_parser, int(clientnumber), noise, 
-                                                                filename, True))
-                values[dashfile].append(readvalues_noisegrouped(config_parser, int(clientnumber), noise, 
-                                                                filename, False))        
+                values[dashfile].append(readvalues_noisegrouped_self(config_parser, int(clientnumber), noise, 
+                                                                filename, True, connectiontype))
+                values[dashfile].append(readvalues_noisegrouped_self(config_parser, int(clientnumber), noise, 
+                                                                filename, False, connectiontype))        
         for i in range (0, len(clientnumberlist)):
-            legendlabels.append("Number of clients = " + str(clientnumberlist[i]) + "_edge")
-            legendlabels.append("Number of clients = " + str(clientnumberlist[i]) + "_remote")
+            if i == 0:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+            else:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
 
                    
         if len(values) == 0:
             print WARNING + "No data for file " + dashfile + RESET
             continue
         
-        ylim = 50
-        
+        #ylim = 50
         showfliers = False
-        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, showfliers)
 
-    
+        print ncol
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
 
-def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_fliers=False):
+
+
+def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, server, segmentgrouped = False, ncol = 5, legendypos = LEGENDYPOS_1LINE):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    folderpath = "bandwidthplot/noisegrouped/mim" + connectiontype + "/"
+    ylabel = "Bandwidth (Mbps)"
+    xlabel = "CrossTraffic (Mbps)"
+     
+    createfolder(folderpath)
+    values = OrderedDict()
+
+
+    for dashfile in dashfileslist:
+        title = "mim-" + direction + "-" + connectiontype + "-" + connectiontype + "-bandwidth-" + dashfile+"-"+server
+        legendlabels = []
+
+
+        for noise in noiselist:
+            values[noise] =[]
+
+            for clientnumber in clientnumberlist:
+                filename = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype
+                filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
+                            + config_parser.get("experiment_conf", "from_passive") + "-" \
+                            + config_parser.get("experiment_conf", "to_passive") + ".csv"
+            
+                values[noise].append(readvalues_noisemim(config_parser, filename, connectiontype,
+                                                            server, noise))       
+
+            
+        for i in range (0, len(clientnumberlist)):
+            legendlabels.append("Number of clients = " + str(clientnumberlist[i]))
+
+
+        if len(values) == 0:
+            print WARNING + "No data for file " + dashfile + RESET
+            continue
+        
+        #print values
+        
+        
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol)
+
+
+
+
+
+def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, ylim, segmentgrouped = False, ncol = 2, legendypos = LEGENDYPOS_4LINE):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    folderpath = "bandwidthplot/noiseandsegmentgrouped/mim" + connectiontype + "/"
+    ylabel = "Bandwidth (Mbps)"
+    xlabel = "CrossTraffic (Mbps)"
+     
+    createfolder(folderpath)
+    values = OrderedDict()
+
+
+    for dashfile in dashfileslist:
+        title = "mim-" + direction + "-" + connectiontype + "-" + connectiontype + "-bandwidth-" + dashfile+"-"
+        legendlabels = []
+
+
+        for noise in noiselist:
+            values[noise] =[]
+
+            for clientnumber in clientnumberlist:
+                filename = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype
+                filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
+                            + config_parser.get("experiment_conf", "from_passive") + "-" \
+                            + config_parser.get("experiment_conf", "to_passive") + ".csv"
+            
+                values[noise].append(readvalues_noisemim(config_parser, filename, connectiontype,
+                                                         "edge" , noise))      
+                values[noise].append(readvalues_noisemim(config_parser, filename, connectiontype,
+                                                         "remote" , noise))   
+
+            
+        for i in range (0, len(clientnumberlist)):
+            if i == 0:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+            else:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
+
+
+        if len(values) == 0:
+            print WARNING + "No data for file " + dashfile + RESET
+            continue
+        
+        #print values       
+        
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+
+
+
+def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers=False, 
+                numcolumn = 3, legendpos = 1.12):
     fig = plt.figure(figsize=(15,6))
     ax = plt.axes()
     plt.grid(True, axis="y", color="#dedddc")
@@ -446,14 +625,13 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_flie
     ax.set_xticklabels(xlabels)
     ax.set_xticks(xlabelspos)
 
-    plt.xlabel("Cross traffic (Mbit/sec)")
+    plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
-    plt.title(title)
+    #plt.title(title)
+    print legendpos
+    leg = ax.legend(legendlabels, loc="upper center", bbox_to_anchor=(0.5, legendpos), ncol = 3, facecolor = "white", frameon=False)#, fancybox=True, framealpha=0.8) 
 
-     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), fancybox=True, shadow=True, ncol = 1, facecolor = "white") 
-
-    #leg=ax.legend(legendlabels, loc="best", frameon=True)
     i=0
     for item in leg.legendHandles:
         item.set_color(BOXPLOT_COLORS[i])
@@ -465,7 +643,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, show_flie
     pdfpage.close()
 
     #plt.show()
-    plt.savefig(folderpath + title + ".png")
+    plt.savefig(folderpath + title + ".png", bbox_inches="tight")
     plt.close()
 
 
@@ -541,7 +719,6 @@ def activebandwidth_lineplot(config_parser, command, direction, conn):
 
 
 
-
 if __name__ == '__main__':
     #read configuration file
     config_parser = ConfigParser.RawConfigParser()
@@ -554,7 +731,10 @@ if __name__ == '__main__':
     #activebandwidth_lineplot(config_parser, "UDPRTT", "Upstream", "wifi")
     #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
     #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
+    '''
+    
 
+    
     #active latency wifi
     ylim = 50
     latencyboxplot_active(config_parser, "TCPRTT", "Upstream", "wifi", ylim)
@@ -576,9 +756,10 @@ if __name__ == '__main__':
     ylim = 100
     latencyboxplot_active_commandgrouped(config_parser, "Upstream", "lte", ylim)
     latencyboxplot_active_commandgrouped(config_parser, "Downstream", "lte", ylim)
+    
 
 
-
+    
     #active bandwidth wifi
     ylim = 35
     bandwidthboxplot_active(config_parser, "TCPBandwidth", "Upstream", "wifi", ylim)
@@ -594,38 +775,52 @@ if __name__ == '__main__':
     ylim = 3000
     bandwidthboxplot_active(config_parser, "UDPBandwidth", "Upstream", "lte", ylim)
     bandwidthboxplot_active(config_parser, "UDPBandwidth", "Downstream", "lte", ylim)
-
-
-
+    
     ylim = 35
     bandwidthboxplot_active_conntypegrouped(config_parser, "TCPBandwidth", "Upstream", ylim)
     bandwidthboxplot_active_conntypegrouped(config_parser, "TCPBandwidth", "Downstream", ylim)
     ylim = 2800
     bandwidthboxplot_active_conntypegrouped(config_parser, "UDPBandwidth", "Upstream", ylim)
     bandwidthboxplot_active_conntypegrouped(config_parser, "UDPBandwidth", "Downstream", ylim)
+    
+    
 
-    '''
-
-
+    
     #passive plot
-
     ylim = 50
-    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, False)
-    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, False, False)
-    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, True)
-    ylim = 100
-    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, False)
-    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, False, False)
-    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, True)
-
+    ncol = 3
+    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, False, ncol, LEGENDYPOS_2LINE)
+    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, False, False, ncol, LEGENDYPOS_2LINE)
+    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, True, ncol, LEGENDYPOS_4LINE)
+    ylim = 200
+    ncol = 2
+    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, False, ncol, LEGENDYPOS_1LINE)
+    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, False, False, ncol, LEGENDYPOS_1LINE)
+    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, True, ncol, LEGENDYPOS_2LINE)
+    
     ylim = 50
-    bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "wifi")
-    ylim = 100
-    bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte")
-  
+    ncol = 3
+    #bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "wifi", ncol, LEGENDYPOS_4LINE)
+    ylim = 200
+    ncol = 2
+    #bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
+    
+    
+
 
     #mim 
-    #createcsv(config_parser, mydb, "bandwidth", "mim", "downlink")
-    #createcsv(config_parser, mydb, "bandwidth", "mim", "uplink")
-    #createcsv(config_parser, mydb, "latency", "mim", "downlink")
-    #createcsv(config_parser, mydb, "latency", "mim", "uplink")
+    ylim = 50
+    ncol = 3
+    bandwidthboxplot_noisemim(config_parser, "downlink", "wifi", ylim, "edge", ncol, LEGENDYPOS_2LINE)
+    bandwidthboxplot_noisemim(config_parser, "downlink", "wifi", ylim, "remote", ncol, LEGENDYPOS_2LINE)
+    bandwidthboxplot_noisemim(config_parser, "downlink", "lte", ylim, "edge", ncol, LEGENDYPOS_1LINE)
+    bandwidthboxplot_noisemim(config_parser, "downlink", "lte", ylim, "remote", ncol, LEGENDYPOS_1LINE)
+
+    bandwidthboxplot_noiseandsegmentmim(config_parser, "downlink", "wifi", ylim, ncol, LEGENDYPOS_4LINE)
+    ncol = 2
+    bandwidthboxplot_noiseandsegmentmim(config_parser, "downlink", "lte", ylim, ncol, LEGENDYPOS_2LINE)
+
+    ncol = 3
+    bandwidthplot_mimfileandsegment(config_parser, "mim", "downlink", "wifi", ncol, LEGENDYPOS_4LINE)
+    ncol = 2
+    bandwidthplot_mimfileandsegment(config_parser, "mim", "downlink", "lte", ncol, LEGENDYPOS_2LINE)

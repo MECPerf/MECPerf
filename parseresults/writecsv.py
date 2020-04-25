@@ -49,7 +49,7 @@ def createcsv_passive(config_parser, mydb, typeofmeasure, mode, direction, conne
     
     fromtime = config_parser.get("experiment_conf", "from_passive")
     totime = config_parser.get("experiment_conf", "to_passive")
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber").split(",")
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
 
@@ -57,12 +57,13 @@ def createcsv_passive(config_parser, mydb, typeofmeasure, mode, direction, conne
     basefilename = mode + "-" + typeofmeasure + "-" + direction + "-" + connectiontype
     
     basequery = "SELECT PassiveTest.ID, PassiveTest.Timestamp, ClientIP,  ClientPort, ServerIP, ServerPort,  "
-    basequery += "Keyword, Direction, Protocol, Mode, Type, PassiveBandwidthMeasure.ID, "
-    basequery += "PassiveBandwidthMeasure.Timestamp, Bytes "
+    basequery += "Keyword, Direction, Protocol, Mode, Type, "
 
     if typeofmeasure == "bandwidth":
+        basequery += "PassiveBandwidthMeasure.ID, PassiveBandwidthMeasure.Timestamp, Bytes "
         basequery += "FROM PassiveTest INNER JOIN PassiveBandwidthMeasure ON PassiveTest.ID = PassiveBandwidthMeasure.id "
     elif typeofmeasure == "latency":
+        basequery += "PassiveRttMeasure.ID, PassiveRttMeasure.Timestamp, latency "
         basequery += "FROM PassiveTest INNER JOIN PassiveRttMeasure ON PassiveTest.ID = PassiveRttMeasure.id "
     else:
         print "unknown type of measure " + str(typeofmeasure)
@@ -85,8 +86,6 @@ def createcsv_passive(config_parser, mydb, typeofmeasure, mode, direction, conne
     querymultipleclients = basequery + "AND Keyword LIKE %s "  
 
 
-    print query1client
-
     for dashfile in dashfileslist:
         for clientnumber in clientnumberlist:
             for noise in noiselist:
@@ -108,6 +107,7 @@ def createcsv_passive(config_parser, mydb, typeofmeasure, mode, direction, conne
                     writer.writerow([query])
                     writer.writerow(params)
                     
+                    print query
                     cursor.execute(query, params)
                     data = cursor.fetchall()
                     columns = []
@@ -234,16 +234,23 @@ if __name__ == '__main__':
     createcsv_active(config_parser, mydb, "UDPBandwidth", "Downstream", "lte")
     
 
+   
+
     #passive measurements (self)
-    #createcsv_passive(config_parser, mydb, "bandwidth", "self", "downlink", "wifi")
-    #createcsv_passive(config_parser, mydb, "bandwidth", "self", "downlink", "lte")
+    createcsv_passive(config_parser, mydb, "bandwidth", "self", "downlink", "wifi")
+    createcsv_passive(config_parser, mydb, "bandwidth", "self", "downlink", "lte")
 
-
-    '''
+    
+    
     #passive measurements (mim)
-    #createcsv_passive(config_parser, mydb, "bandwidth", "mim", "downlink")
-    #createcsv_passive(config_parser, mydb, "bandwidth", "mim", "uplink")
-    #createcsv_passive(config_parser, mydb, "latency", "mim", "downlink")
-    #createcsv_passive(config_parser, mydb, "latency", "mim", "uplink")
+    createcsv_passive(config_parser, mydb, "bandwidth", "mim", "downlink", "wifi")
+    createcsv_passive(config_parser, mydb, "bandwidth", "mim", "downlink", "lte")
+    '''
+    createcsv_passive(config_parser, mydb, "latency", "mim", "downlink", "wifi")
+    createcsv_passive(config_parser, mydb, "latency", "mim", "downlink", "lte")
+    createcsv_passive(config_parser, mydb, "latency", "mim", "uplink", "wifi")
+    createcsv_passive(config_parser, mydb, "latency", "mim", "uplink", "lte")
+
+        
 
     mydb.close()

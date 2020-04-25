@@ -161,7 +161,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
             senderIdentity = row[5]
             receiverIdentity = row[6]
             Kbit = float(row[12])
-            Mbit = Kbit/1024
+            Mbit = Kbit/1000
             nanoTimes = float(row[13])
             s = nanoTimes/1000000000
             direction = row[3]
@@ -330,7 +330,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
 
 
 
-def readvalues_noisegrouped(config_parser, clientnumber, noise, inputfile, edgeserver, connectiontype):
+def readvalues_noisegrouped_self(config_parser, clientnumber, noise, inputfile, edgeserver, connectiontype):
     ret = []
 
     if connectiontype == "wifi":
@@ -392,6 +392,119 @@ def readvalues_noisegrouped(config_parser, clientnumber, noise, inputfile, edges
 
     return ret
 
+
+def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
+    ret = []
+    last_testID = ""
+    
+    if connectiontype == "wifi":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
+        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+    elif connectiontype == "lte":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
+        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+    else:
+        print "unknown connection type"
+        sys.exit(0)
+    
+
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+
+        linecount = 0
+        for row in csvreader:
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[12] == "Timestamp" # in microsec
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[4] == "ServerIP"
+                    assert row[3] == "ClientPort"
+                    assert row[5] == "ServerPort"
+                except:
+                    print row
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue            
+            
+            linecount += 1
+
+            byte = float(row[13])
+            timestamp_micros = float(row[12])  #from microsecons to seconds
+            #bps = (byte * 8) / timestamp_s
+            #Mbps = bps / 1000000
+
+            clientIP = row[2]
+            serverIP = row[4]
+            clientPort = row[3]
+            serverPort = row[5]
+            
+            
+            if  (segment == "edge" and row[4][:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "remote" and row[4][:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
+
+                currentTestID = clientIP + "-" + clientPort + "-" + serverIP + "-" + serverPort
+            
+
+                if last_testID == "":
+                    #this is the first row
+                    last_testID = currentTestID
+                    t0 = timestamp_micros
+                    packets_bandwidth = []
+                    currentByte = 0.0
+                    currentTimestamp_micros = 0.0
+                
+                elif last_testID == currentTestID:
+                    #same test
+                    if byte > 0:
+                        currentByte += byte
+                        currentTimestamp_micros += timestamp_micros - t0
+
+                        if currentTimestamp_micros >= 1000000: #more than one sec
+                            currentTimestamp_s = currentTimestamp_micros /1000000
+                            bps = (currentByte * 8) / currentTimestamp_s
+                            Mbps = bps / 1000000
+
+                            ret.append(Mbps)
+
+                            currentByte = 0.0
+                            currentTimestamp_micros = 0.0
+                    if timestamp_micros !=  t0:
+                        t0 = timestamp_micros
+                else:
+                    #newtest
+                    if currentByte > 0:
+                        currentTimestamp_s = currentTimestamp_micros /1000000
+                        bps = (currentByte * 8) / currentTimestamp_s
+                        Mbps = bps / 1000000
+
+                        ret.append(Mbps)
+
+    
+
+                    last_testID = currentTestID
+                    t0 = timestamp_micros
+                    packets_bandwidth = []
+                    currentByte = 0.0
+                    currentTimestamp_micros = 0.0
+
+        #print ret
+        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+    
+        
+    return ret
+
+
+ 
 
 
 def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
