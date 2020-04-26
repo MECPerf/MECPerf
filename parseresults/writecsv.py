@@ -213,7 +213,7 @@ if __name__ == '__main__':
     createfolder("csv/passive")
     createfolder("csv/active")
 
-    '''
+    
     #active measures (wifi)
     createcsv_active(config_parser, mydb, "TCPRTT", "Upstream", "wifi")
     createcsv_active(config_parser, mydb, "TCPRTT", "Downstream", "wifi")
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     #passive measurements (mim)
     createcsv_passive(config_parser, mydb, "bandwidth", "mim", "downlink", "wifi")
     createcsv_passive(config_parser, mydb, "bandwidth", "mim", "downlink", "lte")
-    '''
+    
     createcsv_passive(config_parser, mydb, "latency", "mim", "downlink", "wifi")
     createcsv_passive(config_parser, mydb, "latency", "mim", "downlink", "lte")
     createcsv_passive(config_parser, mydb, "latency", "mim", "uplink", "wifi")

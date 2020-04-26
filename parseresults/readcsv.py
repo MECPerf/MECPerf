@@ -393,6 +393,7 @@ def readvalues_noisegrouped_self(config_parser, clientnumber, noise, inputfile, 
     return ret
 
 
+
 def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
     ret = []
     last_testID = ""
@@ -505,7 +506,59 @@ def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise
 
 
  
+def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
+    ret = []
+    
+    client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_" + connectiontype)
+    edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_" + connectiontype)
+    remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_" + connectiontype)
 
+
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+
+        linecount = 0
+        for row in csvreader:
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+
+            if linecount == 2:
+                try:
+                    assert row[13] == "latency"
+                    assert row[6] == "Keyword"
+                    assert row[4] == "ServerIP"
+                except:
+                    print row
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue            
+            
+            linecount += 1
+
+            latency = float(row[13])
+            serverIP = row[4]
+
+            
+            if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "remote" and serverIP[:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
+
+                print str(latency/1000)
+                if latency != 0:
+                    
+                    ret.append(latency/1000)
+               
+
+        #print ret
+        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+    
+        
+    return ret
+
+
+ 
 
 def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
     noiselist = config_parser.get("experiment_conf", "noise").split(",")

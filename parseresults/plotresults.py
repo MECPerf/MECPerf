@@ -9,8 +9,9 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 
+
 from readcsv import readvalues_activelatencyboxplot, readvalues_activebandwidthboxplot
-from readcsv import readvalues_activebandwidthlineplot, readvalues_noisegrouped_self, readvalues_noisemim
+from readcsv import readvalues_activebandwidthlineplot, readvalues_noisegrouped_self, readvalues_noisemim, readlatencyvalues_noisemim
 
 
 
@@ -108,8 +109,6 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
 
 
 
-
-
 def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectiontype, ncol, legendypos):
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
@@ -156,8 +155,6 @@ def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectionty
         showfliers = False
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
-
-
 
 
 
@@ -524,8 +521,6 @@ def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, se
 
 
 
-
-
 def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, ylim, segmentgrouped = False, ncol = 2, legendypos = LEGENDYPOS_4LINE):
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
@@ -673,6 +668,57 @@ def writelogfile_boxplot(noise, logfile,  bp, clients, values):
 
 
 
+
+def latencyboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, ylim, ncol = 2, legendypos = LEGENDYPOS_4LINE):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    folderpath = "latency/mim/noiseandsegmentgrouped/" + connectiontype + "/"
+    ylabel = "Latency (ms)"
+    xlabel = "CrossTraffic (Mbps)"
+     
+    createfolder(folderpath)
+    values = OrderedDict()
+
+    for dashfile in dashfileslist:
+        title = "mim-" + direction + "-" + connectiontype + "-latency-" + dashfile
+        legendlabels = []
+
+        for noise in noiselist:
+            values[noise] =[]
+
+            for clientnumber in clientnumberlist:
+                filename = "csv/passive/mim-latency-" + direction + "-" + connectiontype
+                filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
+                            + config_parser.get("experiment_conf", "from_passive") + "-" \
+                            + config_parser.get("experiment_conf", "to_passive") + ".csv"
+            
+                values[noise].append(readlatencyvalues_noisemim(config_parser, filename, connectiontype,
+                                                         "edge" , noise))      
+                values[noise].append(readlatencyvalues_noisemim(config_parser, filename, connectiontype,
+                                                         "remote" , noise))   
+
+            
+        for i in range (0, len(clientnumberlist)):
+            if i == 0:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+            else:
+                legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
+
+
+        if len(values) == 0:
+            print WARNING + "No data for file " + dashfile + RESET
+            continue
+        
+        #print values       
+        
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+
+
+
+
 def activebandwidth_lineplot(config_parser, command, direction, conn):
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
     title = command + "-" + direction + "-" + conn
@@ -719,22 +765,7 @@ def activebandwidth_lineplot(config_parser, command, direction, conn):
 
 
 
-if __name__ == '__main__':
-    #read configuration file
-    config_parser = ConfigParser.RawConfigParser()
-    config_parser.read("experiments.conf")
- 
-    '''
-
-    #activebandwidth_lineplot(config_parser, "TCPRTT", "Upstream", "wifi")
-    #activebandwidth_lineplot(config_parser, "TCPRTT", "Downstream", "wifi")
-    #activebandwidth_lineplot(config_parser, "UDPRTT", "Upstream", "wifi")
-    #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
-    #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
-    '''
-    
-
-    
+def plotactivelatency(config_parser):
     #active latency wifi
     ylim = 50
     latencyboxplot_active(config_parser, "TCPRTT", "Upstream", "wifi", ylim)
@@ -749,17 +780,17 @@ if __name__ == '__main__':
     latencyboxplot_active(config_parser, "UDPRTT", "Upstream", "lte", ylim)
     latencyboxplot_active(config_parser, "UDPRTT", "Downstream", "lte", ylim)
 
-    #
+
     ylim = 50
     latencyboxplot_active_commandgrouped(config_parser, "Upstream", "wifi", ylim)
     latencyboxplot_active_commandgrouped(config_parser, "Downstream", "wifi", ylim)
     ylim = 100
     latencyboxplot_active_commandgrouped(config_parser, "Upstream", "lte", ylim)
     latencyboxplot_active_commandgrouped(config_parser, "Downstream", "lte", ylim)
-    
 
 
-    
+
+def plotactivebandwidth(config_parser):
     #active bandwidth wifi
     ylim = 35
     bandwidthboxplot_active(config_parser, "TCPBandwidth", "Upstream", "wifi", ylim)
@@ -776,6 +807,8 @@ if __name__ == '__main__':
     bandwidthboxplot_active(config_parser, "UDPBandwidth", "Upstream", "lte", ylim)
     bandwidthboxplot_active(config_parser, "UDPBandwidth", "Downstream", "lte", ylim)
     
+    
+
     ylim = 35
     bandwidthboxplot_active_conntypegrouped(config_parser, "TCPBandwidth", "Upstream", ylim)
     bandwidthboxplot_active_conntypegrouped(config_parser, "TCPBandwidth", "Downstream", ylim)
@@ -783,32 +816,30 @@ if __name__ == '__main__':
     bandwidthboxplot_active_conntypegrouped(config_parser, "UDPBandwidth", "Upstream", ylim)
     bandwidthboxplot_active_conntypegrouped(config_parser, "UDPBandwidth", "Downstream", ylim)
     
-    
 
-    
-    #passive plot
+
+def plotselfbandwidth(config_parser):
     ylim = 50
     ncol = 3
-    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, False, ncol, LEGENDYPOS_2LINE)
-    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, False, False, ncol, LEGENDYPOS_2LINE)
-    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, True, ncol, LEGENDYPOS_4LINE)
+    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, False, ncol, LEGENDYPOS_2LINE)
+    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, False, False, ncol, LEGENDYPOS_2LINE)
+    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, True, ncol, LEGENDYPOS_4LINE)
     ylim = 200
     ncol = 2
-    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, False, ncol, LEGENDYPOS_1LINE)
-    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, False, False, ncol, LEGENDYPOS_1LINE)
-    #bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, True, ncol, LEGENDYPOS_2LINE)
+    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, False, ncol, LEGENDYPOS_1LINE)
+    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, False, False, ncol, LEGENDYPOS_1LINE)
+    bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, True, ncol, LEGENDYPOS_2LINE)
     
     ylim = 50
     ncol = 3
-    #bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "wifi", ncol, LEGENDYPOS_4LINE)
+    bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "wifi", ncol, LEGENDYPOS_4LINE)
     ylim = 200
     ncol = 2
-    #bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
-    
+    bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
     
 
 
-    #mim 
+def plotmimbandwidth(config_parser):
     ylim = 50
     ncol = 3
     bandwidthboxplot_noisemim(config_parser, "downlink", "wifi", ylim, "edge", ncol, LEGENDYPOS_2LINE)
@@ -824,3 +855,46 @@ if __name__ == '__main__':
     bandwidthplot_mimfileandsegment(config_parser, "mim", "downlink", "wifi", ncol, LEGENDYPOS_4LINE)
     ncol = 2
     bandwidthplot_mimfileandsegment(config_parser, "mim", "downlink", "lte", ncol, LEGENDYPOS_2LINE)
+
+
+
+def plotmimlatency(config_parser):
+    ylim = 700
+    ncol = 3
+    latencyboxplot_noiseandsegmentmim(config_parser, "downlink", "wifi", ylim, ncol, LEGENDYPOS_4LINE)
+    latencyboxplot_noiseandsegmentmim(config_parser, "downlink", "wifi", ylim, ncol, LEGENDYPOS_4LINE)
+    ylim = 1500
+    latencyboxplot_noiseandsegmentmim(config_parser, "uplink", "wifi", ylim, ncol, LEGENDYPOS_4LINE)
+    latencyboxplot_noiseandsegmentmim(config_parser, "uplink", "wifi", ylim, ncol, LEGENDYPOS_4LINE)
+    ncol = 2
+    ylim = 200
+    latencyboxplot_noiseandsegmentmim(config_parser, "downlink", "lte", ylim, ncol, LEGENDYPOS_2LINE)
+    latencyboxplot_noiseandsegmentmim(config_parser, "downlink", "lte", ylim, ncol, LEGENDYPOS_2LINE)
+    ylim = 20
+    latencyboxplot_noiseandsegmentmim(config_parser, "uplink", "lte", ylim, ncol, LEGENDYPOS_2LINE)
+    latencyboxplot_noiseandsegmentmim(config_parser, "uplink", "lte", ylim, ncol, LEGENDYPOS_2LINE)
+
+
+if __name__ == '__main__':
+    #read configuration file
+    config_parser = ConfigParser.RawConfigParser()
+    config_parser.read("experiments.conf")
+
+ 
+    '''
+    #activebandwidth_lineplot(config_parser, "TCPRTT", "Upstream", "wifi")
+    #activebandwidth_lineplot(config_parser, "TCPRTT", "Downstream", "wifi")
+    #activebandwidth_lineplot(config_parser, "UDPRTT", "Upstream", "wifi")
+    #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
+    #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
+    '''
+    
+    
+    plotactivelatency(config_parser)
+    plotactivebandwidth(config_parser)
+    plotselfbandwidth(config_parser)
+    plotmimbandwidth(config_parser)
+    plotmimlatency(config_parser)
+
+
+    
