@@ -256,6 +256,11 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
     dateslist_wifi = config_parser.get("experiment_conf", "dates_activewifi").split(",")
     dateslist_lte = config_parser.get("experiment_conf", "dates_activelte").split(",")
+    if connectiontype == "wifi":
+        dateslist = dateslist_wifi
+    elif connectiontype == "lte":
+        dateslist = dateslist_lte
+
      
      
     values = OrderedDict()
@@ -339,51 +344,51 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
         else:
             #TCPRRT clientnitos wifi
             filename = "csv/active/TCPRTT-" + direction + "-wifi-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_wifi[0].strip() + "-" + dateslist_wifi[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientNitos"))
             #TCPRRT clientnitos lte
             filename = "csv/active/TCPRTT-" + direction + "-lte-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_lte[0].strip() + "-" + dateslist_lte[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientNitos"))
             #UDPRTT clientnitos wifi
             filename = "csv/active/UDPRTT-" + direction + "-wifi-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_wifi[0].strip() + "-" + dateslist_wifi[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientNitos"))
             #UDPRTT clientnitos lte
             filename = "csv/active/UDPRTT-" + direction + "-lte-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_lte[0].strip() + "-" + dateslist_lte[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientNitos"))
             #TCPRTT clientUnipi wifi
             filename = "csv/active/TCPRTT-" + direction + "-wifi-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_wifi[0].strip() + "-" + dateslist_wifi[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientUnipi"))
             #TCPRTT clientUnipi lte
             filename = "csv/active/TCPRTT-" + direction + "-lte-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_lte[0].strip() + "-" + dateslist_lte[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientUnipi"))
             #UDPRTT clientUnipi wifi
             filename = "csv/active/UDPRTT-" + direction + "-wifi-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_wifi[0].strip() + "-" + dateslist_wifi[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientUnipi"))
             #UDPRTT clientUnipi lte
             filename = "csv/active/UDPRTT-" + direction + "-lte-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_lte[0].strip() + "-" + dateslist_lte[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "clientUnipi"))
             #TCPRTT nitosunipi wifi
             filename = "csv/active/TCPRTT-" + direction + "-wifi-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_wifi[0].strip() + "-" + dateslist_wifi[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))
             #TCPRTT nitosunipi lte
             filename = "csv/active/TCPRTT-" + direction + "-lte-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_lte[0].strip() + "-" + dateslist_lte[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))
             #UDPRTT NITOS UNIPIwifi
             filename = "csv/active/UDPRTT-" + direction + "-wifi-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename +=  dateslist_wifi[0].strip() + "-" + dateslist_wifi[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))           
             #UDPRTT NITOS UNIPI lte
-            filename = "csv/active/UDPRTT-" + direction + "-lte" + connectiontype + "-noise" + noise + "_"         
-            filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+            filename = "csv/active/UDPRTT-" + direction + "-lte-noise" + noise + "_"         
+            filename +=  dateslist_lte[0].strip() + "-" + dateslist_lte[-1].strip() + ".csv"
             values[noise].append(readvalues_activelatencyboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))
 
                    
@@ -394,7 +399,7 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
     createfolder(folderpath)
 
 
-    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel)
+    drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel, legendpos=legendypos)
 
     ylim += 300
     show_fliers = True

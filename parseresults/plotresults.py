@@ -63,7 +63,7 @@ def activebandwidth_lineplot(config_parser, command, direction, conn):
     plt.close()
 def plotactivelatency(config_parser):
     #active latency wifi
-    
+    '''
     ylim = 50
     latencyboxplot_active(config_parser, "TCPRTT", "Upstream", "wifi", ylim, legendypos=LEGENDYPOS_1LINE)
     latencyboxplot_active(config_parser, "TCPRTT", "Downstream", "wifi", ylim, legendypos=LEGENDYPOS_1LINE)
@@ -77,17 +77,17 @@ def plotactivelatency(config_parser):
     latencyboxplot_active(config_parser, "UDPRTT", "Upstream", "lte", ylim, legendypos=LEGENDYPOS_1LINE)
     latencyboxplot_active(config_parser, "UDPRTT", "Downstream", "lte", ylim, legendypos=LEGENDYPOS_1LINE)
     
-
+    '''
     ylim = 50
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Upstream", 
-                                         connectiontype="wifi", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
+                                         connectiontype="wifi", ylim=ylim, legendypos=LEGENDYPOS_2LINE)
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Downstream", 
-                                         connectiontype="wifi", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
+                                         connectiontype="wifi", ylim=ylim, legendypos=LEGENDYPOS_2LINE)
     ylim = 100
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Upstream", 
-                                         connectiontype="lte", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
+                                         connectiontype="lte", ylim=ylim, legendypos=LEGENDYPOS_2LINE)
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Downstream", 
-                                         connectiontype="lte", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
+                                         connectiontype="lte", ylim=ylim, legendypos=LEGENDYPOS_2LINE)
 
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Upstream", 
                                          connectiontype="both", ylim=ylim, legendypos=LEGENDYPOS_4LINE)
