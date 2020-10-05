@@ -545,7 +545,7 @@ def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment
             if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
                 (segment == "remote" and serverIP[:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
 
-                print str(latency/1000)
+                #print str(latency/1000)
                 if latency != 0:
                     
                     ret.append(latency/1000)
