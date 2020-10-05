@@ -278,7 +278,7 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
         legendlabels.append("UDPRTT: Cloud -> Access")
         legendlabels.append("TCPRTT: Cloud -> MEC")
         legendlabels.append("UDPRTT: Cloud -> MEC")
-    if direction == "Upstream" and connectiontype == "both":
+    elif direction == "Upstream" and connectiontype == "both":
         legendlabels.append("TCPRTT Wi-Fi: Access -> MEC")
         legendlabels.append("TCPRTT LTE: Access -> MEC")
         legendlabels.append("UDPRTT Wi-Fi: Access -> MEC")
@@ -306,7 +306,8 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
         legendlabels.append("UDPRTT LTE: Cloud -> MEC")   
     else:
         print ("unknown direction")
-        sys.exti(0)
+        print (direction)
+        sys.exit(0)
 
     for noise in noiselist:
         values[noise] = []

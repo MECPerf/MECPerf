@@ -90,9 +90,9 @@ def plotactivelatency(config_parser):
                                          connectiontype="lte", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
 
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Upstream", 
-                                         connectiontype="both", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
+                                         connectiontype="both", ylim=ylim, legendypos=LEGENDYPOS_4LINE)
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Downstream", 
-                                         connectiontype="both", ylim=ylim, legendypos=LEGENDYPOS_1LINE)
+                                         connectiontype="both", ylim=ylim, legendypos=LEGENDYPOS_4LINE)
 
     ylim = 101
     latencyboxplot_active_conntypegrouped(config_parser, "TCPRTT", "Upstream",  ncol=3, 
