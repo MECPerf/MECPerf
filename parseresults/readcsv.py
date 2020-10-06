@@ -23,8 +23,8 @@ def readvalues_activelatencyboxplot(inputfile, noise, segment):
                     assert row[4] == "Command"
                     assert row[3] == "Direction"
                 except Exception as e:
-                    print e
-                    print row
+                    print (e)
+                    print (row)
                     sys.exit(1)
 
                 linecount += 1
@@ -62,7 +62,7 @@ def readvalues_activelatencyboxplot(inputfile, noise, segment):
                         ret.append(latency)
                 
                 else:
-                    print "unknown direction"
+                    print ("unknown direction")
                     sys.exit(0)                
                 
             elif segment == "clientUnipi":
@@ -70,21 +70,21 @@ def readvalues_activelatencyboxplot(inputfile, noise, segment):
                     continue
 
                 if direction == "Upstream":
-                    #Upstream: Client -> local observer
+                    #Upstream: Client -> cloud observer
                     if senderIdentity != "Client":
                         continue
                     else:
                         ret.append(latency)
 
                 elif direction == "Downstream":
-                    #Upstream: Client <- local observer
+                    #Upstream: Client <- cloud observer
                     if receiverIdentity != "Client":
                         continue
                     else:
                         ret.append(latency)
                 
                 else:
-                    print "unknown direction"
+                    print ("unknown direction")
                     sys.exit(0)
 
 
@@ -93,29 +93,29 @@ def readvalues_activelatencyboxplot(inputfile, noise, segment):
                     continue
 
                 if direction == "Upstream":
-                    #Upstream: Client -> local observer
+                    #Upstream: local observer -> remote server
                     if senderIdentity != "Observer":
                         continue
                     else:
                         ret.append(latency)
 
                 elif direction == "Downstream":
-                    #Upstream: Client <- local observer
+                    #Upstream: local observer <- remote(cloud) server
                     if receiverIdentity != "Observer":
                         continue
                     else:
                         ret.append(latency)
                 
                 else:
-                    print "unknown direction"
+                    print ("unknown direction")
                     sys.exit(0)
     
        
             else:
-                print "unknown segment"
+                print ("unknown segment")
                 sys.exit(0)
 
-        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     
     return ret
 
@@ -146,8 +146,8 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
                     assert row[3] == "Direction"
                     assert row[1] == "ID"
                 except Exception as e:
-                    print e
-                    print row
+                    print (e)
+                    print (row)
                     sys.exit(1)
 
                 linecount += 1
@@ -216,7 +216,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
                             Mb_s = Mbit
                             sec =s
                 else:
-                    print "unknown direction"
+                    print ("unknown direction")
                     sys.exit(0)                
                 
             elif segment == "clientUnipi":
@@ -267,7 +267,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
                             Mb_s = Mbit
                             sec =s                
                 else:
-                    print "unknown direction"
+                    print ("unknown direction")
                     sys.exit(0)
 
             elif segment == "NitosUnipi":
@@ -275,7 +275,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
                     continue
 
                 if direction == "Upstream":
-                    #Upstream:  observer(local) -> remoteserver
+                    #Upstream:  MEC observer(local) -> remote (cloud) server
                     if senderIdentity != "Observer":
                         continue
                     else:
@@ -296,7 +296,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
                             Mb_s = Mbit
                             sec =s
                 elif direction == "Downstream":
-                    #Upstream: observer(local) <- remoteserver
+                    #Upstream: MEC observer(local) <- remote (cloud) server
                     if receiverIdentity != "Observer":
                         continue
                     else:
@@ -317,34 +317,35 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
                             Mb_s = Mbit
                             sec =s                
                 else:
-                    print "unknown direction"
+                    print ("unknown direction")
                     sys.exit(0)
     
             else:
-                print "unknown segment"
+                print ("unknown segment")
                 sys.exit(0)
 
-        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
 
     return ret
 
 
 
-def readvalues_noisegrouped_self(config_parser, clientnumber, noise, inputfile, edgeserver, connectiontype):
+
+
+def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
     ret = []
 
-    if connectiontype == "wifi":
+    if conntype == "wifi":
         client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
         edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
         remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
-    elif connectiontype == "lte":
+    elif conntype == "lte":
         client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
         edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
         remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
     else:
-        print "unknown connection type"
+        print ("unknown connection type")
         sys.exit(0)
-    
     
 
     with open (inputfile, "r") as csvinput:
@@ -354,47 +355,52 @@ def readvalues_noisegrouped_self(config_parser, clientnumber, noise, inputfile, 
             if linecount == 0 or linecount == 1:
                 linecount += 1
                 continue
-
             if linecount == 2:
                 try:
                     assert row[13] == "Bytes"
                     assert row[6] == "Keyword"
                     assert row[2] == "ClientIP"
                     assert row[4] == "ServerIP"
-                except:
-                    print row
+                except Exception as e:
+                    print (e)
+                    print (row)
                     sys.exit(1)
 
                 linecount += 1
                 #print row
                 continue
 
+            measuredbytes = row[13]
+            keyword = row[6]
+            clientIP = row[2]
+            serverIP = row[4] 
             try:
-                assert row[2][:len(client_subnetaddr)] == client_subnetaddr
-            except:
-                #print inputfile
-                #print row[2] [:len(client_subnetaddr)]
-                #print client_subnetaddr
+                assert row[2][:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
+                assert conntype.strip() in inputfile
+            except Exception as e:
+                print (conntype)
+                print (inputfile)
+                print (row[2] [:len(client_subnetaddr)] + "!=" + client_subnetaddr)
                 linecount += 1
                 continue
             
             linecount += 1
 
-            if  (edgeserver == True and row[4][:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
-                (edgeserver == False and row[4][:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
+            if  (edgeserver == True and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (edgeserver == False and serverIP[:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
 
                 bandwidthkbps = float(row[13])
                 bandwidthMbps = bandwidthkbps / 1000
                 ret.append(bandwidthMbps)
 
-        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
 
 
     return ret
 
 
 
-def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
+def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
     ret = []
     last_testID = ""
     
@@ -407,7 +413,7 @@ def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise
         edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
         remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
     else:
-        print "unknown connection type"
+        print ("unknown connection type")
         sys.exit(0)
     
 
@@ -430,7 +436,7 @@ def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise
                     assert row[3] == "ClientPort"
                     assert row[5] == "ServerPort"
                 except:
-                    print row
+                    print (row)
                     sys.exit(1)
 
                 linecount += 1
@@ -499,7 +505,7 @@ def readvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise
                     currentTimestamp_micros = 0.0
 
         #print ret
-        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     
         
     return ret
@@ -529,7 +535,7 @@ def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment
                     assert row[6] == "Keyword"
                     assert row[4] == "ServerIP"
                 except:
-                    print row
+                    print (row)
                     sys.exit(1)
 
                 linecount += 1
@@ -552,7 +558,7 @@ def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment
                
 
         #print ret
-        print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     
         
     return ret
