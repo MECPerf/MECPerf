@@ -34,7 +34,11 @@ _YLABEL_SIZE = 25
 _PASSIVEBANDWIDTH_CLIENTNOISEGROUPED_BASEFILEPATH = "bandwidthplot/clientnoisegrouped/"
 _PASSIVEBANDWIDTH_CLIENTNOISEANDSEGMENTGROUPED_BASEFILEPATH = "bandwidthplot/clientnoiseandsegmentgrouped/"
 _PASSIVEMIM_CLIENTFILEANDSEGMENTGROUPED_BASEFILEPATH = "bandwidthplot/fileandsegmentgrouped/mim/"
-_PASSIVEBANDWIDTH_CONNMODESPONOISEGROUPED_BASEFILEPATH = "bandwidthplot/conntypemodeserverposandnoisegrouped/"
+
+_SELFMIMBANDWIDTH_CONNTYPEFILESERVERPOS_XNOISE_BASEFILEPATH = "bandwidthplot/conntypefileserverpos/x_noise/"
+_SELFMIMBANDWIDTH_CONNTYPEFILESERVERPOS_XCLIENTS_BASEFILEPATH = "bandwidthplot/conntypefileserverpos/x_clients/"
+_SELFMIMBANDWIDTH_CONNTYPESERVERPOSNUMCLIENT_BASEFILEPATH = "bandwidthplot/conntypeserverposnumclient/"
+_SELFMIMBANDWIDTH_CONNTYPESERVERPOSCROSSTRAFFIC_BASEFILEPATH = "bandwidthplot/conntypeserverposcrosstraffic/"
 
 _ACTIVELATENCY_COMMANDANDNOISEGROUPED_BASEFILEPATH= "latencyplot/commandandnoisegrouped/active/" 
 _ACTIVELATENCY_SEGMENTANDNOISEGROUPED_BASEFILEPATH= "latencyplot/segmentandnoisegrouped/active/"
@@ -673,15 +677,17 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
 
-def mimselfbandwidthboxplot_conntypeserverposandcrosstrafficgrouped(config_parser, direction, clientnumber,
-                                    connectiontype, ylim, edgecloudserver, ncol, legendypos):
+
+def mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser, direction,  
+                                                         connectiontype, ylim, edgecloudserver, ncol, 
+                                                         legendypos):
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
     fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
     totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
 
-    folderpath =  _PASSIVEBANDWIDTH_CONNMODESPONOISEGROUPED_BASEFILEPATH
+    folderpath =  _SELFMIMBANDWIDTH_CONNTYPEFILESERVERPOS_XNOISE_BASEFILEPATH
     legendlabels = []
     for clientnumber in clientnumberlist:
         clientnumber_str = str(clientnumber)
@@ -704,10 +710,9 @@ def mimselfbandwidthboxplot_conntypeserverposandcrosstrafficgrouped(config_parse
         else:
             print ("edgecloudserver: unknown value " + edgecloudserver)
             sys.exit(1)
-                
-
-    values = OrderedDict()
+    
     for dashfile in dashfileslist:
+        values = OrderedDict()
         title = connectiontype + "-" + direction + "-bandwidth-" + dashfile + "-" + edgecloudserver
         
         for noise in noiselist:
@@ -756,6 +761,256 @@ def mimselfbandwidthboxplot_conntypeserverposandcrosstrafficgrouped(config_parse
         xlabel = "CrossTraffic (Mbps)"
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+def mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser, direction,  
+                                                           connectiontype, ylim, edgecloudserver, ncol, 
+                                                           legendypos):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
+    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+
+    folderpath =  _SELFMIMBANDWIDTH_CONNTYPEFILESERVERPOS_XCLIENTS_BASEFILEPATH
+    legendlabels = []
+    for noise in noiselist:       
+        if edgecloudserver == "both":
+            legendlabels.append("self MEC " + noise + "bps cross traffic")
+            legendlabels.append("mim MEC " + noise + "bps cross traffic")
+            legendlabels.append("self cloud " + noise + "bps cross traffic")
+            legendlabels.append("mim cloud " + noise + "bps cross traffic")
+        elif edgecloudserver == "edge":
+            legendlabels.append("self MEC " + noise + "bps cross traffic")
+            legendlabels.append("mim MEC " + noise + "bps cross traffic")
+        elif edgecloudserver == "cloud":
+            legendlabels.append("self Cloud " + noise + "bps cross traffic")
+            legendlabels.append("mim Cloud " + noise + "bps cross traffic")
+        else:
+            print ("edgecloudserver: unknown value " + edgecloudserver)
+            sys.exit(1)
+
+    for dashfile in dashfileslist:
+        values = OrderedDict()
+        title = connectiontype + "-" + direction + "-bandwidth-" + dashfile + "-" + edgecloudserver
+        
+        for clientnumber in clientnumberlist:
+            values[clientnumber] =[]
+
+            for noise in noiselist: 
+                #input file of self measurements           
+                filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
+                filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                #input file for mim measurements
+                filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
+                filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+
+                if edgecloudserver != "both":
+                    if edgecloudserver == "edge":
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=True, 
+                                                                conntype=connectiontype))
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="edge", 
+                                                                connectiontype=connectiontype))  
+                    elif edgecloudserver == "cloud":
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=False, 
+                                                                conntype=connectiontype))
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="remote", 
+                                                                connectiontype=connectiontype))  
+                else:
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=True, 
+                                                                conntype=connectiontype))
+                    values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="edge", 
+                                                                connectiontype=connectiontype))  
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=False, 
+                                                                conntype=connectiontype))
+                    values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="remote", 
+                                                                connectiontype=connectiontype)) 
+     
+        if len(values) == 0:
+            print (_WARNING + "No data for file " + dashfile + _RESET)
+            continue
+            
+        #print folderpath
+        createfolder(folderpath)
+        ylabel = "Bandwidth (Mbps)"
+        xlabel = "Number of clients"
+
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+def mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser, direction, connectiontype, 
+                                                       ylim, edgecloudserver, ncol, legendypos):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
+    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+
+    folderpath =  _SELFMIMBANDWIDTH_CONNTYPESERVERPOSNUMCLIENT_BASEFILEPATH
+    legendlabels = []
+    for filename in dashfileslist:       
+        if edgecloudserver == "both":
+            legendlabels.append("self MEC " + filename)
+            legendlabels.append("mim MEC " + filename)
+            legendlabels.append("self cloud " + filename)
+            legendlabels.append("mim cloud " + filename)
+        elif edgecloudserver == "edge":
+            legendlabels.append("self MEC " + filename)
+            legendlabels.append("mim MEC " + filename)
+        elif edgecloudserver == "cloud":
+            legendlabels.append("self Cloud " + filename)
+            legendlabels.append("mim Cloud " + filename)
+        else:
+            print ("edgecloudserver: unknown value " + edgecloudserver)
+            sys.exit(1)
+
+    for clientnumber in clientnumberlist:
+        values = OrderedDict()
+        title = connectiontype + "-" + direction + "-bandwidth-" + clientnumber + "clients-" + edgecloudserver
+        
+        for noise in noiselist:
+            values[noise] =[]
+
+            for dashfile in dashfileslist: 
+                #input file of self measurements           
+                filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
+                filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                #input file for mim measurements
+                filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
+                filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+
+                if edgecloudserver != "both":
+                    if edgecloudserver == "edge":
+                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=True, 
+                                                                conntype=connectiontype))
+                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="edge", 
+                                                                connectiontype=connectiontype))  
+                    elif edgecloudserver == "cloud":
+                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=False, 
+                                                                conntype=connectiontype))
+                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="remote", 
+                                                                connectiontype=connectiontype))  
+                else:
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=True, 
+                                                                conntype=connectiontype))
+                    values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="edge", 
+                                                                connectiontype=connectiontype))  
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=False, 
+                                                                conntype=connectiontype))
+                    values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="remote", 
+                                                                connectiontype=connectiontype)) 
+     
+        if len(values) == 0:
+            print (_WARNING + "No data for " + clientnumber + " clients" + _RESET)
+            continue
+            
+        #print folderpath
+        createfolder(folderpath)
+        ylabel = "Bandwidth (Mbps)"
+        xlabel = "Cross traffic (Mbps)"
+
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+
+def mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser, direction, connectiontype, 
+                                                       ylim, edgecloudserver, ncol, legendypos):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
+    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+
+    folderpath =  _SELFMIMBANDWIDTH_CONNTYPESERVERPOSCROSSTRAFFIC_BASEFILEPATH
+    legendlabels = []
+    for filename in dashfileslist:       
+        if edgecloudserver == "both":
+            legendlabels.append("self MEC " + filename)
+            legendlabels.append("mim MEC " + filename)
+            legendlabels.append("self cloud " + filename)
+            legendlabels.append("mim cloud " + filename)
+        elif edgecloudserver == "edge":
+            legendlabels.append("self MEC " + filename)
+            legendlabels.append("mim MEC " + filename)
+        elif edgecloudserver == "cloud":
+            legendlabels.append("self Cloud " + filename)
+            legendlabels.append("mim Cloud " + filename)
+        else:
+            print ("edgecloudserver: unknown value " + edgecloudserver)
+            sys.exit(1)
+
+    for noise in noiselist:
+        values = OrderedDict()
+        title = connectiontype + "-" + direction + "-bandwidth-" + noise + "-" + edgecloudserver
+        
+        for clientnumber in clientnumberlist:
+            values[clientnumber] =[]
+
+            for dashfile in dashfileslist: 
+                #input file of self measurements           
+                filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
+                filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                #input file for mim measurements
+                filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
+                filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+
+                if edgecloudserver != "both":
+                    if edgecloudserver == "edge":
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=True, 
+                                                                conntype=connectiontype))
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="edge", 
+                                                                connectiontype=connectiontype))  
+                    elif edgecloudserver == "cloud":
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=False, 
+                                                                conntype=connectiontype))
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="remote", 
+                                                                connectiontype=connectiontype))  
+                else:
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=True, 
+                                                                conntype=connectiontype))
+                    values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="edge", 
+                                                                connectiontype=connectiontype))  
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                                                                inputfile=filename_self, edgeserver=False, 
+                                                                conntype=connectiontype))
+                    values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                                                                inputfile=filename_mim, segment="remote", 
+                                                                connectiontype=connectiontype)) 
+     
+        if len(values) == 0:
+            print (_WARNING + "No data for " + noise + " of cross traffic" + _RESET)
+            continue
+            
+        #print folderpath
+        createfolder(folderpath)
+        ylabel = "Bandwidth (Mbps)"
+        xlabel = "Number of clients"
+
+        drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
+
+
 
 def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connectiontype, ncol, legendypos, ylim = 50):
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
@@ -903,11 +1158,10 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype
     xlabel = "CrossTraffic (Mbps)"
      
     createfolder(folderpath)
-    values = OrderedDict()
-
 
     for dashfile in dashfileslist:
         title = "mim-" + direction + "-" + connectiontype + "-" + connectiontype + "-bandwidth-" + dashfile+"-"
+        values = OrderedDict()
         legendlabels = []
 
 
@@ -920,10 +1174,10 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype
                             + config_parser.get("experiment_conf", "from_passive") + "-" \
                             + config_parser.get("experiment_conf", "to_passive") + ".csv"
             
-                values[noise].append(readvalues_noisemim(config_parser, filename, connectiontype,
-                                                         "edge" , noise))      
-                values[noise].append(readvalues_noisemim(config_parser, filename, connectiontype,
-                                                         "remote" , noise))   
+                values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                                                             "edge"))      
+                values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                                                             "remote"))   
 
             
         for i in range (0, len(clientnumberlist)):
@@ -1039,10 +1293,19 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
 
     i = 1
     with open(folderpath + title + ". txt", "w") as logfile:
+        #values = [  
+        #           (group #1, [[bar 1 measures], [bar #2 measures], ..., [bar #n measures]]),
+        #           (group #2, [[bar 1 measures], [bar #2 measures], ..., [bar #n measures]]),
+        #                                      ....
+        #           (group #k, [[bar 1 measures], [bar #2 measures], ..., [bar #n measures]])
+        #        ]
         for key, value in values.items():
+            #   key = group #i
+            #   value = [[bar 1 of group i measures], [bar #2 of group i measures], ..., [bar #n of group i measures]]
+            
+            #for eac group of boxplots
             plt.axvline(1.0 * i + len(value), 0, 10, color="#b0b0b0")
 
-            #value = [group # 1: [bar 1 measures], [bar #2 measures], ..., [bar #n measures], ...., group #k:[bar 1 measures], [bar #2 measures], ..., [bar #n measures]]
             boxplotpos = []
             for k in range (0, len(value)):
                 boxplotpos.append(i + k)
@@ -1052,6 +1315,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
 
             j=0
             for box in bp["boxes"]:
+                #set the color
                 plt.setp(box, facecolor=_BOXPLOT_COLORS[j], edgecolor='black')
                 j += 1
             
