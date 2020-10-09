@@ -1,3 +1,10 @@
 csv/*
 bandwidth/*
+_bandwidth/*
 latency/*
+_latency/*
+
+*.zip
+
+
+
