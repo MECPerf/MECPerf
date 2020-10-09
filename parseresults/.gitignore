@@ -1,10 +1,14 @@
 csv/*
 bandwidth/*
 _bandwidth/*
+bandwidthplot/*
+_bandwidthplot/*
 latency/*
 _latency/*
+latencyplot/*
+_latencyplot/*
 
 *.zip
-
+.vscode/*
 
 
