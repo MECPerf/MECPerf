@@ -401,6 +401,9 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
 
 
 def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
+    print (inputfile)
+    assert "SORTED" in inputfile
+    
     ret = []
     last_testID = ""
     
@@ -465,6 +468,14 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
                 if last_testID == "":
                     #this is the first row
                     last_testID = currentTestID
+
+                    ####################
+                    lastclientIP = clientIP
+                    lastClientPort = clientPort
+                    lastServerIP = serverIP
+                    lastServerPort = serverPort
+                    ##############
+
                     t0 = timestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
@@ -472,6 +483,13 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
                 
                 elif last_testID == currentTestID:
                     #same test
+                    
+                    assert clientIP == lastclientIP
+                    assert serverIP == lastServerIP
+                    assert clientPort == lastClientPort
+                    assert serverPort == lastServerPort
+                    assert currentTimestamp_micros <= timestamp_micros
+
                     if byte > 0:
                         currentByte += byte
                         currentTimestamp_micros += timestamp_micros - t0
@@ -489,6 +507,8 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
                         t0 = timestamp_micros
                 else:
                     #newtest
+                    assert currentTimestamp_micros <= timestamp_micros
+
                     if currentByte > 0:
                         currentTimestamp_s = currentTimestamp_micros /1000000
                         bps = (currentByte * 8) / currentTimestamp_s
@@ -496,7 +516,10 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
 
                         ret.append(Mbps)
 
-    
+                    lastclientIP = clientIP
+                    lastClientPort = clientPort
+                    lastServerIP = serverIP
+                    lastServerPort = serverPort    
 
                     last_testID = currentTestID
                     t0 = timestamp_micros

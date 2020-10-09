@@ -631,7 +631,7 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
                     filename = "csv/passive/" + mode + "-bandwidth-" + direction + "-" + connectiontype
                     filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
                              + config_parser.get("experiment_conf", "from_passive") + "-" \
-                             + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                             + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
 
                     values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
                                                 inputfile=filename, edgeserver=edgeserver, 
@@ -641,7 +641,7 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
                     filename = "csv/passive/" + mode + "-bandwidth-" + direction + "-" + connectiontype \
                              + "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
                              + config_parser.get("experiment_conf", "from_passive") + "-" \
-                             + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                             + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
                 
                     values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
                                                 inputfile=filename, edgeserver=True, 
@@ -721,11 +721,11 @@ def mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser, directio
             for clientnumber in clientnumberlist:
                 filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
 
                 filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
 
             
                 if edgecloudserver != "both":
@@ -799,11 +799,11 @@ def mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser, direct
                 #input file of self measurements           
                 filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
                 #input file for mim measurements
                 filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
 
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
@@ -881,11 +881,11 @@ def mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser, direction,
                 #input file of self measurements           
                 filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
                 #input file for mim measurements
                 filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
 
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
@@ -964,11 +964,11 @@ def mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser, directi
                 #input file of self measurements           
                 filename_self  = "csv/passive/self-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_self += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_self += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
                 #input file for mim measurements
                 filename_mim  = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype + "-" 
                 filename_mim += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + ".csv"
+                filename_mim += fromtimestamp_passive + "-" + totimestamp_passive + "_SORTED.csv"
 
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
@@ -1036,7 +1036,7 @@ def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connecti
                 filename = "csv/passive/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-" \
                          + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_"  \
                          + config_parser.get("experiment_conf", "from_passive") + "-" \
-                         + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                         + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
                 values[dashfile].append(readbandwidthvalues_self(config_parser=config_parser,  
                                                 inputfile=filename, edgeserver=True, conntype=connectiontype))
@@ -1084,7 +1084,7 @@ def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectionty
                 filename = "csv/passive/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-" \
                          + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_"  \
                          + config_parser.get("experiment_conf", "from_passive") + "-" \
-                         + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                         + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
                 values[dashfile].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
                                                             "edge"))  
@@ -1131,7 +1131,7 @@ def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, le
                 filename = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
                             + config_parser.get("experiment_conf", "from_passive") + "-" \
-                            + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                            + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
                 values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
                                                             server))       
@@ -1172,7 +1172,7 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype
                 filename = "csv/passive/mim-bandwidth-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
                             + config_parser.get("experiment_conf", "from_passive") + "-" \
-                            + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                            + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
                 values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
                                                              "edge"))      
@@ -1222,7 +1222,7 @@ def latencyboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, 
                 filename = "csv/passive/mim-latency-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
                             + config_parser.get("experiment_conf", "from_passive") + "-" \
-                            + config_parser.get("experiment_conf", "to_passive") + ".csv"
+                            + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
                 values[noise].append(readlatencyvalues_noisemim(config_parser, filename, connectiontype,
                                                          "edge" , noise))      

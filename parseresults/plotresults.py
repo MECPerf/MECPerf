@@ -177,7 +177,7 @@ def plotselfbandwidth(config_parser):
     bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
 def plotmimbandwidth(config_parser):
     ylim = 50
-    '''
+    
     bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                               ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3)
     bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
@@ -186,20 +186,20 @@ def plotmimbandwidth(config_parser):
                               ylim=ylim, legendypos=LEGENDYPOS_1LINE, server="edge", ncol=3)
     bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
                               ylim=ylim, legendypos=LEGENDYPOS_1LINE, server="remote", ncol=3)
-    '''
+    
     bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", 
                                         connectiontype="wifi", ylim=ylim, ncol=3, legendypos=LEGENDYPOS_4LINE)
     bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", 
                                         connectiontype="lte", ylim=ylim, ncol=2, legendypos=LEGENDYPOS_2LINE)
-    '''
+    
     bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
                                     connectiontype="wifi", ncol=3, legendypos=LEGENDYPOS_4LINE)
     bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
                                     connectiontype="lte", ncol=2, legendypos=LEGENDYPOS_2LINE)
-    '''
+    
 def plotmimandselfbandwidth(conf_parser):
     ylim = 50
-    '''
+    
     mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser=conf_parser, direction="downlink", 
                                                          connectiontype="wifi", ylim=ylim,
                                                          edgecloudserver="edge", ncol=3, 
@@ -238,7 +238,7 @@ def plotmimandselfbandwidth(conf_parser):
                                                        connectiontype="wifi", ylim=ylim, 
                                                        edgecloudserver="both", ncol=3, 
                                                        legendypos=LEGENDYPOS_8LINE)
-    '''
+    
     mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser=conf_parser, direction="downlink", 
                                                           connectiontype="wifi", ylim=ylim,
                                                           edgecloudserver="edge", ncol=3,
@@ -296,9 +296,9 @@ if __name__ == '__main__':
     #plotactivebandwidth(config_parser)
     
     #plotselfbandwidth(config_parser)
-    #plotmimbandwidth(config_parser)
+    plotmimbandwidth(config_parser)
     plotmimandselfbandwidth(config_parser)
-    #plotmimlatency(config_parser)
+    plotmimlatency(config_parser)
 
 
     
