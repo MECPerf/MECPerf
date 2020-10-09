@@ -143,6 +143,7 @@ def analyze_activebandwidthmeasures(BASE_URL, direction, command, config_parser)
     starting_time_intervals_list = starting_time_intervals.split(",")
 
     #PARAMS["group_by"] = "false"
+    
     clientT_observerT, clientT_observerR, observerT_remoteR, observerR_remoteR = create_request (PARAMS, BASE_URL, "/get_active_measures/bandwidth",
                                                                                 config_parser, 
                                                                                 starting_time_intervals_list, 
@@ -151,6 +152,7 @@ def analyze_activebandwidthmeasures(BASE_URL, direction, command, config_parser)
     simplebandwidth_lineplot(clientT_observerT, clientT_observerR, observerT_remoteR, title, labels)
     bandwidth_grouped(starting_time_intervals_list, duration_m, clientT_observerT, clientT_observerR, 
                       observerT_remoteR, title, labels, dates_list, config_parser)
+    
     
     if PARAMS["command"] == "UDPBandwidth":
         print "UDPBandwidth"
@@ -163,5 +165,5 @@ def analyze_activebandwidthmeasures(BASE_URL, direction, command, config_parser)
 
 
         bandwidth_raw(clientT_observerT_rawdata, clientT_observerR_rawdata, observerT_remoteR_rawdata, 
-                      observerR_remoteR_rawdata, title, config_parser)
+                      observerR_remoteR_rawdata, title, config_parser, direction)
             
