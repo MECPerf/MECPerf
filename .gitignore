@@ -44,3 +44,5 @@ local.properties
 RESTAggregator/RESTAggregator.egg-info/*
 RESTAggregator/dist/*
 RESTAggregator/opt.txt
+
+conf/
