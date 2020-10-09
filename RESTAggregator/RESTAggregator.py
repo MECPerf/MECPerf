@@ -155,17 +155,22 @@ def create_app():
         query += "'SenderIdentity', SenderIdentity, "
         query += "'ReceiverIdentity', ReceiverIdentity "
         query += " ) FROM MECPerf.Test "
-        query += " ORDER BY (Timestamp) DESC "
+        query += " ORDER BY (Timestamp) DESC limit 100"
 
         cur = mysql.connection.cursor()
         cur.execute(query)
         queryRes = cur.fetchall()
+        rc =  len(queryRes)
+        print ("rowcount = " + str(rc))
         cur.close()
     
 
         i = 0
+        
+
         for row in queryRes:
-            print row
+            #print row
+            
             if i == 0:
                 result += "["
                 i += 1
