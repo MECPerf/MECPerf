@@ -217,31 +217,52 @@ def bandwidth_groupedbyweekdayandintervals(start_time, stop_time, segment, title
 
 
 def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,  observerR_remoteR,
-                      title, config_parser):
+                      title, config_parser, direction):
     start_noise = int(config_parser.get("active_experiment_params", "start_noise"))
     stop_noise = int(config_parser.get("active_experiment_params", "stop_noise"))
     step_noise = int(config_parser.get("active_experiment_params", "step_noise"))
 
     for i in range (start_noise, stop_noise + 1, step_noise):
         if len(clientT_observerT) != 0:
-            ylim = 10000
-            xlim = 1200
+            ylim = 11000
+            xlim = 2000
             bandwidth_histogram(clientT_observerT, str(i) + "M",  
                             "client-observer(nitos)" + title + str(i) + "M Noise", 
                             "client -> Observer(Nitos)", colors.OBSERVER_CLIENT_TESTBED, xlim, ylim)
         else:
             colors.WARNING + "len(clientT_observerT) is 0"
         if len(clientT_observerR) != 0:
-            ylim = 10000
-            xlim = 1200
+            ylim = 11000
+            xlim = 3400
+
+            '''
+            if direction == "Upstream":
+                xlim = 3000
+            elif direction == "Downstream":
+                xlim = 1200
+            else:
+                print "unknown direction"
+                sys.exit(0)
+            '''
+
             bandwidth_histogram(clientT_observerR, str(i) + "M",  
                             "client-observer(unipi)" + title + str(i) + "M Noise", 
                             "client -> Observer(Unipi))", colors.OBSERVER_CLIENT_UNIPI, xlim, ylim)
         else:
             colors.WARNING + "len(clientT_observerR) is 0"
         if len(observerT_remoteR) != 0:
-            ylim = 10000
-            xlim = 1200
+            ylim = 11000
+            xlim = 3400
+            '''
+            if direction == "Upstream":
+                xlim = 3000
+            elif direction == "Downstream":
+                xlim = 1200
+            else:
+                print "unknown direction"
+                sys.exit(0)
+            '''
+
             bandwidth_histogram(observerT_remoteR, str(i) + "M",  
                             "observer-remote" + title + str(i) + "M Noise", 
                             "Observer -> Remote", colors.NITOS_REMOTE, xlim, ylim)
@@ -292,11 +313,14 @@ def bandwidth_histogram(segment, noise, title, legendlabels, histcolor, xlim, yl
 
     plt.xlim(0, xlim)
     plt.ylim(0, ylim)
-    plt.xticks(np.arange(0, xlim, step = 50))
-    plt.yticks(np.arange(0, ylim, step=500))
+    if xlim < 2000:
+        plt.xticks(np.arange(0, xlim + 1, step = 50))
+    else:
+        plt.xticks(np.arange(0, xlim + 1, step = 200))
+    plt.yticks(np.arange(0, ylim + 1, step=500))
 
     plt.ylabel("Number of occurrences")
-    plt.xlabel("Mbps ")
+    plt.xlabel("Measured capacity (Mbps)")
     #plt.title(title + "mean: " + str(sum(x)/len(x)) + "-" + str(len(x)))
 
     print "plotting"  + basedir + title + ".png"
