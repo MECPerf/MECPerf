@@ -1,5 +1,8 @@
 import csv
 import sys
+import logging
+
+
 
 
 
@@ -333,6 +336,7 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
 
 
 def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
+    assert "SORTED" in inputfile
     ret = []
 
     if conntype == "wifi":
@@ -347,7 +351,6 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
         print ("unknown connection type")
         sys.exit(0)
     
-
     with open (inputfile, "r") as csvinput:
         csvreader = csv.reader(csvinput, delimiter=",")
         linecount = 0
@@ -428,7 +431,6 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
             if linecount == 0 or linecount == 1:
                 linecount += 1
                 continue
-
             if linecount == 2:
                 try:
                     assert row[13] == "Bytes"
@@ -449,7 +451,7 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
             linecount += 1
 
             byte = float(row[13])
-            timestamp_micros = float(row[12])  #from microsecons to seconds
+            timestamp_micros = float(row[12])  #timestamp microsecons
             #bps = (byte * 8) / timestamp_s
             #Mbps = bps / 1000000
 
@@ -488,14 +490,18 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
                     assert serverIP == lastServerIP
                     assert clientPort == lastClientPort
                     assert serverPort == lastServerPort
-                    assert currentTimestamp_micros <= timestamp_micros
+                    try:
+                        assert t0 <= timestamp_micros
+                    except:
+                        print (t0)
+                        print (timestamp_micros)
 
                     if byte > 0:
                         currentByte += byte
                         currentTimestamp_micros += timestamp_micros - t0
 
                         if currentTimestamp_micros >= 1000000: #more than one sec
-                            currentTimestamp_s = currentTimestamp_micros /1000000
+                            currentTimestamp_s = currentTimestamp_micros /1000000 #from microseconds to seconds
                             bps = (currentByte * 8) / currentTimestamp_s
                             Mbps = bps / 1000000
 
@@ -503,11 +509,12 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
 
                             currentByte = 0.0
                             currentTimestamp_micros = 0.0
+
                     if timestamp_micros !=  t0:
                         t0 = timestamp_micros
                 else:
                     #newtest
-                    assert currentTimestamp_micros <= timestamp_micros
+                    #assert currentTimestamp_micros <= timestamp_micros
 
                     if currentByte > 0:
                         currentTimestamp_s = currentTimestamp_micros /1000000
@@ -516,10 +523,12 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
 
                         ret.append(Mbps)
 
+                    ##################################
                     lastclientIP = clientIP
                     lastClientPort = clientPort
                     lastServerIP = serverIP
                     lastServerPort = serverPort    
+                    ###################################
 
                     last_testID = currentTestID
                     t0 = timestamp_micros
@@ -534,8 +543,175 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
     return ret
 
 
+
+#returns a dict
+def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, segment, logger):
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(connectiontype))
+    logger.debug("segment = " + segment)
+
+    assert "SORTED" in inputfile
+
+    ret = {}
+    last_testID = ""
+    
+    if connectiontype == "wifi":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+    elif connectiontype == "lte":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+    else:
+        print ("unknown connection type")
+        logger.critical("unknown connection type.")
+        logger.critical("EXIT")
+        sys.exit(0)
+    
+    
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+        for row in csvreader:
+            #line #0 contains the query
+            #line #1 contains query's arguments 
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+            #line #3 contains the name of each column
+            #       mim-bandwidth columns: ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,
+            #                             Direction,Protocol,Mode,Type,ID,Timestamp,Bytes
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[12] == "Timestamp" # in microsec
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[4] == "ServerIP"
+                    assert row[3] == "ClientPort"
+                    assert row[5] == "ServerPort"
+                except:
+                    print (row)
+                    logger.critical("linecount = 2 " + str(row) + "unexpercted columns")
+                    logger.critical ("EXIT")
+                    sys.exit(1)
+
+                linecount += 1
+                continue            
+            
+            linecount += 1
+
+            byte = float(row[13])
+            currenttimestamp_micros = float(row[12])  #timestamp microseconds
+            clientIP = row[2]
+            serverIP = row[4]
+            clientPort = row[3]
+            serverPort = row[5]
+            
+            if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+
+                currentTestID = clientIP + "-" + clientPort + "-" + serverIP + "-" + serverPort
+            
+                if last_testID == "":
+                    #this is the first row that contains results values
+                    last_testID = currentTestID
+                    lastclientIP = clientIP
+
+                    ####################  FOR DEBUGGING ONLY ####################
+                
+                    lastClientPort = clientPort
+                    lastServerIP = serverIP
+                    lastServerPort = serverPort
+                    ############################################################
+
+                    previoustimestamp_micros = currenttimestamp_micros
+                    packets_bandwidth = []
+                    currentByte = 0.0
+                    current_micros = 0.0
+                
+                elif last_testID == currentTestID:
+                    #same test
+                    
+                    ####################  FOR DEBUGGING ONLY ####################
+                    assert clientIP == lastclientIP
+                    assert serverIP == lastServerIP
+                    assert clientPort == lastClientPort
+                    assert serverPort == lastServerPort
+                    try:
+                        assert previoustimestamp_micros <= currenttimestamp_micros
+                    except Exception as e:
+                        exception_type, exception_obj, exception_traceback = sys.exc_info()
+                        print (linecount)
+                        print ("error on " + str(exception_traceback.tb_frame.f_code.co_filename) + "," + \
+                               str(exception_traceback.tb_lineno))
+                        print (previoustimestamp_micros)
+                        print (currenttimestamp_micros)
+
+                        logger.critical("assertion failed: assert previoustimestamp_micros <= currenttimestamp_micros")
+                        logger.critical("line number = " + str(linecount))
+                        logger.critical("previoustimestamp_micros=" + str(previoustimestamp_micros))
+                        logger.critical("currenttimestamp_micros=" + str(currenttimestamp_micros))
+                        logger.critical ("EXIT")
+                        sys.exit(-1)
+                    ##############################################################
+
+                    if byte > 0:
+                        currentByte += byte
+                        current_micros += currenttimestamp_micros - previoustimestamp_micros
+
+                        if current_micros >= 1000000: #more than one sec
+                            current_s = current_micros /1000000 #from microseconds to seconds
+                            bps = (currentByte * 8) / current_s
+                            Mbps = bps / 1000000
+
+                            if ret.get(clientIP) == None:
+                                ret[clientIP] = []
+                            ret[clientIP].append(Mbps)
+
+                            currentByte = 0.0
+                            current_micros = 0.0
+
+
+                    previoustimestamp_micros = currenttimestamp_micros
+                else:
+                    #new testID                    
+                    if currentByte > 0:
+                        current_s = current_micros /1000000
+                        bps = (currentByte * 8) / current_s
+                        Mbps = bps / 1000000
+
+                        if ret.get(lastclientIP) == None:
+                                ret[lastclientIP] = []
+                        ret[lastclientIP].append(Mbps)
+
+                    last_testID = currentTestID
+                    lastclientIP = clientIP
+                    ############################FOR DEBUGGING ONLY##############################
+                    lastClientPort = clientPort
+                    lastServerIP = serverIP
+                    lastServerPort = serverPort    
+                    #################################################################
+                    
+                    previoustimestamp_micros = currenttimestamp_micros
+                    packets_bandwidth = []
+                    currentByte = 0.0
+                    current_micros = 0.0
+
+
+        #logger.debug("dict = " + str(ret))
+        logger.debug(str(len(ret)) + " clients in ret")
+        print ("read  kn" + str(linecount) + " from " + inputfile + "(including headers)")
+    
+        
+    return ret
+
+
+
  
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
+    assert "SORTED" in inputfile
     ret = []
     
     client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_" + connectiontype)
@@ -567,7 +743,15 @@ def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment
             
             linecount += 1
 
-            latency = float(row[13])
+            try:
+                latency = float(row[13])
+            except:
+                print (inputfile)
+                for iii in range(0, len(row)):
+                    print(str(iii) + ": " + str(row[iii]) )
+                
+
+                sys.exit(0)
             serverIP = row[4]
 
             
@@ -638,7 +822,7 @@ def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
                         elif command == "TCPRTT" or command == "UDPRTT":
                             assert row[12] == "latency"
                         else:
-                            print "unknown command"
+                            print ("unknown command")
                             sys.exit(0)
 
                         assert row[9] == "Keyword"
@@ -648,7 +832,7 @@ def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
                         assert row[2] == "Timestamp"
                         assert row[1] == "ID"
                     except:
-                        print row
+                        print (row)
                         sys.exit(1)
 
                     linecount += 1
@@ -706,8 +890,8 @@ def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
                         else:
                             NitosUnipi["y"].append(200)
                     else:
-                        print "error"
-                        print row
+                        print ("error")
+                        print (row)
                         sys.exit(0)
 
 
