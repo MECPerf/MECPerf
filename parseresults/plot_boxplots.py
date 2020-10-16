@@ -7,9 +7,9 @@ import errno
 
 from collections import OrderedDict
 from matplotlib.backends.backend_pdf import PdfPages
-from readcsv import readvalues_activelatencyboxplot, readvalues_activebandwidthboxplot
-from readcsv import readvalues_activebandwidthlineplot, readbandwidthvalues_self, readbandwidthvalues_mim 
-from readcsv import readlatencyvalues_noisemim
+from readcsv import readvalues_activelatencyboxplot, readvalues_activebandwidthboxplot, \
+                    readvalues_activebandwidthlineplot, readbandwidthvalues_self, readbandwidthvalues_mim, \
+                    readbandwidthvalues_mim_perclient, readlatencyvalues_noisemim
 
 
 _BOXPLOT_COLORS=['#F8B195', "#355C7D", '#C06C84', '#F67280', '#99B898', '#A8E6CE', '#E84A5F', '#A7226E', 
@@ -1107,7 +1107,7 @@ def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectionty
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
 def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, legendypos, server, 
-                              segmentgrouped = False, ncol = 5):
+                              segmentgrouped = False, ncol = 5, logger = None):
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
@@ -1134,7 +1134,9 @@ def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, le
                             + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
                 values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
-                                                            server))       
+                                                            server))     
+
+                #print (readbandwidthvalues_mim_perclient(config_parser, filename, connectiontype, server, logger)) 
 
             
         for i in range (0, len(clientnumberlist)):
@@ -1149,6 +1151,65 @@ def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, le
         
         
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol)
+
+
+def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim, legendypos, server, ncol, logger):
+    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
+    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+
+    folderpath = "bandwidthplot/perclient/" + mode + connectiontype + "/"
+    ylabel = "Bandwidth (Mbps)"
+    xlabel = "Number of clients"
+     
+    createfolder(folderpath)
+    
+    for dashfile in dashfileslist:
+        for noise in noiselist:
+            values = OrderedDict()
+
+            title  = mode + "-" + direction + "-" + connectiontype + "-bandwidth-" + dashfile + "-" + server + "-"
+            title += str(noise)
+            print (title)
+            legendlabels = []
+            for clientnumber in clientnumberlist:
+                values[clientnumber] = []
+            
+                inputfilename  = "csv/passive/" + mode + "-bandwidth-" + direction + "-" + connectiontype
+                inputfilename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
+                               + config_parser.get("experiment_conf", "from_passive") + "-" \
+                               + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
+
+            
+                ret = (readbandwidthvalues_mim_perclient(config_parser, inputfilename, connectiontype, 
+                       server, logger)) 
+
+                logger.debug (ret)
+                boxplotvalues=[]
+                for x in ret.values():
+                    logger.debug (x)
+                    boxplotvalues.append(x)
+                
+                values[clientnumber] = boxplotvalues
+                
+
+            
+            #for i in range (0, len(clientnumberlist)):
+            #    legendlabels.append("Number of clients = " + str(clientnumberlist[i]))
+
+
+            if len(values) == 0:
+                print (_WARNING + "No data for file " + dashfile + "and cross_traffic " + noise + _RESET)
+                continue
+        
+            logger.debug(values)
+        
+        
+            drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol)
+
+
+
+
 def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, ylim, legendypos, segmentgrouped = False, ncol = 2):
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
@@ -1300,15 +1361,29 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
         #           (group #k, [[bar 1 measures], [bar #2 measures], ..., [bar #n measures]])
         #        ]
         for key, value in values.items():
+            print("jvsdvlj")
             #   key = group #i
             #   value = [[bar 1 of group i measures], [bar #2 of group i measures], ..., [bar #n of group i measures]]
             
             #for eac group of boxplots
-            plt.axvline(1.0 * i + len(value), 0, 10, color="#b0b0b0")
+            plt.axvline(1.0 * i + len(value) + 0.1, 0, 10, color="#b0b0b0")
 
             boxplotpos = []
+
+            
+
             for k in range (0, len(value)):
                 boxplotpos.append(i + k)
+            
+            print ("len: " + str(len(value)))
+            print (boxplotpos)
+
+            if len(value) == 0:
+                i += 1
+                continue
+            
+
+            #print (value)
             
             bp = ax.boxplot(value, positions = boxplotpos, widths = 0.6, patch_artist=True, showfliers=show_fliers,
                             medianprops={"color":"black"}, showmeans=False)
@@ -1324,7 +1399,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
             xlabelspos.append(1.0* i + (1.0 * len(value)/2) - 0.5)
             i += k + 2
 
-            writelogfile_boxplot(key, logfile, bp, legendlabels, value)
+            #writelogfile_boxplot(key, logfile, bp, legendlabels, value)
             
     # set axes limits and labels
     plt.xlim(0,i - 1)
@@ -1345,7 +1420,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
     #plt.xlabel(xlabel)
     #plt.ylabel(ylabel)
 
-    plt.title(title)
+    #plt.title(title)
     print (legendpos)
     leg = ax.legend(legendlabels, loc="upper center", bbox_to_anchor=(0.5, legendpos), ncol = 3, 
                     facecolor = "white", frameon=False, fontsize=_LABEL_SIZE) 
