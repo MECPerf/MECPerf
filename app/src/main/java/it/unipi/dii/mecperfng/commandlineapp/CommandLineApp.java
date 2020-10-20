@@ -350,7 +350,7 @@ public class CommandLineApp {
 
                     ret =  MainUtils.tcpRTTMeasure("Receiver", keyword, CMDPORT,
                                                    observerAddress, TCPPORT, pktSizeTCPLatency,
-                                                   numPktTCPLatency, interfaceName);
+                                                   numPktTCPLatency, interfaceName, null); //TODO: l'ultimo null è mio
                     if (ret == 0)
                         break;
 
@@ -382,7 +382,7 @@ public class CommandLineApp {
 
                     ret =  MainUtils.tcpRTTMeasure("Sender", keyword, CMDPORT,
                                                    observerAddress, TCPPORT, pktSizeTCPLatency,
-                                                   numPktTCPLatency, interfaceName);
+                                                   numPktTCPLatency, interfaceName, null); //TODO: l'ultimo null è mio
                     if (ret == 0)
                         break;
 
@@ -426,7 +426,7 @@ public class CommandLineApp {
 
                     ret = MainUtils.udpRTTMeasure("Receiver", keyword, CMDPORT,
                                                   observerAddress, UDPPORT, pktSizeUDPLatency,
-                                                  numPktUDPLatency, interfaceName);
+                                                  numPktUDPLatency, interfaceName, null); //TODO: l'ultimo null è mio
 
                     if (ret == 0)
                         break;
@@ -458,7 +458,7 @@ public class CommandLineApp {
 
                     ret = MainUtils.udpRTTMeasure("Sender", keyword, CMDPORT,
                                                   observerAddress, UDPPORT,  pktSizeUDPLatency,
-                                                  numPktUDPLatency, interfaceName);
+                                                  numPktUDPLatency, interfaceName, null); //TODO: l'ultimo null è mio
                     if (ret == 0)
                         break;
 

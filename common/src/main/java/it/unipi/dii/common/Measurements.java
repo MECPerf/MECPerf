@@ -103,6 +103,7 @@ public class Measurements {
                 connectionSocket.receive(receivePacket);
                 long endTime = System.currentTimeMillis();
 
+                //QUI METTE LA LATENZA PER OGNI PACCHETTO FACENDO LA DIFFERENZA TRA L'ISTANTE DI INVIO E QUELLO DI ARRIVO E LO CARICA NELLA MAPPA
                 Long[] mapValue = new Long[1];
                 mapValue[0] = endTime - startTime;
 

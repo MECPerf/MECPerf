@@ -2,6 +2,8 @@ package it.unipi.dii.mecperfng;
 
 
 
+import android.util.Log;
+
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -12,6 +14,7 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import it.unipi.dii.common.Measurements;
@@ -61,6 +64,14 @@ public class MainUtils {
      * @return: 0 = successfull
      *          -1 = IOException
      */
+
+    /* RESTITUISCE  ? IN UNA TRASMISSIONE TCP/IP. HA BISOGNO DELLA:
+     -  DIREZIONE (SE INVIO O RICEZIONE)
+     -  DELLA KEYWORD DA SALVARE NEL DATABASE UNA VOLTA FINITA LA MISURA
+     -  L'IP E LA PORTA DEL SERVER
+     -  IL NUMERO L DI BIT DI CIASCUN PACCHETTO E IL NUMERO DI QUANTI DI QUESTI MANDARE
+     -
+     */
     public static int tcpBandwidthMeasure(String direction, String keyword, int commandPort,
                                           String observerAddress, int observerPort,
                                           int tcp_bandwidth_pktsize, int tcp_bandwidth_num_pkt,
@@ -69,8 +80,13 @@ public class MainUtils {
             int tcp_bandwidth_stream = tcp_bandwidth_num_pkt * tcp_bandwidth_pktsize;
 
             Socket communicationSocket = new Socket();
+            /*QUESTA VARIABILE CREA IL CLIENT SOCKET:
+            -   UN GRUPPO DI MESSAGGI CHE POSSONO ESSERE USATI PER DESCRIVERE COSA E' SUCCESSO
+            -   CREA IL SOCKET E LO STREAM DI OUTPUT SU CUI INVIARE I PACCHETTI
+            */
             ControlMessages controlSocketObserver;
 
+             // (?)SE NON SI SA
             if (interfaceName != null) {
                 InetAddress sourceIPv4Address =getInterfacesInfo(interfaceName);
                 if (sourceIPv4Address == null)
@@ -87,7 +103,9 @@ public class MainUtils {
             communicationSocket.connect(new InetSocketAddress(InetAddress.getByName(observerAddress), observerPort));
 
 
+
             if (direction.equals("Sender")) {
+                Log.d("MyLog","direzione sender");
                 controlSocketObserver.sendCMD("TCPBandwidthSender#" + keyword + "#" +
                         tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
                 //System.out.println(controlSocketObserver);
@@ -99,17 +117,20 @@ public class MainUtils {
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
-                Measurements.TCPBandwidthSender(communicationSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
 
+                Log.d("MyLog","direzione sender 2");
+                Measurements.TCPBandwidthSender(communicationSocket, tcp_bandwidth_stream, tcp_bandwidth_pktsize);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages
                         .COMPLETED.toString()) == 0) {
+                    Log.d("MyLog","direzione sender 3");
                     controlSocketObserver.closeConnection();
                     return 0;
                 }
-
+                Log.d("MyLog","direzione sender 4");
                 controlSocketObserver.closeConnection();
                 return -1;
             } else {
+                Log.d("MyLog","direzione receiver");
                 controlSocketObserver.sendCMD("TCPBandwidthReceiver#" + keyword +
                         "#" + tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
                 Map<Integer, Long[]> longIntegerMap = Measurements.TCPBandwidthReceiver(
@@ -232,7 +253,7 @@ public class MainUtils {
 
     public static int tcpRTTMeasure(String direction, String keyword, int commandPort,
                                     String observerAddress, int observerPort,
-                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack, String interfaceName) {
+                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack, String interfaceName, Map<Integer, Long[]> map) {
 
         try {
             Socket communicationSocket = new Socket();
@@ -267,9 +288,15 @@ public class MainUtils {
                     return -1;
                 }
 
-                //perform measure
+                //RITORNA UNA MAPPA CONTENENTE UN ARRAY DI TOT MISURE (TOT=NUMERO DI PACCHETTI DA INVIARE SCELTI) PER OGNI PACCHETTO
                 Map<Integer, Long[]> latency = Measurements.TCPRTTSender(communicationSocket, tcp_rtt_pktsize,
                         tcp_rtt_num_pack);
+
+                //la copio nella mappa passata alla funzione cosi da elaborarla nel chiamante
+                for(Integer key : latency.keySet()) {
+                    map.put(key,latency.get(key));
+                }
+
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
 
@@ -317,7 +344,7 @@ public class MainUtils {
 
     public static int udpRTTMeasure(String direction, String keyword, int commandPort,
                                     String observerAddress, int observerPort,
-                                    int udp_rtt_pktsize, int udp_rtt_num_pack, String interfaceName) {
+                                    int udp_rtt_pktsize, int udp_rtt_num_pack, String interfaceName,  Map<Integer, Long[]> map) {
 
         try {
             ControlMessages controlSocketObserver;
@@ -356,15 +383,21 @@ public class MainUtils {
                     return -1;
                 }
 
-                //perform measure
+                //RITORNA UNA MAPPA CONTENENTE UN ARRAY DI TOT MISURE (TOT=NUMERO DI PACCHETTI DA INVIARE SCELTI) PER OGNI PACCHETTO
                 Map<Integer, Long[]> latency = Measurements.UDPRTTSender(udpsocket, udp_rtt_pktsize,
                         udp_rtt_num_pack);
+                //la copio nella mappa passata alla funzione cosi da elaborarla nel chiamante
+                for(Integer key : latency.keySet()) {
+                    map.put(key,latency.get(key));
+                }
+
                 if (latency == null) {
                     System.out.println("Measure filed");
                     controlSocketObserver.sendCMD(ControlMessages.Messages.FAILED.toString());
                     controlSocketObserver.closeConnection();
                     return -1;
                 }
+
                 controlSocketObserver.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages

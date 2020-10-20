@@ -14,79 +14,101 @@
   ~ limitations under the License.
   -->
 
-<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/settings_environment">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:layout="@layout/preference_category_layout" app:title="@string/settings_environment" >
         <EditTextPreference
-            app:key="number_of_consecutive_tests"
+            android:layout="@layout/edit_text_preference_layout"
             app:defaultValue="1"
+            app:key="number_of_consecutive_tests"
             app:title="@string/number_of_consecutive_tests"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
-            app:key="observer_address"
+            android:layout="@layout/edit_text_preference_layout"
             app:defaultValue=""
+            app:key="observer_address"
             app:title="@string/observer_address_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
-            app:key="aggregator_address"
+            android:layout="@layout/edit_text_preference_layout"
             app:defaultValue=""
+            app:key="aggregator_address"
             app:title="@string/aggregator_address_title"
             app:useSimpleSummaryProvider="true" />
 
+
+        <ListPreference
+            android:layout="@layout/listpreference_layout"
+            android:key="@string/direction"
+            android:title="Direction"
+            android:entries="@array/function_array"
+            android:entryValues="@array/function_array_value"
+            android:defaultValue="0"
+            />
+
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/messages_UDP_header">
+    <PreferenceCategory android:layout="@layout/preference_category_layout" app:title="@string/messages_UDP_header">
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="pack_size_UDP_RTT"
             app:defaultValue="1"
             app:title="@string/pack_size_RTT_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="pack_size_UDP_BANDWIDTH"
             app:defaultValue="1024"
             app:title="@string/pack_size_BANDWIDTH_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="num_pack_UDP_RTT"
             app:defaultValue="100"
             app:title="@string/num_pack_RTT_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="num_pack_UDP_BANDWIDTH"
             app:defaultValue="2"
             app:title="@string/num_pack_BANDWIDTH_title"
-            app:enabled="false"
             app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/messages_TCP_header">
+    <PreferenceCategory android:layout="@layout/preference_category_layout" app:title="@string/messages_TCP_header">
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="pack_size_TCP_RTT"
             app:defaultValue="1"
             app:title="@string/pack_size_RTT_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="pack_size_TCP_BANDWIDTH"
             app:defaultValue="1024"
             app:title="@string/pack_size_BANDWIDTH_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="num_pack_TCP_RTT"
             app:defaultValue="100"
             app:title="@string/num_pack_RTT_title"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            android:layout="@layout/edit_text_preference_layout"
             app:key="num_pack_TCP_BANDWIDTH"
             app:defaultValue="1024"
             app:title="@string/num_pack_BANDWIDTH_title"

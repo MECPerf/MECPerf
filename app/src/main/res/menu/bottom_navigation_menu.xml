@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/preferences_icon"
+        android:icon="@drawable/ic_preferences"
+        />
+
+    <item
+        android:id="@+id/testing_icon"
+        android:icon="@drawable/ic_testing"
+        />
+
+    <item
+        android:id="@+id/storage_icon"
+        android:icon="@drawable/ic_storage"
+         />
+
+</menu>
