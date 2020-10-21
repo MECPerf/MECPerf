@@ -2,7 +2,7 @@ import csv
 import sys
 import logging
 
-
+_MINROWNUMBER = 50
 
 
 
@@ -333,8 +333,6 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
 
 
 
-
-
 def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
     assert "SORTED" in inputfile
     ret = []
@@ -403,9 +401,9 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
 
 
 
-def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
-    print (inputfile)
+def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, logger):
     assert "SORTED" in inputfile
+    logger.debug("\n")
     
     ret = []
     last_testID = ""
@@ -413,24 +411,38 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
     if connectiontype == "wifi":
         client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
         edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
     elif connectiontype == "lte":
         client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
         edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type")
+        logger.critical("unknown connection type")
+        logger.critical("EXIT")
         sys.exit(0)
     
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(connectiontype))
+    logger.debug("segment = " + segment)
+    logger.debug("client_subnetaddr = " + str(client_subnetaddr))
+    logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
+    logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
 
     with open (inputfile, "r") as csvinput:
         csvreader = csv.reader(csvinput, delimiter=",")
-
         linecount = 0
+
         for row in csvreader:
+            #line #0 contains the query
+            #line #1 contains query's arguments 
             if linecount == 0 or linecount == 1:
                 linecount += 1
+                logger.debug("line " + (str(linecount) + ": " + str(row)))
                 continue
+            #line #3 contains the name of each column
+            #       mim-bandwidth columns: ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,
+            #                             Direction,Protocol,Mode,Type,ID,Timestamp,Bytes
             if linecount == 2:
                 try:
                     assert row[13] == "Bytes"
@@ -442,6 +454,8 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
                     assert row[5] == "ServerPort"
                 except:
                     print (row)
+                    logger.critical("linecount = 2 " + str(row) + "unexpected columns")
+                    logger.critical ("EXIT")
                     sys.exit(1)
 
                 linecount += 1
@@ -451,9 +465,7 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
             linecount += 1
 
             byte = float(row[13])
-            timestamp_micros = float(row[12])  #timestamp microsecons
-            #bps = (byte * 8) / timestamp_s
-            #Mbps = bps / 1000000
+            currenttimestamp_micros = float(row[12])  #timestamp microsecons
 
             clientIP = row[2]
             serverIP = row[4]
@@ -462,79 +474,93 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
             
             
             if  (segment == "edge" and row[4][:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
-                (segment == "remote" and row[4][:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
+                (segment == "remote" and row[4][:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
 
                 currentTestID = clientIP + "-" + clientPort + "-" + serverIP + "-" + serverPort
-            
 
                 if last_testID == "":
                     #this is the first row
                     last_testID = currentTestID
-
-                    ####################
                     lastclientIP = clientIP
+
+                    ####################  FOR DEBUGGING ONLY ####################
                     lastClientPort = clientPort
                     lastServerIP = serverIP
                     lastServerPort = serverPort
-                    ##############
+                    ############################################################
 
-                    t0 = timestamp_micros
+                    previoustimestamp_micros = currenttimestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
-                    currentTimestamp_micros = 0.0
-                
+                    rowcounter = 1
+                    current_micros = 0.0
                 elif last_testID == currentTestID:
                     #same test
-                    
+                    ####################  FOR DEBUGGING ONLY ####################
                     assert clientIP == lastclientIP
                     assert serverIP == lastServerIP
                     assert clientPort == lastClientPort
                     assert serverPort == lastServerPort
                     try:
-                        assert t0 <= timestamp_micros
+                        assert previoustimestamp_micros <= currenttimestamp_micros
                     except:
-                        print (t0)
-                        print (timestamp_micros)
+                        print (previoustimestamp_micros)
+                        print (currenttimestamp_micros)
+
+                        logger.critical("previoustimestamp_micros = " + str(previoustimestamp_micros))
+                        logger.critical("currenttimestamp_micros = " + str(currenttimestamp_micros))
+                        sys.exit(0)
+                    ##############################################################
+
+                    rowcounter += 1
 
                     if byte > 0:
                         currentByte += byte
-                        currentTimestamp_micros += timestamp_micros - t0
+                        current_micros += currenttimestamp_micros - previoustimestamp_micros
 
-                        if currentTimestamp_micros >= 1000000: #more than one sec
-                            currentTimestamp_s = currentTimestamp_micros /1000000 #from microseconds to seconds
-                            bps = (currentByte * 8) / currentTimestamp_s
+                        if current_micros >= 1000000: #more than one sec
+                            current_s = current_micros /1000000 #from microseconds to seconds
+                            bps = (currentByte * 8) / current_s
                             Mbps = bps / 1000000
 
-                            ret.append(Mbps)
+                            packets_bandwidth.append(Mbps)
 
                             currentByte = 0.0
-                            currentTimestamp_micros = 0.0
+                            current_micros = 0.0
 
-                    if timestamp_micros !=  t0:
-                        t0 = timestamp_micros
+                    previoustimestamp_micros = currenttimestamp_micros
                 else:
                     #newtest
-                    #assert currentTimestamp_micros <= timestamp_micros
-
                     if currentByte > 0:
-                        currentTimestamp_s = currentTimestamp_micros /1000000
-                        bps = (currentByte * 8) / currentTimestamp_s
+                        current_s = current_micros /1000000
+                        bps = (currentByte * 8) / current_s
                         Mbps = bps / 1000000
 
-                        ret.append(Mbps)
+                        packets_bandwidth.append(Mbps)
+                    
+                    if rowcounter >= _MINROWNUMBER:
+                        for elem in packets_bandwidth:
+                            #print (elem)
+                            ret.append(elem)
+                        #logger.debug("accepted " + last_testID + " with rowcounter " + str(rowcounter))
+                    else:
+                        #print ("skipped " + last_testID + " with rowcounter " + str(rowcounter))
+                        logger.debug("skipped " + last_testID + " with rowcounter " + str(rowcounter))
+                    
 
-                    ##################################
+                    last_testID = currentTestID
                     lastclientIP = clientIP
+                    ############################FOR DEBUGGING ONLY##############################
                     lastClientPort = clientPort
                     lastServerIP = serverIP
                     lastServerPort = serverPort    
-                    ###################################
-
-                    last_testID = currentTestID
-                    t0 = timestamp_micros
+                    ###########################################################################
+                    
+                    previoustimestamp_micros = currenttimestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
-                    currentTimestamp_micros = 0.0
+                    rowcounter = 1
+                    current_micros = 0.0
 
         #print ret
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
@@ -546,12 +572,9 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment):
 
 #returns a dict
 def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, segment, logger):
-    logger.debug("inputfile = " + str(inputfile))
-    logger.debug("connectiontype = " + str(connectiontype))
-    logger.debug("segment = " + segment)
-
     assert "SORTED" in inputfile
-
+    logger.debug("\n")
+    
     ret = {}
     last_testID = ""
     
@@ -568,7 +591,13 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
         logger.critical("unknown connection type.")
         logger.critical("EXIT")
         sys.exit(0)
-    
+
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(connectiontype))
+    logger.debug("segment = " + segment)
+    logger.debug("client_subnetaddr = " + str(client_subnetaddr))
+    logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
+    logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
     
     with open (inputfile, "r") as csvinput:
         csvreader = csv.reader(csvinput, delimiter=",")
@@ -578,6 +607,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
             #line #1 contains query's arguments 
             if linecount == 0 or linecount == 1:
                 linecount += 1
+                logger.debug("line " + (str(linecount) + ": " + str(row)))
                 continue
             #line #3 contains the name of each column
             #       mim-bandwidth columns: ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,
@@ -613,14 +643,12 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                 (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
 
                 currentTestID = clientIP + "-" + clientPort + "-" + serverIP + "-" + serverPort
-            
                 if last_testID == "":
                     #this is the first row that contains results values
                     last_testID = currentTestID
                     lastclientIP = clientIP
 
                     ####################  FOR DEBUGGING ONLY ####################
-                
                     lastClientPort = clientPort
                     lastServerIP = serverIP
                     lastServerPort = serverPort
@@ -629,11 +657,10 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                     previoustimestamp_micros = currenttimestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
-                    current_micros = 0.0
-                
+                    rowcounter = 1
+                    current_micros = 0.0 
                 elif last_testID == currentTestID:
-                    #same test
-                    
+                    #same testID
                     ####################  FOR DEBUGGING ONLY ####################
                     assert clientIP == lastclientIP
                     assert serverIP == lastServerIP
@@ -657,6 +684,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                         sys.exit(-1)
                     ##############################################################
 
+                    rowcounter += 1
                     if byte > 0:
                         currentByte += byte
                         current_micros += currenttimestamp_micros - previoustimestamp_micros
@@ -666,13 +694,9 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                             bps = (currentByte * 8) / current_s
                             Mbps = bps / 1000000
 
-                            if ret.get(clientIP) == None:
-                                ret[clientIP] = []
-                            ret[clientIP].append(Mbps)
-
+                            packets_bandwidth.append(Mbps)
                             currentByte = 0.0
                             current_micros = 0.0
-
 
                     previoustimestamp_micros = currenttimestamp_micros
                 else:
@@ -682,10 +706,14 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                         bps = (currentByte * 8) / current_s
                         Mbps = bps / 1000000
 
-                        if ret.get(lastclientIP) == None:
-                                ret[lastclientIP] = []
-                        ret[lastclientIP].append(Mbps)
-
+                        packets_bandwidth.append(Mbps)
+                        
+                    if rowcounter >= _MINROWNUMBER:
+                        ret[clientIP]=packets_bandwidth
+                        logger.debug("accepted " + last_testID + " with rowcounter " + str(rowcounter))
+                    else:
+                        logger.debug("skipped " + last_testID + " with rowcounter " + str(rowcounter))
+                    
                     last_testID = currentTestID
                     lastclientIP = clientIP
                     ############################FOR DEBUGGING ONLY##############################
@@ -697,21 +725,20 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                     previoustimestamp_micros = currenttimestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
+                    rowcounter = 1
                     current_micros = 0.0
-
 
         #logger.debug("dict = " + str(ret))
         logger.debug(str(len(ret)) + " clients in ret")
         print ("read  kn" + str(linecount) + " from " + inputfile + "(including headers)")
-    
-        
-    return ret
 
+    return ret
 
 
  
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
     assert "SORTED" in inputfile
+    
     ret = []
     
     client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_" + connectiontype)
@@ -771,7 +798,6 @@ def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment
     return ret
 
 
- 
 
 def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
@@ -915,11 +941,11 @@ def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
                     elif row[5] == "Server" or row[6] == "Server":
                         continue
                     else:
-                        print "error"
-                        print row
+                        print ("error")
+                        print (row)
                         sys.exit(0)
 
-            print "read " + str(linecount) + " from " + inputfile + "(including headers)"
+            print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
 
     
     return clientNitos, clientUnipi, NitosUnipi
