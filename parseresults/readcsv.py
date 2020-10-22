@@ -1,7 +1,7 @@
 import csv
 import sys
 import logging
-
+from collections import OrderedDict
 _MINROWNUMBER = 50
 
 
@@ -121,8 +121,6 @@ def readvalues_activelatencyboxplot(inputfile, noise, segment):
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     
     return ret
-
-
 
 def readvalues_activebandwidthboxplot(inputfile, noise, segment):
     ret = []
@@ -332,9 +330,9 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
     return ret
 
 
-
-def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
+def readbandwidthvalues_timeseries_self(config_parser, inputfile, edgeserver, conntype):
     assert "SORTED" in inputfile
+    assert "self" in inputfile
     ret = []
 
     if conntype == "wifi":
@@ -358,7 +356,9 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
                 continue
             if linecount == 2:
                 try:
+                    #columns: ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,Direction,Protocol,Mode,Type,ID,Timestamp,Bytes
                     assert row[13] == "Bytes"
+                    assert row[12] == "Timestamp"
                     assert row[6] == "Keyword"
                     assert row[2] == "ClientIP"
                     assert row[4] == "ServerIP"
@@ -371,7 +371,10 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
                 #print row
                 continue
 
+            
+
             measuredbytes = row[13]
+            current_timenstamp = row[12]
             keyword = row[6]
             clientIP = row[2]
             serverIP = row[4] 
@@ -400,9 +403,9 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
     return ret
 
 
-
 def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, logger):
     assert "SORTED" in inputfile
+    assert "mim" in inputfile
     logger.debug("\n")
     
     ret = []
@@ -522,7 +525,7 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, l
                             current_s = current_micros /1000000 #from microseconds to seconds
                             bps = (currentByte * 8) / current_s
                             Mbps = bps / 1000000
-
+                            
                             packets_bandwidth.append(Mbps)
 
                             currentByte = 0.0
@@ -567,15 +570,82 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, l
     
         
     return ret
+def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
+    assert "SORTED" in inputfile
+    assert "self" in inputfile
+
+    ret = []
+
+    if conntype == "wifi":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
+        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+    elif conntype == "lte":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
+        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+    else:
+        print ("unknown connection type")
+        sys.exit(0)
+    
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+        for row in csvreader:
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[4] == "ServerIP"
+                except Exception as e:
+                    print (e)
+                    print (row)
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue
+
+            measuredbytes = row[13]
+            keyword = row[6]
+            clientIP = row[2]
+            serverIP = row[4] 
+            try:
+                assert row[2][:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
+                assert conntype.strip() in inputfile
+            except Exception as e:
+                print (conntype)
+                print (inputfile)
+                print (row[2] [:len(client_subnetaddr)] + "!=" + client_subnetaddr)
+                linecount += 1
+                continue
+            
+            linecount += 1
+
+            if  (edgeserver == True and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (edgeserver == False and serverIP[:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
+
+                bandwidthkbps = float(row[13])
+                bandwidthMbps = bandwidthkbps / 1000
+                ret.append(bandwidthMbps)
+
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
 
 
+    return ret
 
 #returns a dict
 def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, segment, logger):
     assert "SORTED" in inputfile
+    assert "mim" in inputfile
     logger.debug("\n")
     
-    ret = {}
+    #ret = {}
+    ret= OrderedDict()
     last_testID = ""
     
     if connectiontype == "wifi":
@@ -685,7 +755,12 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                     ##############################################################
 
                     rowcounter += 1
+
+                    
                     if byte > 0:
+                        #if currenttimestamp_micros - previoustimestamp_micros > 1000000:
+                        #    print (currenttimestamp_micros - previoustimestamp_micros)/1000000 * 3
+                        #    print(str(currenttimestamp_micros) + "-" + str(previoustimestamp_micros) + ": " + str(currenttimestamp_micros - previoustimestamp_micros))
                         currentByte += byte
                         current_micros += currenttimestamp_micros - previoustimestamp_micros
 
@@ -726,18 +801,113 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                     packets_bandwidth = []
                     currentByte = 0.0
                     rowcounter = 1
-                    current_micros = 0.0
+                    current_micros = 0.0      
+
+        
+        if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+            (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+            #add the last flow results
+                        
+            if rowcounter >= _MINROWNUMBER:
+                ret[clientIP]=packets_bandwidth
+                logger.debug("accepted " + last_testID + " with rowcounter " + str(rowcounter))
+            else:
+                logger.debug("skipped " + last_testID + " with rowcounter " + str(rowcounter))
+   
 
         #logger.debug("dict = " + str(ret))
         logger.debug(str(len(ret)) + " clients in ret")
         print ("read  kn" + str(linecount) + " from " + inputfile + "(including headers)")
 
     return ret
+def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntype, logger):
+    assert "SORTED" in inputfile
+    assert "self" in inputfile
 
+    #ret = {}
+    ret = OrderedDict()
+
+    if conntype == "wifi":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
+        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+    elif conntype == "lte":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
+        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+    else:
+        print ("unknown connection type" + str(conntype))
+        sys.exit(0)
+    
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+        for row in csvreader:
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+            if linecount == 2:
+                try:
+                    #columns: ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,Direction,Protocol,
+                    #         Mode,Type,ID,Timestamp,Bytes
+                    assert row[13] == "Bytes"
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[3] == "ClientPort"
+                    assert row[4] == "ServerIP"
+                    assert row[5] == "ServerPort"
+                except Exception as e:
+                    print (e)
+                    print (row)
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue
+
+            measuredbytes = row[13]
+            keyword = row[6]
+            clientIP = row[2]
+            clientPort = row[3]
+            serverIP = row[4] 
+            ServerPort = row[5]
+            currentTestID = ""
+            try:
+                assert row[2][:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
+                assert conntype.strip() in inputfile
+            except Exception as e:
+                print (conntype)
+                print (inputfile)
+                print (row[2] [:len(client_subnetaddr)] + "!=" + client_subnetaddr)
+                linecount += 1
+                continue
+            
+            linecount += 1
+            
+            if  (server == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (server == "cloud" and serverIP[:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
+
+                if not ret.has_key(clientIP):
+                    print ("first " + str(clientIP))
+                    ret[clientIP] = []
+
+                bandwidthkbps = float(row[13])
+                bandwidthMbps = bandwidthkbps / 1000
+                #print (bandwidthMbps)
+                #print (row)
+                ret[clientIP].append(bandwidthMbps)
+            #else: 
+            #    print("discarded" + str(row))                    
+                
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
+
+
+    return ret
 
  
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
     assert "SORTED" in inputfile
+    assert "mim" in inputfile
     
     ret = []
     
