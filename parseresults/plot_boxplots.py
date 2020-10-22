@@ -11,7 +11,7 @@ from collections import OrderedDict
 from matplotlib.backends.backend_pdf import PdfPages
 from readcsv import readvalues_activelatencyboxplot, readvalues_activebandwidthboxplot, \
                     readvalues_activebandwidthlineplot, readbandwidthvalues_self, readbandwidthvalues_mim, \
-                    readbandwidthvalues_mim_perclient, readlatencyvalues_noisemim
+                    readbandwidthvalues_mim_perclient, readlatencyvalues_noisemim, readbandwidthvalues_self_perclient
 
 
 _BOXPLOT_COLORS=['#F8B195', "#355C7D", '#C06C84', '#F67280', '#99B898', '#A8E6CE', '#E84A5F', '#A7226E', 
@@ -611,6 +611,8 @@ def latencyboxplot_active_conntypegrouped(config_parser, command, direction, nco
 
 #PASSIVE BANDWIDTH
 def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped, ncol, legendypos):
+    assert mode == "self"
+    
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
@@ -1067,6 +1069,7 @@ def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connecti
         print (ncol)
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
 def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectiontype, ncol, legendypos, logger):
+    assert mode == "mim"
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
     noiselist = config_parser.get("experiment_conf", "noise").split(",")
@@ -1185,9 +1188,15 @@ def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim
                                + config_parser.get("experiment_conf", "from_passive") + "-" \
                                + config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
 
-            
-                ret = (readbandwidthvalues_mim_perclient(config_parser, inputfilename, connectiontype, 
-                       server, logger)) 
+
+                if mode == "mim":            
+                    ret = (readbandwidthvalues_mim_perclient(config_parser, inputfilename, connectiontype, 
+                                                                server, logger)) 
+                elif mode == "self":
+                    ret = (readbandwidthvalues_self_perclient(config_parser=config_parser, inputfile=inputfilename, conntype=connectiontype, 
+                                                                server=server, logger=logger)) 
+                else:
+                    sys.exit(0)
 
                 logger.debug (ret)
                 boxplotvalues=[]
