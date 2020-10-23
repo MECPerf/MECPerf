@@ -5,6 +5,7 @@ RESULTS_SORTEDBYKEYWORD="results_sortedbykeyword.txt"
 OUTPUT_UNSORTED="out_unsorted.txt"
 INPUTFILENAME=""
 OUTPUTFILENAME=""
+OUTPUTFILENAME_LEGACY=""
 
 CLOUDSERVER_SUBNETADDR="131.114.73"
 EDGESERVER_SUBNETADDR1="192.168.200"
@@ -80,12 +81,14 @@ for INPUTFILENAME in *.csv; do
     IFS=.
     set $INPUTFILENAME
     #echo $1
-    OUTPUTFILENAME=$1"_SORTED.csv"
+    OUTPUTFILENAME="sorted/"$1"_SORTED.csv"
+    OUTPUTFILENAME_LEGACY="sorted/"$1"_SORTED_LEGACY.csv"
     IFS=$OLDIFS
     echo -e "\033[0;34m$OUTPUTFILENAME\033[0m"   
 
     #copy the headers into the output file (they should not be sorted)
     head -3 $INPUTFILENAME > $OUTPUTFILENAME
+    head -3 $INPUTFILENAME > $OUTPUTFILENAME_LEGACY
     #copy the remaining lines in a temporary file
     tail -n +4 $INPUTFILENAME > $TEMPFILE
     #-t, --field-separator=SEP: use SEP instead of non-blank to blank transition
@@ -186,7 +189,8 @@ for INPUTFILENAME in *.csv; do
     #k4 = ClientPort
     #k6 = ServerPort
     #k13 = Timestamp
-    sort -t, -k5,5 -k6,6 -k3,3 -k4,4 -k13,13  $OUTPUT_UNSORTED >>$OUTPUTFILENAME
+    sort -t, -k5,5 -k6,6 -k3,3 -k4,4 -k13,13  $OUTPUT_UNSORTED >>$OUTPUTFILENAME_LEGACY
+    sort -t, -k5,5 -k6,6 -k3,3 -k13,13  $OUTPUT_UNSORTED >>$OUTPUTFILENAME
 done
 
 
