@@ -263,7 +263,7 @@ def plotmimandselfbandwidth(conf_parser):
 
 def plotpassiveperclient(conf_parser):
     ylim = 20
-    
+    '''
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
                             logger=logger, legacy=True)     
@@ -271,13 +271,32 @@ def plotpassiveperclient(conf_parser):
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
                             logger=logger, legacy=True)   
     
-    
+    '''
+    bucketsize = 1.0 * 0.1 * 1000000 #0.1 sec
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False)     
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)     
+    #bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+    #                        mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
+    #                        logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    
+
+    bucketsize = 1.0 * 0.5 * 1000000 #0.5 sec
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
-                            logger=logger, legacy=False)   
+                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)     
+    #bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+    #                        mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
+    #                        logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    
+    bucketsize = 1.0 * 1000000 #1 sec
+    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)     
+    #bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+    #                        mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
+    #                        logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    
     
 
     ylim = 50
