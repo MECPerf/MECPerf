@@ -7,8 +7,9 @@ from plot_boxplots import bandwidthboxplot_noisegrouped, bandwidthplot_mimfilean
         latencyboxplot_active_commandgrouped, latencyboxplot_active, latencyboxplot_active_conntypegrouped, \
         mimselfbandwidthboxplot_conntypefileserverpos_xnoise, \
         mimselfbandwidthboxplot_conntypefileserverpos_xclients,  \
-        mimselfbandwidthboxplot_conntypeserverposnumclient, \
+        mimselfbandwidthboxplot_conntypeserverposnumclient, readbandwidthvalues_mim_perclient_usingfixbucket,\
         mimselfbandwidthboxplot_conntypeserverposcrosstraffic, bandwidthplot_perclient, latencyboxplot_noiseandsegmentactivemim
+from timeplots import passive_timeseries
 
 
 WARNING = '\033[93m'
@@ -261,16 +262,29 @@ def plotmimandselfbandwidth(conf_parser):
                                                           legendypos=LEGENDYPOS_8LINE, logger=logger)
 
 def plotpassiveperclient(conf_parser):
-    ylim = 50
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="mim",
-                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger)     
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="mim",
-                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, logger=logger)   
+    ylim = 20
+    
+    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
+                            logger=logger, legacy=True)     
+    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
+                            logger=logger, legacy=True)   
+    
+    
+    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
+                            logger=logger, legacy=False)     
+    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                            mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
+                            logger=logger, legacy=False)   
+    
 
+    ylim = 50
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="self", 
-                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger)     
+                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger, legacy=True)     
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="self", 
-                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, logger=logger)                                               
+                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, logger=logger, legacy=True)                                               
     
 
 def plotmimlatency(config_parser):
@@ -317,10 +331,13 @@ if __name__ == '__main__':
     #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
     #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
     '''
+
+    #passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
+    #                   server="edge", clientnumber=10, noise="0M", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     
-    plotactivelatency(config_parser)
-    plotmimlatency(config_parser)
-    plotactiveandpassivelatency(config_parser)
+    #plotactivelatency(config_parser)
+    #plotmimlatency(config_parser)
+    #plotactiveandpassivelatency(config_parser)
 
     #plotactivebandwidth(config_parser)
     
