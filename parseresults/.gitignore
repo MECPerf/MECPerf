@@ -7,6 +7,7 @@ latency/*
 _latency/*
 latencyplot/*
 _latencyplot/*
+tex/*
 
 *.zip
 .vscode/*
