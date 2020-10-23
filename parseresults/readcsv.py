@@ -1128,6 +1128,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
     return ret
 def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, connectiontype, segment, 
                                                      logger, bucketsize_microsec):
+    assert bucketsize_microsec != None
     assert "SORTED" in inputfile
     assert "LEGACY" not in inputfile
     assert "mim" in inputfile
