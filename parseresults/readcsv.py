@@ -4,6 +4,22 @@ import logging
 from collections import OrderedDict
 _MINROWNUMBER = 50
 
+def _get_subnetaddresses(config_parser, conntype, logger):
+    if conntype == "wifi":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+    elif conntype == "lte":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+    else:
+        print ("unknown connection type")
+        logger.critical("unknown connection type " + str(conntype))
+        logger.critical("EXIT")
+        sys.exit(0)
+
+    return client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr
 
 
 def readvalues_activelatencyboxplot(inputfile, noise, segment):
@@ -719,8 +735,149 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, l
     
         
     return ret
+def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiontype, segment, logger):
+    assert "SORTED" in inputfile
+    assert "LEGACY" not in inputfile
+    assert "mim" in inputfile
+    logger.debug("\n")
+    
+    ret = []
+    lastclientIP = ""
+    bucketsize_microsec = 1000000 #1 sec
+    
+    if connectiontype == "wifi":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+    elif connectiontype == "lte":
+        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+    else:
+        print ("unknown connection type")
+        logger.critical("unknown connection type")
+        logger.critical("EXIT")
+        sys.exit(0)
+    
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(connectiontype))
+    logger.debug("segment = " + segment)
+    logger.debug("client_subnetaddr = " + str(client_subnetaddr))
+    logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
+    logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
+
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+
+        for row in csvreader:
+            #line #0 contains the query
+            #line #1 contains query's arguments 
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                logger.debug("line " + (str(linecount) + ": " + str(row)))
+                continue
+            #line #3 contains the name of each column
+            #       mim-bandwidth columns: ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,
+            #                             Direction,Protocol,Mode,Type,ID,Timestamp,Bytes
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[12] == "Timestamp" # in microsec
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[4] == "ServerIP"
+                    assert row[3] == "ClientPort"
+                    assert row[5] == "ServerPort"
+                except:
+                    print (row)
+                    logger.critical("linecount = 2 " + str(row) + "unexpected columns")
+                    logger.critical ("EXIT")
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue            
+            
+            linecount += 1
+
+            byte = float(row[13])
+            currenttimestamp_micros = float(row[12])  #timestamp microsecons
+            clientIP = row[2]
+            serverIP = row[4]
+            
+            if  (segment == "edge" and row[4][:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "remote" and row[4][:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+
+                if lastclientIP == "":
+                    #this is the first row
+                    lastclientIP = clientIP
+                    lastServerIP = serverIP
+                    previoustimestamp_micros = currenttimestamp_micros
+                    
+                    bucket_starttime_microsec = currenttimestamp_micros
+                    bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec                    
+                    currentByte = 0.0
+                elif lastclientIP == clientIP:
+                    #same test
+                    ####################  FOR DEBUGGING ONLY ####################
+                    assert serverIP == lastServerIP
+                    try:
+                        assert previoustimestamp_micros <= currenttimestamp_micros
+                    except:
+                        print (previoustimestamp_micros)
+                        print (currenttimestamp_micros)
+
+                        logger.critical("previoustimestamp_micros = " + str(previoustimestamp_micros))
+                        logger.critical("currenttimestamp_micros = " + str(currenttimestamp_micros))
+                        sys.exit(0)
+                    ##############################################################
+
+                    if currenttimestamp_micros < bucket_endtime_microsec:
+                        #packet received within the bucketsize_microsec interval
+                        currentBytes += byte
+                    else:
+                        #packet received within the next bucketsize_microsec interval
+                        if currentBytes == 0:
+                            Mbps = 0
+                        else:
+                            bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+                            bps = (1.0 * currentBytes * 8) / bucketsize_sec
+                            Mbps = bps/1000000
+
+                        ret.append(Mbps)
+                        currentBytes = byte
+                        bucket_starttime_microsec = bucket_endtime_microsec
+                        bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec
+                               
+                else:
+                    #newtest
+                    if currentBytes == 0:
+                            Mbps = 0
+                    else:
+                        bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+                        bps = (1.0 * currentBytes * 8) / bucketsize_sec
+                        Mbps = bps/1000000   
+                    ret.append(Mbps)
+
+                    lastclientIP = clientIP
+                    lastServerIP = serverIP
+                
+                    currentByte = 0.0
+                    ret[clientIP] = []
+                    bucket_starttime_microsec = currenttimestamp_micros
+                    bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec         
+        
+            previoustimestamp_micros = currenttimestamp_micros
+
+        #print ret
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
+    
+        
+    return ret
 def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
-    assert "SORTED_LEGACY" in inputfile
+    assert "LEGACY" not in inputfile
+    assert "SORTED" in inputfile
     assert "self" in inputfile
 
     ret = []
@@ -783,7 +940,6 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
                 ret.append(bandwidthMbps)
 
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
-
 
     return ret
 
@@ -970,7 +1126,8 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
         print ("read  kn" + str(linecount) + " from " + inputfile + "(including headers)")
 
     return ret
-def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, connectiontype, segment, logger):
+def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, connectiontype, segment, 
+                                                     logger, bucketsize_microsec):
     assert "SORTED" in inputfile
     assert "LEGACY" not in inputfile
     assert "mim" in inputfile
@@ -979,28 +1136,16 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
     ret= OrderedDict()
     lastclientIP = ""
     pastclientIP = []
-    bucketsize_microsec = 1000000 #1 sec
     
-    if connectiontype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
-    elif connectiontype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
-    else:
-        print ("unknown connection type")
-        logger.critical("unknown connection type " + str(connectiontype))
-        logger.critical("EXIT")
-        sys.exit(0)
-
+    client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
+                                        config_parser=config_parser, conntype=connectiontype, logger=logger)
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("connectiontype = " + str(connectiontype))
     logger.debug("segment = " + segment)
     logger.debug("client_subnetaddr = " + str(client_subnetaddr))
     logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
     logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
+    logger.debug("bucketsize_microsec = " + str(bucketsize_microsec))
     
     with open (inputfile, "r") as csvinput:
         csvreader = csv.reader(csvinput, delimiter=",")
@@ -1053,13 +1198,12 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
 
                     currentBytes = 0.0
                     ret[clientIP] = []
+                    previoustimestamp_micros = currenttimestamp_micros
                     bucket_starttime_microsec = currenttimestamp_micros
                     bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec                     
                 elif lastclientIP == clientIP:
                     #same testID
                     ####################  FOR DEBUGGING ONLY ####################
-                    
-                    
                     assert serverIP == lastServerIP
                     try:
                         assert clientIP in pastclientIP
@@ -1092,7 +1236,8 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                             Mbps = bps/1000000
 
                         ret[lastclientIP].append(Mbps)
-                        currentBytes = 0
+                        #currentBytes = 0
+                        currentBytes = byte
                         bucket_starttime_microsec = bucket_endtime_microsec
                         bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec
                 else:
@@ -1206,7 +1351,6 @@ def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntyp
 
     return ret
 
- 
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
     assert "SORTED_LEGACY" in inputfile
     assert "mim" in inputfile
