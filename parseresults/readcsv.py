@@ -735,7 +735,8 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, l
     
         
     return ret
-def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiontype, segment, logger):
+def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiontype, segment, logger, 
+                                           bucketsize_microsec):
     assert "SORTED" in inputfile
     assert "LEGACY" not in inputfile
     assert "mim" in inputfile
@@ -743,23 +744,13 @@ def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiont
     
     ret = []
     lastclientIP = ""
-    bucketsize_microsec = 1000000 #1 sec
+    pastclientIP = []
     
-    if connectiontype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
-    elif connectiontype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
-    else:
-        print ("unknown connection type")
-        logger.critical("unknown connection type")
-        logger.critical("EXIT")
-        sys.exit(0)
+    client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
+                                        config_parser=config_parser, conntype=connectiontype, logger=logger)
     
     logger.debug("inputfile = " + str(inputfile))
+    logger.debug("bucketsize_microsec = " + str(bucketsize_microsec))
     logger.debug("connectiontype = " + str(connectiontype))
     logger.debug("segment = " + segment)
     logger.debug("client_subnetaddr = " + str(client_subnetaddr))
@@ -806,33 +797,43 @@ def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiont
             clientIP = row[2]
             serverIP = row[4]
             
-            if  (segment == "edge" and row[4][:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
-                (segment == "remote" and row[4][:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+            if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "remote" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
 
                 if lastclientIP == "":
-                    #this is the first row
+                    #this is the first row containing results for the target server
                     lastclientIP = clientIP
+                    ####################  FOR DEBUGGING ONLY ####################
+                    pastclientIP.append(clientIP)
                     lastServerIP = serverIP
+                    ############################################################
+
+                    currentBytes = 0.0
                     previoustimestamp_micros = currenttimestamp_micros
-                    
                     bucket_starttime_microsec = currenttimestamp_micros
-                    bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec                    
-                    currentByte = 0.0
+                    bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec                     
                 elif lastclientIP == clientIP:
-                    #same test
+                    #same testID
                     ####################  FOR DEBUGGING ONLY ####################
                     assert serverIP == lastServerIP
                     try:
+                        assert clientIP in pastclientIP
                         assert previoustimestamp_micros <= currenttimestamp_micros
-                    except:
+                    except Exception as e:
+                        print (clientIP)
+                        print(pastclientIP)
+                        print (linecount)
                         print (previoustimestamp_micros)
                         print (currenttimestamp_micros)
 
-                        logger.critical("previoustimestamp_micros = " + str(previoustimestamp_micros))
-                        logger.critical("currenttimestamp_micros = " + str(currenttimestamp_micros))
-                        sys.exit(0)
+                        logger.critical("assertion failed: assert previoustimestamp_micros <= currenttimestamp_micros")
+                        logger.critical("line number = " + str(linecount))
+                        logger.critical("previoustimestamp_micros=" + str(previoustimestamp_micros))
+                        logger.critical("currenttimestamp_micros=" + str(currenttimestamp_micros))
+                        logger.critical ("EXIT")
+                        sys.exit(-1)
                     ##############################################################
-
+                    
                     if currenttimestamp_micros < bucket_endtime_microsec:
                         #packet received within the bucketsize_microsec interval
                         currentBytes += byte
@@ -848,12 +849,13 @@ def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiont
                         ret.append(Mbps)
                         currentBytes = byte
                         bucket_starttime_microsec = bucket_endtime_microsec
-                        bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec
-                               
+                        bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec                               
                 else:
-                    #newtest
+                    #switch to a new client
+                    pastclientIP.append(clientIP)
+                    #add the last results
                     if currentBytes == 0:
-                            Mbps = 0
+                        Mbps = 0
                     else:
                         bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
                         bps = (1.0 * currentBytes * 8) / bucketsize_sec
@@ -864,16 +866,14 @@ def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiont
                     lastServerIP = serverIP
                 
                     currentByte = 0.0
-                    ret[clientIP] = []
                     bucket_starttime_microsec = currenttimestamp_micros
-                    bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec         
+                    bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec             
         
-            previoustimestamp_micros = currenttimestamp_micros
+                previoustimestamp_micros = currenttimestamp_micros
 
         #print ret
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
-    
-        
+       
     return ret
 def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
     assert "LEGACY" not in inputfile
@@ -1137,6 +1137,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
     ret= OrderedDict()
     lastclientIP = ""
     pastclientIP = []
+    currentBytes = 0.0
     
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
                                         config_parser=config_parser, conntype=connectiontype, logger=logger)
@@ -1188,7 +1189,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
             
             if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
                 (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
-
+                print (currentBytes)
                 if lastclientIP == "":
                     #this is the first row containing results for the target server
                     lastclientIP = clientIP
@@ -1197,7 +1198,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                     lastServerIP = serverIP
                     ############################################################
 
-                    currentBytes = 0.0
+                    
                     ret[clientIP] = []
                     previoustimestamp_micros = currenttimestamp_micros
                     bucket_starttime_microsec = currenttimestamp_micros
@@ -1242,13 +1243,17 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                         bucket_starttime_microsec = bucket_endtime_microsec
                         bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec
                 else:
+                    print("new client")
+                    
                     #switch to a new client
                     pastclientIP.append(clientIP)
                     #add the last results
                     if currentBytes == 0:
                             Mbps = 0
                     else:
-                        bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+                        #bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+                        bucketsize_sec = 1.0 * (previoustimestamp_micros-bucket_starttime_microsec) / 1000000
+                        print (bucketsize_sec)
                         bps = (1.0 * currentBytes * 8) / bucketsize_sec
                         Mbps = bps/1000000   
                     ret[lastclientIP].append(Mbps)
