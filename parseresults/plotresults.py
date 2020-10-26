@@ -184,82 +184,60 @@ def plotselfbandwidth(config_parser):
     bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
 def plotmimbandwidth(config_parser):
     ylim = 50
+    bucketsizes = [1.0 * 0.1 * 1000000, 1.0 * 0.5 * 1000000, 1.0 * 1 * 1000000] #[0.1, 0.5, 1]sec
 
-    bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                              ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger)
-    bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                              ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="remote", ncol=3, logger=logger)
-    bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
-                              ylim=ylim, legendypos=LEGENDYPOS_1LINE, server="edge", ncol=3, logger=logger)
-    bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
-                              ylim=ylim, legendypos=LEGENDYPOS_1LINE, server="remote", ncol=3, logger=logger)
-    
-    bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
-                                        connectiontype="wifi", ylim=ylim, ncol=3, legendypos=LEGENDYPOS_4LINE)
-    bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
-                                        connectiontype="lte", ylim=ylim, ncol=2, legendypos=LEGENDYPOS_2LINE)
-    
-    bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
-                                    connectiontype="wifi", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-    bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
-                                    connectiontype="lte", ncol=2, legendypos=LEGENDYPOS_2LINE, logger=logger)
+    for elem in bucketsizes:
+        bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                                  ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger,
+                                  bucketsize_microsec=elem)
+        bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
+                                ylim=ylim, legendypos=LEGENDYPOS_1LINE, server="edge", ncol=3, logger=logger, 
+                                bucketsize_microsec=elem)
+        
+        bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
+                                            connectiontype="wifi", ylim=ylim, ncol=3, legendypos=LEGENDYPOS_4LINE, 
+                                            bucketsize_microsec=elem)
+        bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
+                                            connectiontype="lte", ylim=ylim, ncol=2, legendypos=LEGENDYPOS_2LINE, 
+                                            bucketsize_microsec=elem)
+        
+        bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
+                                        connectiontype="wifi", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger, 
+                                        bucketsize_microsec=elem)
+        bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
+                                        connectiontype="lte", ncol=2, legendypos=LEGENDYPOS_2LINE, logger=logger, 
+                                        bucketsize_microsec=elem)
 
     
     
 def plotmimandselfbandwidth(conf_parser):
     ylim = 50
-    
-    mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser=conf_parser, direction="downlink", 
-                                                         connectiontype="wifi", ylim=ylim,
-                                                         edgecloudserver="edge", ncol=3, 
-                                                         legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser=conf_parser, direction="downlink",
-                                                         connectiontype="wifi", ylim=ylim, 
-                                                         edgecloudserver="cloud", ncol=3, 
-                                                         legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser=conf_parser, direction="downlink",
-                                                         connectiontype="wifi", ylim=ylim, 
-                                                         edgecloudserver="both", ncol=3, 
-                                                         legendypos=LEGENDYPOS_8LINE, logger=logger)
 
-    mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser=conf_parser, direction="downlink", 
+    bucketsizes = [1.0 * 0.1 * 1000000, 1.0 * 0.5 * 1000000, 1.0 * 1 * 1000000] #[0.1, 0.5, 1]sec
+    for elem in bucketsizes:
+        mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser=conf_parser, direction="downlink", 
+                                                             connectiontype="wifi", ylim=ylim,
+                                                             edgecloudserver="edge", ncol=3, 
+                                                             legendypos=LEGENDYPOS_4LINE, logger=logger, 
+                                                             bucketsize_microsec=elem)
+
+        mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser=conf_parser, direction="downlink", 
+                                                               connectiontype="wifi", ylim=ylim,
+                                                               edgecloudserver="edge", ncol=3, 
+                                                               legendypos=LEGENDYPOS_4LINE, logger=logger, 
+                                                               bucketsize_microsec=elem)
+        
+        mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser=conf_parser, direction="downlink", 
                                                            connectiontype="wifi", ylim=ylim,
-                                                           edgecloudserver="edge", ncol=3, 
-                                                           legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser=conf_parser, direction="downlink",
-                                                           connectiontype="wifi", ylim=ylim, 
-                                                           edgecloudserver="cloud", ncol=3, 
-                                                           legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser=conf_parser, direction="downlink",
-                                                           connectiontype="wifi", ylim=ylim, 
-                                                           edgecloudserver="both", ncol=3, 
-                                                           legendypos=LEGENDYPOS_8LINE, logger=logger)
-    
-    mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser=conf_parser, direction="downlink", 
-                                                       connectiontype="wifi", ylim=ylim,
-                                                       edgecloudserver="edge", ncol=3,
-                                                       legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser=conf_parser, direction="downlink",
-                                                       connectiontype="wifi", ylim=ylim, 
-                                                       edgecloudserver="cloud", ncol=3, 
-                                                       legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser=conf_parser, direction="downlink",
-                                                       connectiontype="wifi", ylim=ylim, 
-                                                       edgecloudserver="both", ncol=3, 
-                                                       legendypos=LEGENDYPOS_8LINE, logger=logger)
-    
-    mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser=conf_parser, direction="downlink", 
-                                                          connectiontype="wifi", ylim=ylim,
-                                                          edgecloudserver="edge", ncol=3,
-                                                          legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser=conf_parser, direction="downlink",
-                                                          connectiontype="wifi", ylim=ylim, 
-                                                          edgecloudserver="cloud", ncol=3, 
-                                                          legendypos=LEGENDYPOS_4LINE, logger=logger)
-    mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser=conf_parser, direction="downlink",
-                                                          connectiontype="wifi", ylim=ylim, 
-                                                          edgecloudserver="both", ncol=3, 
-                                                          legendypos=LEGENDYPOS_8LINE, logger=logger)
+                                                           edgecloudserver="edge", ncol=3,
+                                                           legendypos=LEGENDYPOS_4LINE, logger=logger, 
+                                                           bucketsize_microsec=elem)
+        
+        mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser=conf_parser, direction="downlink", 
+                                                              connectiontype="wifi", ylim=ylim,
+                                                              edgecloudserver="edge", ncol=3,
+                                                              legendypos=LEGENDYPOS_4LINE, logger=logger, 
+                                                              bucketsize_microsec=elem)
 
 def plotpassiveperclient(conf_parser):
     ylim = 20
@@ -354,16 +332,18 @@ if __name__ == '__main__':
     #passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
     #                   server="edge", clientnumber=10, noise="0M", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     
-    #plotactivelatency(config_parser)
-    #plotmimlatency(config_parser)
-    #plotactiveandpassivelatency(config_parser)
-
-    #plotactivebandwidth(config_parser)
     
-    plotpassiveperclient(config_parser)
-    plotselfbandwidth(config_parser)
+
+   
     plotmimbandwidth(config_parser)
     plotmimandselfbandwidth(config_parser)
+    plotpassiveperclient(config_parser)
+    plotselfbandwidth(config_parser)
+    
+    plotactivelatency(config_parser)
+    plotmimlatency(config_parser)
+    plotactiveandpassivelatency(config_parser)
+    plotactivebandwidth(config_parser)
     
 
     
