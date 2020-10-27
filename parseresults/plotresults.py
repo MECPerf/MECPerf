@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import logging
 from datetime import datetime
 from plot_boxplots import bandwidthboxplot_noisegrouped, bandwidthplot_mimfileandsegment, \
@@ -9,7 +9,7 @@ from plot_boxplots import bandwidthboxplot_noisegrouped, bandwidthplot_mimfilean
         mimselfbandwidthboxplot_conntypefileserverpos_xclients,  \
         mimselfbandwidthboxplot_conntypeserverposnumclient, readbandwidthvalues_mim_perclient_usingfixbucket,\
         mimselfbandwidthboxplot_conntypeserverposcrosstraffic, bandwidthplot_perclient, latencyboxplot_noiseandsegmentactivemim
-from timeplots import passive_timeseries
+from timeplots import passive_timeseries, passive_timeseries_usingbandwidth
 
 
 WARNING = '\033[93m'
@@ -241,40 +241,24 @@ def plotmimandselfbandwidth(conf_parser):
 
 def plotpassiveperclient(conf_parser):
     ylim = 20
-    '''
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=True)     
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
-                            logger=logger, legacy=True)   
-    
-    '''
     bucketsize = 1.0 * 0.1 * 1000000 #0.1 sec
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)     
-    #bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-    #                        mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
-    #                        logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
     
 
     bucketsize = 1.0 * 0.5 * 1000000 #0.5 sec
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)     
-    #bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-    #                        mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
-    #                        logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)    
     
     bucketsize = 1.0 * 1000000 #1 sec
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)     
-    #bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-    #                        mode="mim",ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
-    #                        logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
-    
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
+                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
+                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
     
 
     ylim = 50
@@ -316,9 +300,31 @@ def plotactiveandpassivelatency(config_parser):
 
 
 
+def plottimeseries(config_parser):
+    ylim = 100
+    '''
+    passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
+                       server="edge", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
+                       logger=logger)
+    '''
+    
+    passive_timeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
+                       server="edge", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
+                       logger=logger)
+    
+
+    passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
+                       server="cloud", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
+                       logger=logger)
+    passive_timeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
+                       server="cloud", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
+                       logger=logger)
+
+
+
 if __name__ == '__main__':
     #read configuration file
-    config_parser = ConfigParser.RawConfigParser()
+    config_parser = configparser.RawConfigParser()
     config_parser.read("experiments.conf")
  
     '''
@@ -328,22 +334,22 @@ if __name__ == '__main__':
     #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
     #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
     '''
-
-    #passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
-    #                   server="edge", clientnumber=10, noise="0M", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    plotpassiveperclient(config_parser)
+    plottimeseries(config_parser)
     
     
 
-   
+    '''
     plotmimbandwidth(config_parser)
     plotmimandselfbandwidth(config_parser)
-    plotpassiveperclient(config_parser)
+    
     plotselfbandwidth(config_parser)
     
     plotactivelatency(config_parser)
     plotmimlatency(config_parser)
     plotactiveandpassivelatency(config_parser)
     plotactivebandwidth(config_parser)
+    '''
     
 
     
