@@ -1,6 +1,9 @@
 import csv
 import sys
 import logging
+import datetime
+
+
 from collections import OrderedDict
 _MINROWNUMBER = 50
 
@@ -1032,6 +1035,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                     previoustimestamp_micros = currenttimestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
+                    totalbytes = byte
                     rowcounter = 1
                     current_micros = 0.0 
                 elif last_testID == currentTestID:
@@ -1067,6 +1071,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                         #    print (currenttimestamp_micros - previoustimestamp_micros)/1000000 * 3
                         #    print(str(currenttimestamp_micros) + "-" + str(previoustimestamp_micros) + ": " + str(currenttimestamp_micros - previoustimestamp_micros))
                         currentByte += byte
+                        totalbyte += byte
                         current_micros += currenttimestamp_micros - previoustimestamp_micros
 
                         if current_micros >= 1000000: #more than one sec
@@ -1089,7 +1094,10 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                         packets_bandwidth.append(Mbps)
                         
                     if rowcounter >= _MINROWNUMBER:
-                        ret[clientIP]=packets_bandwidth
+                        Kb = 1.0 * totalbyte /1024
+                        Mb = Kb / 1024
+                        index = clientIP + str(Mb)
+                        ret[index]=packets_bandwidth
                         logger.debug("accepted " + last_testID + " with rowcounter " + str(rowcounter))
                     else:
                         logger.debug("skipped " + last_testID + " with rowcounter " + str(rowcounter))
@@ -1105,6 +1113,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                     previoustimestamp_micros = currenttimestamp_micros
                     packets_bandwidth = []
                     currentByte = 0.0
+                    totalbyte = byte
                     rowcounter = 1
                     current_micros = 0.0      
         
@@ -1135,6 +1144,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
 
     logger.debug("\n")
     ret= OrderedDict()
+    totalbytes= OrderedDict()
     lastclientIP = ""
     pastclientIP = []
     currentBytes = 0.0
@@ -1189,7 +1199,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
             
             if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
                 (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
-                print (currentBytes)
+                
                 if lastclientIP == "":
                     #this is the first row containing results for the target server
                     lastclientIP = clientIP
@@ -1198,8 +1208,9 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                     lastServerIP = serverIP
                     ############################################################
 
-                    
+                    totalbytes[clientIP] = byte
                     ret[clientIP] = []
+
                     previoustimestamp_micros = currenttimestamp_micros
                     bucket_starttime_microsec = currenttimestamp_micros
                     bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec                     
@@ -1225,6 +1236,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                         sys.exit(-1)
                     ##############################################################
                     
+                    totalbytes[clientIP] += byte
                     if currenttimestamp_micros < bucket_endtime_microsec:
                         #packet received within the bucketsize_microsec interval
                         currentBytes += byte
@@ -1243,8 +1255,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                         bucket_starttime_microsec = bucket_endtime_microsec
                         bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec
                 else:
-                    print("new client")
-                    
+
                     #switch to a new client
                     pastclientIP.append(clientIP)
                     #add the last results
@@ -1257,12 +1268,14 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
                         bps = (1.0 * currentBytes * 8) / bucketsize_sec
                         Mbps = bps/1000000   
                     ret[lastclientIP].append(Mbps)
+                    
 
                     lastclientIP = clientIP
                     lastServerIP = serverIP
                 
                     currentByte = 0.0
                     ret[clientIP] = []
+                    totalbytes[clientIP] = byte
                     bucket_starttime_microsec = currenttimestamp_micros
                     bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec         
         
@@ -1270,7 +1283,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
         logger.debug(str(len(ret)) + " clients in ret")
         print ("read  kn" + str(linecount) + " from " + inputfile + "(including headers)")
 
-    return ret
+    return ret, totalbytes
 
 def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntype, logger):
     assert "LEGACY" not in inputfile
@@ -1355,6 +1368,80 @@ def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntyp
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
 
 
+    return ret
+
+
+def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntype, logger):
+    assert "LEGACY" not in inputfile
+    assert "SORTED" in inputfile
+    assert "self" in inputfile
+    client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
+                                        config_parser=config_parser, conntype=conntype, logger=logger)
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(conntype))
+    logger.debug("segment = " + segment)
+    logger.debug("client_subnetaddr = " + str(client_subnetaddr))
+    logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
+    logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
+    
+    ret = OrderedDict()
+    
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+        for row in csvreader:
+            #line 0 contains the query
+            #line #1 contains its arguments
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+            #line #2 contains the name of each column
+            #       ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,Direction,Protocol,Mode,Type,
+            #       ID,Timestamp,Bytes
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[4] == "ServerIP"
+                except Exception as e:
+                    logger.critical("unknown columns: " + str(row))
+                    logger.critical("EXIT")
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue
+
+            measuredbytes = row[13]
+            timestamp_micros = row[12]
+            keyword = row[6]
+            clientIP = row[2]
+            serverIP = row[4]
+            try:
+                assert clientIP[:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
+                assert conntype.strip() in inputfile
+            except:
+                logger.critical("conntype: " + str(conntype))
+                logger.critical("inputfile" + str(inputfile))
+                logger.critical(str(clientIP[:len(client_subnetaddr)]) + "!=" + str(client_subnetaddr))
+                logger.critical("Exit")
+                sys.exit(0)  
+
+            linecount += 1
+
+            if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+                if clientIP not in ret:
+                    ret[clientIP] = []
+
+                bandwidthkbps = float(measuredbytes)
+                bandwidthMbps = bandwidthkbps / 1000
+                date = datetime.datetime.fromtimestamp(float(timestamp_micros) / 1000000.0)
+
+                ret[clientIP].append({"bandwidthMbps": bandwidthMbps, "timestamp": date})
+        
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
 
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):

@@ -1376,10 +1376,17 @@ def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim
                                             segment=server, logger=logger, 
                                             bucketsize_microsec=bucketsize_microsec)) 
                     else:
-                        ret = (readbandwidthvalues_mim_perclient_usingfixbucket(config_parser=config_parser, 
+                        tmp, bytes_sent = (readbandwidthvalues_mim_perclient_usingfixbucket(config_parser=config_parser, 
                                             inputfile=inputfilename, connectiontype=connectiontype, 
                                             segment=server, logger=logger, 
-                                            bucketsize_microsec=bucketsize_microsec))                
+                                            bucketsize_microsec=bucketsize_microsec))   
+
+                        ret = OrderedDict()
+                        for key in tmp:
+                            ret[key + " - " + str(bytes_sent[key] / 1000000) + "MB"] = tmp[key]
+                            del tmp[key]
+                           
+
                 elif mode == "self":
                     ret = (readbandwidthvalues_self_perclient(config_parser=config_parser, 
                                             inputfile=inputfilename, conntype=connectiontype, server=server, 
@@ -1678,7 +1685,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
             #print (value)
             
             bp = ax.boxplot(value, positions = boxplotpos, widths = 0.6, patch_artist=True, showfliers=show_fliers,
-                            medianprops={"color":"black"}, showmeans=False)
+                            medianprops={"color":"black"}, showmeans=True)
 
             j=0
             for box in bp["boxes"]:
