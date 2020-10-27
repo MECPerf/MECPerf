@@ -17,6 +17,8 @@ _YLABEL_SIZE = 25
 
 _LEGENDYPOS_10LINE = 2.05
 
+_BUCKETSIZE_SEC = 0.5
+_BUCKETSIZE_SEC_BANDWIDTH = 0.00001
 _TIMEPLOT_COLORS=['#F8B195', "#355C7D", '#C06C84', '#F67280', '#99B898', '#A8E6CE', '#E84A5F', '#A7226E', 
                   '#F7DB4F', "#FC913A", "#1bdc9d", "#9c5a4c", "#9c4c84", "#4c999c", '#F8B195', "#355C7D", 
                   '#C06C84', '#F67280', '#99B898', '#A8E6CE', '#F8B195', "#355C7D", '#C06C84', '#F67280', 
@@ -48,7 +50,7 @@ def _createfolder(directoryname):
 #connectiontype=wifi/lte
 #ylim
 #edgeserver=edge/cloud
-def passive_timeseries(config_parser, mode, direction, connectiontype, ylim, server, clientnumber, noise, ncol, 
+def passive_timeseries(config_parser, mode, direction, connectiontype, ylim, server, clientnumber, ncol, 
                        legendypos, logger):
     assert mode == "self"
     clientnumberlist = _getclientnumberlist(config_parser=config_parser, conntype=connectiontype)
@@ -78,23 +80,19 @@ def passive_timeseries(config_parser, mode, direction, connectiontype, ylim, ser
             
             i = 0
             for clientIP, clientresults in ret.items():
-                #print (clientIP)
-                #print (clientresults)
-
                 times = []
                 ypos = []
                 
                 first_timestamp = None
-                bucketsize_sec = 0.5
+                
                 for elem in clientresults:
                     if first_timestamp == None:
-                        times.append (elem["timestamp"])
+                        times.append (elem["timestamp"] + datetime.timedelta(seconds=_BUCKETSIZE_SEC/2))
                         ypos.append(i)
-
                         first_timestamp = elem["timestamp"]
                         continue
 
-                    if (elem["timestamp"] - first_timestamp).total_seconds() < bucketsize_sec:
+                    if (elem["timestamp"] - first_timestamp).total_seconds() < _BUCKETSIZE_SEC:
                         continue 
 
                     times.append (elem["timestamp"])
@@ -103,7 +101,7 @@ def passive_timeseries(config_parser, mode, direction, connectiontype, ylim, ser
                     first_timestamp = elem["timestamp"]
                 
 
-                plt.plot(times, ypos, marker =_TIMEPLOT_MARKERS[i], linestyle="None", label=clientIP)
+                plt.plot(times, ypos, marker =_TIMEPLOT_MARKERS[i], linestyle="None", label=clientIP, color=_TIMEPLOT_COLORS[i])
 
                 ytick_labels.append(clientIP)
                 ytick_positions.append(i)
@@ -127,7 +125,7 @@ def passive_timeseries(config_parser, mode, direction, connectiontype, ylim, ser
 #connectiontype=wifi/lte
 #ylim
 #edgeserver=edge/cloud
-def passive_timeseries_usingbandwidth(config_parser, mode, direction, connectiontype, ylim, server, clientnumber, noise, ncol, 
+def passive_timeseries_usingbandwidth(config_parser, mode, direction, connectiontype, ylim, server, clientnumber, ncol, 
                        legendypos, logger):
     assert mode == "self"
     clientnumberlist = _getclientnumberlist(config_parser=config_parser, conntype=connectiontype)
@@ -137,6 +135,8 @@ def passive_timeseries_usingbandwidth(config_parser, mode, direction, connection
     logger.debug("clientnumberlist" + str(clientnumberlist))
     logger.debug ("dashfileslist" + str(dashfileslist))
     logger.debug ("noiselist" +  str(noiselist))
+
+
 
     for noise in noiselist:
         for dashfile in dashfileslist:        
@@ -149,18 +149,13 @@ def passive_timeseries_usingbandwidth(config_parser, mode, direction, connection
             filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
             
             fig, ax = plt.subplots(ncols = 1, nrows = clientnumber, squeeze=False)
-            fig.set_size_inches(18.5, 10.5)
+            fig.set_size_inches(8.3, 17)
             fig.tight_layout()
-            
             plt.grid(True, axis="y", color="#dedddc")
-            
-
             plt.title(title)
-
             plt.gcf().autofmt_xdate()
             formatter = "%H:%M:%S"
             xfmt = md.DateFormatter(formatter)
-            #ax.xaxis.set_major_formatter(xfmt)
   
             ret = readbandwidthvalues_self_timeplot(config_parser=config_parser, inputfile=filename, 
                                                     segment=server, conntype=connectiontype, logger=logger)
@@ -168,42 +163,87 @@ def passive_timeseries_usingbandwidth(config_parser, mode, direction, connection
             ytick_labels = []
             ytick_positions = []
             
-
-            i = 0
+            
+            time_min = None
+            time_max = None
+            xvalues=[]
+            yvalues = []
+            titles =[]
             for clientIP, clientresults in ret.items():
-                #print (clientIP)
-                #print (clientresults)
-
                 times = []
                 bandwidths = []
-                
+                first_timestamp = None
             
                 for elem in clientresults:
-  
-                    times.append (elem["timestamp"])
-                    bandwidths.append(elem["bandwidthMbps"])
-                    
+                    if first_timestamp == None:
+                        first_timestamp = elem["timestamp"]
+                        bandwidthsMbps = elem["bandwidthMbps"]
+                        counter = 1
+                        if time_min == None:
+                            time_max = first_timestamp
+                            time_min = first_timestamp
+                        continue
 
+                    if (elem["timestamp"] - first_timestamp).total_seconds() < _BUCKETSIZE_SEC_BANDWIDTH:
+                        bandwidthsMbps += elem["bandwidthMbps"]
+                        counter += 1
+                        continue 
+
+                    if time_min > elem["timestamp"]:
+                        timemin = elem["timestamp"]
+                    if time_max < elem["timestamp"]:
+                        time_max = elem["timestamp"]
+
+                    times.append (first_timestamp + datetime.timedelta(seconds=_BUCKETSIZE_SEC_BANDWIDTH/2))
+                    bandwidths.append(1.0 * bandwidthsMbps / counter)
+
+                    first_timestamp = elem["timestamp"]
+                    bandwidthsMbps = elem["bandwidthMbps"]
+                    counter = 1
+
+                    '''times.append (elem["timestamp"])
+                    if time_min == None:
+                        time_min = elem["timestamp"]
+                        time_max = elem["timestamp"]
+
+                    if time_min > elem["timestamp"]:
+                        timemin = elem["timestamp"]
+                    if time_max < elem["timestamp"]:
+                        time_max = elem["timestamp"]
+
+                    bandwidths.append(elem["bandwidthMbps"])'''
+
+                xvalues.append(times)
+                yvalues.append(bandwidths)  
+                titles.append(clientIP) 
+
+               
+                    
+            #time_min -= datetime.timedelta(seconds=_BUCKETSIZE_SEC * 2)
+            #time_max += datetime.timedelta(seconds=_BUCKETSIZE_SEC * 2)
+            #print (xvalues)
+            #print (yvalues)
+            for k in range(0, len(xvalues)):
                 #print times
                 #print bandwidth
-                #ax[i, 0] = plt.gca()
-                ax[i, 0].tick_params(axis="both", labelsize=_TICK_SIZE)
-                ax[i, 0].set_xlabel("Time")
-                ax[i, 0].set_ylabel("Bandwidth ()Mbps)")
-                ax[i, 0].set_ylim(0,100)
-                ax[i, 0].set_title("client " + str(i) + "- with IP = " + clientIP)
-                ax[i, 0].xaxis.set_major_formatter(xfmt)
-                ax[i, 0].plot(times, bandwidths, marker =_TIMEPLOT_MARKERS[i], linestyle="None", label=clientIP)
-               
-                legendlabels.append(clientIP)
-                i += 1            
+
+                if len(xvalues[k]) != 0:
+                    ax[k, 0].tick_params(axis="both", labelsize=_TICK_SIZE)
+                    ax[k, 0].set_xlabel("t")
+                    ax[k, 0].set_ylabel("Mbps)")
+                    ax[k, 0].set_ylim(0,ylim)
+                    ax[k, 0].set_xlim(time_min,time_max)
+                    ax[k, 0].set_title("client " + str(k) + "- with IP = " + clientIP)
+                    ax[k, 0].xaxis.set_major_formatter(xfmt)
+                    ax[k, 0].plot(xvalues[k], yvalues[k], marker =_TIMEPLOT_MARKERS[k], markersize=3, 
+                                label=titles[k], color=_TIMEPLOT_COLORS[k], linestyle="None")           
 
             folderpath = "time/bandwidth/" + str(connectiontype) + "/"
             _createfolder(folderpath)
         
-            pdfpage = PdfPages(folderpath + title + ".pdf")
+            '''pdfpage = PdfPages(folderpath + title + ".pdf")
             pdfpage.savefig( bbox_inches="tight")
-            pdfpage.close()
+            pdfpage.close()'''
 
 
             plt.savefig(folderpath + title + ".png", bbox_inches="tight") 
@@ -222,8 +262,9 @@ def create_passivetimeseriesplot(plottitle):
     ax.set_xlabel("Time")
     ax.set_ylabel("Bandwidth ()Mbps)")
 
-    plt.title(plottitle)
 
+    plt.title(plottitle + "___" + str(datetime.datetime.now()))
+    print("plotting " + plottitle + "___" + str(datetime.datetime.now()) + "...")
     plt.gcf().autofmt_xdate()
     formatter = "%H:%M:%S"
     xfmt = md.DateFormatter(formatter)
