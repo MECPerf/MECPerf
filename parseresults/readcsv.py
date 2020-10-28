@@ -1071,7 +1071,7 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                         #    print (currenttimestamp_micros - previoustimestamp_micros)/1000000 * 3
                         #    print(str(currenttimestamp_micros) + "-" + str(previoustimestamp_micros) + ": " + str(currenttimestamp_micros - previoustimestamp_micros))
                         currentByte += byte
-                        totalbyte += byte
+                        #totalbyte += byte
                         current_micros += currenttimestamp_micros - previoustimestamp_micros
 
                         if current_micros >= 1000000: #more than one sec
@@ -1094,10 +1094,11 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
                         packets_bandwidth.append(Mbps)
                         
                     if rowcounter >= _MINROWNUMBER:
-                        Kb = 1.0 * totalbyte /1024
-                        Mb = Kb / 1024
-                        index = clientIP + str(Mb)
-                        ret[index]=packets_bandwidth
+                        #Kb = 1.0 * totalbyte /1024
+                        #Mb = Kb / 1024
+                        #index = clientIP + str(Mb)
+                        #ret[index]=packets_bandwidth
+                        ret[clientIP]=packets_bandwidth
                         logger.debug("accepted " + last_testID + " with rowcounter " + str(rowcounter))
                     else:
                         logger.debug("skipped " + last_testID + " with rowcounter " + str(rowcounter))

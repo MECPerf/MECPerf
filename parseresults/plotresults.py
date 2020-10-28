@@ -302,24 +302,20 @@ def plotactiveandpassivelatency(config_parser):
 
 def plottimeseries(config_parser):
     ylim = 100
-    '''
+    
     passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
-                       server="edge", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
-                       logger=logger)
+                       server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    
     '''
-    
     passive_timeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
-                       server="edge", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
-                       logger=logger)
-    
-
+                       server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''
     passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
-                       server="cloud", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
-                       logger=logger)
+                       server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''
     passive_timeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
-                       server="cloud", clientnumber=10, ncol=3, legendypos=LEGENDYPOS_4LINE, 
-                       logger=logger)
-
+                       server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''
 
 
 if __name__ == '__main__':
@@ -334,7 +330,7 @@ if __name__ == '__main__':
     #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
     #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
     '''
-    plotpassiveperclient(config_parser)
+    #plotpassiveperclient(config_parser)
     plottimeseries(config_parser)
     
     
