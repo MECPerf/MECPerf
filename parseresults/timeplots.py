@@ -62,64 +62,68 @@ def passive_timeseries(config_parser, mode, direction, connectiontype, ylim, ser
     logger.debug ("noiselist" +  str(noiselist))
 
     for clientnumber in clientnumberlist:
-        for noise in noiselist:
-            for dashfile in dashfileslist:        
+        for noise in noiselist:        
+            for dashfile in dashfileslist: 
                 title  = str(mode) + "-" + str(direction) + "-" + str(dashfile) + str(clientnumber) + "-" 
                 title += str(noise) + "-" + str(server) + "_plot1"
 
                 filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-"
                 filename += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
                 filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"  
+                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv" 
+
+                folderpath = "time/bandwidth/" + str(connectiontype) + "/" 
 
                 plt = create_passivetimeseriesplot(plottitle = title, nclient=int(clientnumber))
                 ret = readbandwidthvalues_self_timeplot(config_parser=config_parser, inputfile=filename, 
                                                         segment=server, conntype=connectiontype, logger=logger)
-                legendlabels = []
-                ytick_labels = []
-                ytick_positions = []
-            
-                i = 0
-                for clientIP, clientresults in ret.items():
-                    times = []
-                    ypos = []
-                    
-                    first_timestamp = None
-                    
-                    for elem in clientresults:
-                        if first_timestamp == None:
-                            times.append (elem["timestamp"] + datetime.timedelta(seconds=_BUCKETSIZE_SEC/2))
-                            ypos.append(i)
-                            first_timestamp = elem["timestamp"]
-                            continue
 
-                        if (elem["timestamp"] - first_timestamp).total_seconds() < _BUCKETSIZE_SEC:
-                            continue 
+                passive_timeseries_plot(plt=plt, results=ret, title=title, folderpath=folderpath)    
 
-                        times.append (elem["timestamp"])
-                        ypos.append(i)
+def passive_timeseries_plot(plt, results, title, folderpath):
+    legendlabels = []
+    ytick_labels = []
+    ytick_positions = []
 
-                        first_timestamp = elem["timestamp"]
-                    
+    i = 0
+    for clientIP, clientresults in results.items():
+        times = []
+        ypos = []
+        first_timestamp = None
+        
+        for elem in clientresults:
+            if first_timestamp == None:
+                times.append (elem["timestamp"] + datetime.timedelta(seconds=_BUCKETSIZE_SEC/2))
+                ypos.append(i)
+                first_timestamp = elem["timestamp"]
+                continue
 
-                    plt.plot(times, ypos, marker =_TIMEPLOT_MARKERS[i], linestyle="None", label=clientIP, color=_TIMEPLOT_COLORS[i])
+            if (elem["timestamp"] - first_timestamp).total_seconds() < _BUCKETSIZE_SEC:
+                continue 
 
-                    ytick_labels.append(clientIP)
-                    ytick_positions.append(i)
-                    legendlabels.append(clientIP)
-                    i += 1
+            times.append(elem["timestamp"]  + datetime.timedelta(seconds=_BUCKETSIZE_SEC/2))
+            ypos.append(i)
 
-                plt.yticks(ytick_positions, ytick_labels)            
+            first_timestamp = elem["timestamp"]
+        
+        plt.plot(times, ypos, marker =_TIMEPLOT_MARKERS[i], linestyle="None", label=clientIP, color=_TIMEPLOT_COLORS[i])
 
-                folderpath = "time/bandwidth/" + str(connectiontype) + "/"
-                _createfolder(folderpath)
-            
-                pdfpage = PdfPages(folderpath + title + ".pdf")
-                pdfpage.savefig( bbox_inches="tight")
-                pdfpage.close()
+        ytick_labels.append(clientIP)
+        ytick_positions.append(i)
+        legendlabels.append(clientIP)
+        i += 1
 
-                plt.savefig(folderpath + title + ".png", bbox_inches="tight")
-                plt.close() 
+
+    plt.yticks(ytick_positions, ytick_labels)                
+    _createfolder(folderpath)
+
+    pdfpage = PdfPages(folderpath + title + ".pdf")
+    pdfpage.savefig( bbox_inches="tight")
+    pdfpage.close()
+
+    plt.savefig(folderpath + title + ".png", bbox_inches="tight")
+    plt.close() 
+
 
 # mode=self/mim
 #direction = downstream/upstream
