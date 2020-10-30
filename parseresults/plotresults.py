@@ -9,7 +9,7 @@ from plot_boxplots import bandwidthboxplot_noisegrouped, bandwidthplot_mimfilean
         mimselfbandwidthboxplot_conntypefileserverpos_xclients,  \
         mimselfbandwidthboxplot_conntypeserverposnumclient, readbandwidthvalues_mim_perclient_usingfixbucket,\
         mimselfbandwidthboxplot_conntypeserverposcrosstraffic, bandwidthplot_perclient, latencyboxplot_noiseandsegmentactivemim
-from timeplots import passive_timeseries, passive_timeseries_usingbandwidth
+from timeplots import passivetimeseries, passivetimeseries_usingbandwidth, passivetimeseries_usingclientports
 
 
 WARNING = '\033[93m'
@@ -303,19 +303,24 @@ def plotactiveandpassivelatency(config_parser):
 def plottimeseries(config_parser):
     ylim = 100
     
-    passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
-                       server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''passivetimeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
+                      server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''
+    '''passivetimeseries_usingclientports(config_parser, mode="self", direction="downlink", connectiontype="wifi", 
+                                       ylim=5, server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     
-    '''
-    passive_timeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
-                       server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-    '''
-    passive_timeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
+    passivetimeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", 
+                                     ylim=ylim,  server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    
+
+    passivetimeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
                        server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     '''
-    passive_timeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
+    passivetimeseries_usingclientports(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=5, 
                        server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-    '''
+    passivetimeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
+                       server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    
 
 
 if __name__ == '__main__':

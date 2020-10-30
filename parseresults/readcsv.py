@@ -1404,6 +1404,7 @@ def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntyp
                     assert row[13] == "Bytes"
                     assert row[6] == "Keyword"
                     assert row[2] == "ClientIP"
+                    assert row[3] == "ClientPort"
                     assert row[4] == "ServerIP"
                 except Exception as e:
                     logger.critical("unknown columns: " + str(row))
@@ -1418,6 +1419,7 @@ def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntyp
             timestamp_micros = row[12]
             keyword = row[6]
             clientIP = row[2]
+            clientPort = row[3]
             serverIP = row[4]
             try:
                 assert clientIP[:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
@@ -1440,10 +1442,84 @@ def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntyp
                 bandwidthMbps = bandwidthkbps / 1000
                 date = datetime.datetime.fromtimestamp(float(timestamp_micros) / 1000000.0)
 
-                ret[clientIP].append({"bandwidthMbps": bandwidthMbps, "timestamp": date})
+                ret[clientIP].append({"bandwidthMbps": bandwidthMbps, "clientPort": clientPort, "timestamp": date})
         
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
+
+'''
+def readbandwidth_searchportnumbers_self_timeplot(config_parser, inputfile, bucketsize, segment, conntype, logger):
+    assert "LEGACY" not in inputfile
+    assert "SORTED" in inputfile
+    assert "self" in inputfile
+    client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
+                                        config_parser=config_parser, conntype=conntype, logger=logger)
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(conntype))
+    logger.debug("segment = " + segment)
+    logger.debug("client_subnetaddr = " + str(client_subnetaddr))
+    logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
+    logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
+    
+    ret = OrderedDict()
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+        for row in csvreader:
+            #line 0 contains the query
+            #line #1 contains its arguments
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+            #line #2 contains the name of each column
+            #       ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,Direction,Protocol,Mode,Type,
+            #       ID,Timestamp,Bytes
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[4] == "ServerIP"
+                    assert row[3] == "ClientPort"
+                except Exception as e:
+                    logger.critical("unknown columns: " + str(row))
+                    logger.critical("EXIT")
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue
+
+            clientIP = row[2]
+            clientPort = row[3]
+            serverIP = row[4]
+            keyword = row[6] 
+            timestamp_micros = row[12]       
+            try:
+                assert clientIP[:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
+                assert conntype.strip() in inputfile
+                assert conntype.strip() in keyword
+            except:
+                logger.critical("conntype: " + str(conntype))
+                logger.critical("inputfile" + str(inputfile))
+                logger.critical(str(clientIP[:len(client_subnetaddr)]) + "!=" + str(client_subnetaddr))
+                logger.critical("Exit")
+                sys.exit(0)  
+
+            linecount += 1
+
+            if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+                if clientIP not in ret:
+                    ret[clientIP] = []
+
+                date = datetime.datetime.fromtimestamp(float(timestamp_micros) / 1000000.0)
+                ret[clientIP].append({"portNumber": clientPort, "timestamp": date})
+        
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
+    return ret
+'''
+
 
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
     assert "SORTED_LEGACY" in inputfile
