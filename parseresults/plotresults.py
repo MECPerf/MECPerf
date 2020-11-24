@@ -84,7 +84,7 @@ def plotactivelatency(config_parser):
                           connectiontype="wifi", ylim=ylim_wifi, legendypos=LEGENDYPOS_1LINE)
     latencyboxplot_active(config_parser=config_parser, command="UDPRTT", direction="Downstream", 
                           connectiontype="wifi", ylim=ylim_wifi, legendypos=LEGENDYPOS_1LINE)
-
+    '''
     #active latency lte boxplots
     latencyboxplot_active(config_parser=config_parser, command="TCPRTT", direction="Upstream", 
                           connectiontype="lte", ylim=ylim_lte, legendypos=LEGENDYPOS_1LINE)
@@ -94,12 +94,14 @@ def plotactivelatency(config_parser):
                           connectiontype="lte", ylim=ylim_lte, legendypos=LEGENDYPOS_1LINE)
     latencyboxplot_active(config_parser=config_parser, command="UDPRTT", direction="Downstream", 
                           connectiontype="lte", ylim=ylim_lte, legendypos=LEGENDYPOS_1LINE)
+    '''
     
     #wifi
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Upstream", 
                                          connectiontype="wifi", ylim=ylim_wifi, legendypos=LEGENDYPOS_2LINE)
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Downstream", 
                                          connectiontype="wifi", ylim=ylim_wifi, legendypos=LEGENDYPOS_2LINE)
+    '''
     #lte
     latencyboxplot_active_commandgrouped(config_parser=config_parser, direction="Upstream", 
                                          connectiontype="lte", ylim=ylim_lte, legendypos=LEGENDYPOS_2LINE)
@@ -125,6 +127,7 @@ def plotactivelatency(config_parser):
                                             legendypos=LEGENDYPOS_2LINE, ylim=max(ylim_wifi, ylim_lte))
     latencyboxplot_active_conntypegrouped(config_parser, "UDPRTT", "both",  ncol=3, 
                                             legendypos=LEGENDYPOS_4LINE, ylim=max(ylim_wifi, ylim_lte))
+    '''
 def plotactivebandwidth(config_parser):
     ylim_TCPwifi = 35
     ylim_TCPlte = 35
@@ -140,7 +143,7 @@ def plotactivebandwidth(config_parser):
                             legendypos=LEGENDYPOS_1LINE)
     bandwidthboxplot_active(config_parser, "UDPBandwidth", "Downstream", "wifi", ylim_UDPwifi, 
                             legendypos=LEGENDYPOS_1LINE)
-
+    '''
     #active bandwidth lte
     bandwidthboxplot_active(config_parser, "TCPBandwidth", "Upstream", "lte", ylim_TCPlte, 
                             legendypos=LEGENDYPOS_1LINE)
@@ -150,6 +153,7 @@ def plotactivebandwidth(config_parser):
                             legendypos=LEGENDYPOS_1LINE)
     bandwidthboxplot_active(config_parser, "UDPBandwidth", "Downstream", "lte", ylim_UDPlte, 
                             legendypos=LEGENDYPOS_1LINE)
+    
 
     #wifi
     bandwidthboxplot_active_conntypegrouped(config_parser, "TCPBandwidth", "Upstream",  ncol=3, 
@@ -164,6 +168,7 @@ def plotactivebandwidth(config_parser):
                                             legendypos=LEGENDYPOS_2LINE, ylim=max(ylim_TCPwifi, ylim_TCPlte))
     bandwidthboxplot_active_conntypegrouped(config_parser, "UDPBandwidth", "both",  ncol=3, 
                                             legendypos=LEGENDYPOS_4LINE, ylim=max(ylim_TCPwifi, ylim_TCPlte))
+    '''
 def plotselfbandwidth(config_parser):
     ylim = 50
     ncol = 3
@@ -172,16 +177,17 @@ def plotselfbandwidth(config_parser):
     bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "wifi", ylim, True, True, ncol, LEGENDYPOS_4LINE)
     ylim = 200
     ncol = 2
+    '''
     bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, False, ncol, LEGENDYPOS_1LINE)
     bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, False, False, ncol, LEGENDYPOS_1LINE)
     bandwidthboxplot_noisegrouped(config_parser, "self", "downlink", "lte", ylim, True, True, ncol, LEGENDYPOS_2LINE)
-    
+    '''
     ylim = 50
     ncol = 3
     bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "wifi", ncol, LEGENDYPOS_4LINE)
     ylim = 200
     ncol = 2
-    bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
+    #bandwidthplot_fileandsegmentgrouped(config_parser, "self", "downlink", "lte", ncol, LEGENDYPOS_2LINE, ylim)
 def plotmimbandwidth(config_parser):
     ylim = 50
     bucketsizes = [1.0 * 0.1 * 1000000, 1.0 * 0.5 * 1000000, 1.0 * 1 * 1000000] #[0.1, 0.5, 1]sec
@@ -190,24 +196,24 @@ def plotmimbandwidth(config_parser):
         bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                                   ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger,
                                   bucketsize_microsec=elem)
-        bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
+        '''bandwidthboxplot_noisemim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
                                 ylim=ylim, legendypos=LEGENDYPOS_1LINE, server="edge", ncol=3, logger=logger, 
                                 bucketsize_microsec=elem)
-        
+        '''
         bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
                                             connectiontype="wifi", ylim=ylim, ncol=3, legendypos=LEGENDYPOS_4LINE, 
                                             bucketsize_microsec=elem)
-        bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
+        '''bandwidthboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", logger=logger,
                                             connectiontype="lte", ylim=ylim, ncol=2, legendypos=LEGENDYPOS_2LINE, 
                                             bucketsize_microsec=elem)
-        
+        '''
         bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
                                         connectiontype="wifi", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger, 
                                         bucketsize_microsec=elem)
-        bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
+        '''bandwidthplot_mimfileandsegment(config_parser=config_parser, mode="mim", direction="downlink", 
                                         connectiontype="lte", ncol=2, legendypos=LEGENDYPOS_2LINE, logger=logger, 
                                         bucketsize_microsec=elem)
-
+        '''
     
     
 def plotmimandselfbandwidth(conf_parser):
@@ -242,6 +248,7 @@ def plotmimandselfbandwidth(conf_parser):
 def plotpassiveperclient(conf_parser):
     ylim = 20
     bucketsize = 1.0 * 0.1 * 1000000 #0.1 sec
+    
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
                             mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
                             logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
@@ -262,8 +269,10 @@ def plotpassiveperclient(conf_parser):
     
 
     ylim = 50
+    
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="self", 
                             ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger, legacy=True)     
+    
     bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="self", 
                             ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, logger=logger, legacy=True)                                               
     
@@ -280,6 +289,7 @@ def plotmimlatency(config_parser):
     latencyboxplot_noiseandsegmentmim(config_parser=config_parser, direction="uplink", connectiontype="wifi", 
                                       ylim=ylim, ncol=3, legendypos=LEGENDYPOS_4LINE)
     ylim = 200
+    '''
     latencyboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
                                       ylim=ylim, ncol=2, legendypos=LEGENDYPOS_2LINE)
     latencyboxplot_noiseandsegmentmim(config_parser=config_parser, direction="downlink", connectiontype="lte", 
@@ -290,7 +300,7 @@ def plotmimlatency(config_parser):
     latencyboxplot_noiseandsegmentmim(config_parser=config_parser, direction="uplink", connectiontype="lte", 
                                       ylim=ylim, ncol=2, legendypos=LEGENDYPOS_2LINE)
 
-
+    '''
 
 def plotactiveandpassivelatency(config_parser):
     ylim = 405
@@ -302,24 +312,37 @@ def plotactiveandpassivelatency(config_parser):
 
 def plottimeseries(config_parser):
     ylim = 100
-    
-    '''passivetimeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
+    ylim_mimbandwidth = 20
+    bucketsize_micros = 1.0 * 1000000 * 0.5 #0.5 sec
+    '''passivetimeseries(config_parser, mode="mim", direction="downlink", connectiontype="wifi", ylim=50, 
                       server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-    '''
-    '''passivetimeseries_usingclientports(config_parser, mode="self", direction="downlink", connectiontype="wifi", 
+    passivetimeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=50, 
+                      server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    
+    passivetimeseries_usingclientports(config_parser, mode="self", direction="downlink", connectiontype="wifi", 
                                        ylim=5, server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     
     passivetimeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", 
                                      ylim=ylim,  server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''
+    passivetimeseries_usingbandwidth(config_parser, mode="mim", direction="downlink", connectiontype="wifi", 
+                                     ylim=ylim_mimbandwidth,  server="edge", bucketsize_microsec=bucketsize_micros, ncol=3, 
+                                     legendypos=LEGENDYPOS_4LINE, logger=logger)
     
-
+    
+    '''passivetimeseries(config_parser, mode="mim", direction="downlink", connectiontype="wifi", ylim=ylim, 
+                       server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     passivetimeseries(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
                        server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-    '''
+    
     passivetimeseries_usingclientports(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=5, 
                        server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
     passivetimeseries_usingbandwidth(config_parser, mode="self", direction="downlink", connectiontype="wifi", ylim=ylim, 
                        server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
+    '''
+    passivetimeseries_usingbandwidth(config_parser, mode="mim", direction="downlink", connectiontype="wifi", 
+                                     ylim=ylim_mimbandwidth,  server="cloud", bucketsize_microsec=bucketsize_micros, ncol=3, 
+                                     legendypos=LEGENDYPOS_4LINE, logger=logger)
     
 
 
@@ -336,21 +359,21 @@ if __name__ == '__main__':
     #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
     '''
     #plotpassiveperclient(config_parser)
+    
+    
     plottimeseries(config_parser)
-    
-    
-
-    '''
+    plotselfbandwidth(config_parser)
     plotmimbandwidth(config_parser)
+    plotmimlatency(config_parser)
+    
+    
     plotmimandselfbandwidth(config_parser)
     
-    plotselfbandwidth(config_parser)
-    
     plotactivelatency(config_parser)
-    plotmimlatency(config_parser)
+    
     plotactiveandpassivelatency(config_parser)
     plotactivebandwidth(config_parser)
-    '''
+
     
 
     

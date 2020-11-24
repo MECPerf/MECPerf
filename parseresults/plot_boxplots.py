@@ -234,10 +234,13 @@ def bandwidthboxplot_active(config_parser, command, direction, connectiontype, y
 
         filename = "csv/active/" + command + "-" + direction + "-" + connectiontype + "-noise" + noise + "_"         
         filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
+
+        
                             
         values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "clientNitos"))
         values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "clientUnipi"))
         values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))   
+
 
                    
     if len(values) == 0:
