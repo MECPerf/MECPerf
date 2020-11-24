@@ -1446,12 +1446,10 @@ def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntyp
         
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
-
-'''
-def readbandwidth_searchportnumbers_self_timeplot(config_parser, inputfile, bucketsize, segment, conntype, logger):
+def readbandwidthvalues_mim_timeplot(config_parser, inputfile, segment, conntype, logger):
     assert "LEGACY" not in inputfile
     assert "SORTED" in inputfile
-    assert "self" in inputfile
+    assert "mim" in inputfile
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
                                         config_parser=config_parser, conntype=conntype, logger=logger)
     logger.debug("inputfile = " + str(inputfile))
@@ -1462,6 +1460,7 @@ def readbandwidth_searchportnumbers_self_timeplot(config_parser, inputfile, buck
     logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
     
     ret = OrderedDict()
+    
     with open (inputfile, "r") as csvinput:
         csvreader = csv.reader(csvinput, delimiter=",")
         linecount = 0
@@ -1479,8 +1478,8 @@ def readbandwidth_searchportnumbers_self_timeplot(config_parser, inputfile, buck
                     assert row[13] == "Bytes"
                     assert row[6] == "Keyword"
                     assert row[2] == "ClientIP"
-                    assert row[4] == "ServerIP"
                     assert row[3] == "ClientPort"
+                    assert row[4] == "ServerIP"
                 except Exception as e:
                     logger.critical("unknown columns: " + str(row))
                     logger.critical("EXIT")
@@ -1490,15 +1489,15 @@ def readbandwidth_searchportnumbers_self_timeplot(config_parser, inputfile, buck
                 #print row
                 continue
 
+            #measuredbytes = row[13]
+            timestamp_micros = row[12]
+            #keyword = row[6]
             clientIP = row[2]
-            clientPort = row[3]
+            #clientPort = row[3]
             serverIP = row[4]
-            keyword = row[6] 
-            timestamp_micros = row[12]       
             try:
                 assert clientIP[:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
                 assert conntype.strip() in inputfile
-                assert conntype.strip() in keyword
             except:
                 logger.critical("conntype: " + str(conntype))
                 logger.critical("inputfile" + str(inputfile))
@@ -1514,11 +1513,164 @@ def readbandwidth_searchportnumbers_self_timeplot(config_parser, inputfile, buck
                     ret[clientIP] = []
 
                 date = datetime.datetime.fromtimestamp(float(timestamp_micros) / 1000000.0)
-                ret[clientIP].append({"portNumber": clientPort, "timestamp": date})
+
+                ret[clientIP].append({"timestamp": date})
         
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
-'''
+def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, segment, conntype, logger,
+                                                     bucketsize_microsec):
+    assert "LEGACY" not in inputfile
+    assert "SORTED" in inputfile
+    assert "mim" in inputfile
+
+    client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
+                                        config_parser=config_parser, conntype=conntype, logger=logger)
+    logger.debug("inputfile = " + str(inputfile))
+    logger.debug("connectiontype = " + str(conntype))
+    logger.debug("segment = " + segment)
+    logger.debug("client_subnetaddr = " + str(client_subnetaddr))
+    logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
+    logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
+
+    print (segment)
+    print ("bucketsize_microsec " + str(bucketsize_microsec))
+    
+    ret = OrderedDict()
+    lastclientIP = ""
+    
+    pastclientIP = []
+    
+    with open (inputfile, "r") as csvinput:
+        csvreader = csv.reader(csvinput, delimiter=",")
+        linecount = 0
+        for row in csvreader:
+            #line 0 contains the query
+            #line #1 contains its arguments
+            if linecount == 0 or linecount == 1:
+                linecount += 1
+                continue
+            #line #2 contains the name of each column
+            #       ID,Timestamp,ClientIP,ClientPort,ServerIP,ServerPort,Keyword,Direction,Protocol,Mode,Type,
+            #       ID,Timestamp,Bytes
+            if linecount == 2:
+                try:
+                    assert row[13] == "Bytes"
+                    assert row[6] == "Keyword"
+                    assert row[2] == "ClientIP"
+                    assert row[3] == "ClientPort"
+                    assert row[4] == "ServerIP"
+                except Exception as e:
+                    logger.critical("unknown columns: " + str(row))
+                    logger.critical("EXIT")
+                    sys.exit(1)
+
+                linecount += 1
+                #print row
+                continue
+
+            #keyword = row[6]
+            clientIP = row[2]
+            #clientPort = row[3]
+            serverIP = row[4]
+            byte = float(row[13])
+            currenttimestamp_micros = float(row[12]) 
+            try:
+                assert clientIP[:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
+                assert conntype.strip() in inputfile
+            except:
+                logger.critical("conntype: " + str(conntype))
+                logger.critical("inputfile" + str(inputfile))
+                logger.critical(str(clientIP[:len(client_subnetaddr)]) + "!=" + str(client_subnetaddr))
+                logger.critical("Exit")
+                sys.exit(0)  
+
+            linecount += 1
+
+            if  (segment == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
+                (segment == "cloud" and serverIP[:len(cloudserver_subnetaddr)] == cloudserver_subnetaddr):
+                if clientIP not in ret:
+                    #new clientIP
+                    ret[clientIP] = []
+                    if len(ret) == 1:
+                        #this is the first row containing results for the target server
+                        lastclientIP = clientIP
+                        
+                        pastclientIP.append(str(clientIP))
+
+                        currentBytes = 0.0
+                        previoustimestamp_micros = currenttimestamp_micros
+                        bucket_starttime_microsec = currenttimestamp_micros
+                        bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec         
+                    else:
+                        #switch to a new client with a different IP
+                        pastclientIP.append(str(clientIP))         
+                        
+                        #add the results of the previous clien
+                        if currentBytes == 0:
+                            Mbps = 0
+                        else:
+                            bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+                            bps = (1.0 * currentBytes * 8) / bucketsize_sec
+                            Mbps = bps/1000000 
+                          
+                          
+                        time_datetime = datetime.datetime.fromtimestamp(float(bucket_starttime_microsec + (bucketsize_microsec/2)) / 1000000.0)
+                        ret[lastclientIP].append({"bandwidthMbps": Mbps, "timestamp": time_datetime})
+
+                        lastclientIP = clientIP
+                        currentByte = 0.0
+                        bucket_starttime_microsec = currenttimestamp_micros
+                        bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec 
+
+                    continue
+                elif lastclientIP == clientIP:
+                    if currenttimestamp_micros < bucket_endtime_microsec:
+                        #packet received within the bucketsize_microsec interval
+                        currentBytes += byte
+                    else:
+                        #packet received within the next bucketsize_microsec interval
+                        if currentBytes == 0:
+                            Mbps = 0
+                        else:
+                            bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+                            bps = (1.0 * currentBytes * 8) / bucketsize_sec
+                            Mbps = bps/1000000
+
+                        
+                        time_datetime = datetime.datetime.fromtimestamp(float(bucket_starttime_microsec + (bucketsize_microsec/2)) / 1000000.0)
+                        ret[clientIP].append({"bandwidthMbps": Mbps, "timestamp": time_datetime})
+
+                        currentBytes = byte
+                        bucket_starttime_microsec = bucket_endtime_microsec
+                        bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec
+                    
+                    continue
+                else:
+                    print("NON DOVREMMO MAI ARRIVARCI")
+                    assert False
+                 
+
+                previoustimestamp_micros = currenttimestamp_micros
+
+        #add the last results
+                
+        if currentBytes == 0:
+            Mbps = 0
+        else:
+            bucketsize_sec = 1.0 * bucketsize_microsec / 1000000
+            bps = (1.0 * currentBytes * 8) / bucketsize_sec
+            Mbps = bps/1000000 
+            
+            
+        time_datetime = datetime.datetime.fromtimestamp(float(bucket_starttime_microsec + (bucketsize_microsec/2)) / 1000000.0)
+        ret[lastclientIP].append({"bandwidthMbps": Mbps, "timestamp": time_datetime})
+
+        print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
+    return ret
+
+
+
 
 
 def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
