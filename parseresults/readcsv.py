@@ -911,6 +911,7 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
                     assert row[2] == "ClientIP"
                     assert row[4] == "ServerIP"
                 except Exception as e:
+                    print("sdvb")
                     print (e)
                     print (row)
                     sys.exit(1)
@@ -1539,8 +1540,6 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, s
     ret = OrderedDict()
     lastclientIP = ""
     
-    pastclientIP = []
-    
     with open (inputfile, "r") as csvinput:
         csvreader = csv.reader(csvinput, delimiter=",")
         linecount = 0
@@ -1569,9 +1568,7 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, s
                 #print row
                 continue
 
-            #keyword = row[6]
             clientIP = row[2]
-            #clientPort = row[3]
             serverIP = row[4]
             byte = float(row[13])
             currenttimestamp_micros = float(row[12]) 
@@ -1593,20 +1590,16 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, s
                     #new clientIP
                     ret[clientIP] = []
                     if len(ret) == 1:
-                        #this is the first row containing results for the target server
+                        #this is the first row containing results for the first target server
                         lastclientIP = clientIP
-                        
-                        pastclientIP.append(str(clientIP))
 
-                        currentBytes = 0.0
-                        previoustimestamp_micros = currenttimestamp_micros
+                        currentBytes = byte
                         bucket_starttime_microsec = currenttimestamp_micros
                         bucket_endtime_microsec = bucket_starttime_microsec + bucketsize_microsec         
                     else:
-                        #switch to a new client with a different IP
-                        pastclientIP.append(str(clientIP))         
+                        #switch to a new client with a different IP     
                         
-                        #add the results of the previous clien
+                        #add the results of the previous client
                         if currentBytes == 0:
                             Mbps = 0
                         else:
@@ -1649,9 +1642,6 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, s
                 else:
                     print("NON DOVREMMO MAI ARRIVARCI")
                     assert False
-                 
-
-                previoustimestamp_micros = currenttimestamp_micros
 
         #add the last results
                 
@@ -1668,7 +1658,6 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, s
 
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
-
 
 
 
