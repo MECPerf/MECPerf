@@ -617,6 +617,7 @@ def latencyboxplot_active_conntypegrouped(config_parser, command, direction, nco
 #PASSIVE BANDWIDTH
 def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped, ncol, legendypos):
     assert mode == "self"
+
     
     clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
