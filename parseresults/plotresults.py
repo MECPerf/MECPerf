@@ -245,36 +245,38 @@ def plotmimandselfbandwidth(conf_parser):
                                                               legendypos=LEGENDYPOS_4LINE, logger=logger, 
                                                               bucketsize_microsec=elem)
 
-def plotpassiveperclient(conf_parser):
+def plotpassiveperclient(conf_parser, section):
     ylim = 20
     bucketsize = 1.0 * 0.1 * 1000000 #0.1 sec
-    '''
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    
+    bandwidthplot_perclient(config_parser=config_parser, section=section, direction="downlink", 
+                            connectiontype="wifi", mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, 
+                            server="edge", ncol=3, logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
     
 
     bucketsize = 1.0 * 0.5 * 1000000 #0.5 sec
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)    
+    bandwidthplot_perclient(config_parser=config_parser, section=section, direction="downlink", 
+                            connectiontype="wifi", mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, 
+                            server="edge", ncol=3, logger=logger, legacy=False, bucketsize_microsec=bucketsize)    
     
     bucketsize = 1.0 * 1000000 #1 sec
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", 
-                            mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, 
-                            logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    bandwidthplot_perclient(config_parser=config_parser, section=section, direction="downlink", 
+                            connectiontype="wifi", mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, 
+                            server="edge", ncol=3, logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
+    bandwidthplot_perclient(config_parser=config_parser, section=section, direction="downlink", 
+                            connectiontype="wifi", mode="mim", ylim=ylim, legendypos=LEGENDYPOS_2LINE, 
+                            server="cloud", ncol=3, logger=logger, legacy=False, bucketsize_microsec=bucketsize)   
     
-    '''
+    
     ylim = 50
     
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="self", 
-                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="edge", ncol=3, logger=logger, legacy=True)     
+    bandwidthplot_perclient(config_parser=config_parser, section=section, direction="downlink", 
+                            connectiontype="wifi", mode="self", ylim=ylim, legendypos=LEGENDYPOS_2LINE, 
+                            server="edge", ncol=3, logger=logger, legacy=False)     
     
-    bandwidthplot_perclient(config_parser=config_parser, direction="downlink", connectiontype="wifi", mode="self", 
-                            ylim=ylim, legendypos=LEGENDYPOS_2LINE, server="cloud", ncol=3, logger=logger, legacy=True)                                               
+    bandwidthplot_perclient(config_parser=config_parser, section=section, direction="downlink", 
+                            connectiontype="wifi", mode="self", ylim=ylim, legendypos=LEGENDYPOS_2LINE, 
+                            server="cloud", ncol=3, logger=logger, legacy=False)                                               
     
 
 def plotmimlatency(config_parser):
@@ -310,39 +312,58 @@ def plotactiveandpassivelatency(config_parser):
 
 
 
-def plottimeseries(config_parser):
+def plottimeseries(config_parser, section):
     ylim_selfbandwidth = 100
     ylim_mimbandwidth = 20
     bucketsize_micros = 1.0 * 1000000 * 0.5 #0.5 sec
 
-    plottimeseries_bandwidth(config_parser, mode="self", ylim=ylim_selfbandwidth)
-    plottimeseries_bandwidth(config_parser, mode="mim", ylim=ylim_mimbandwidth, bucketsize_micros=bucketsize_micros)
-    plottimeseries_ports(config_parser, mode="self")
-def plottimeseries_bandwidth(config_parser, mode, ylim, bucketsize_micros=None):
-    passivetimeseries_usingbandwidth(config_parser, mode=mode, direction="downlink", connectiontype="wifi", 
+    plottimeseries_bandwidth(config_parser, section=section, mode="self", ylim=ylim_selfbandwidth)
+    plottimeseries_bandwidth(config_parser, section=section, mode="mim", ylim=ylim_mimbandwidth, bucketsize_micros=bucketsize_micros)
+    plottimeseries_ports(config_parser, section=section, mode="self")
+def plottimeseries_bandwidth(config_parser, section, mode, ylim, bucketsize_micros=None):
+    passivetimeseries_usingbandwidth(config_parser, section=section, mode=mode, direction="downlink", connectiontype="wifi", 
                                      ylim=ylim, server="edge",bucketsize_microsec=bucketsize_micros, ncol=3, 
                                      legendypos=LEGENDYPOS_4LINE, logger=logger)
-    passivetimeseries_usingbandwidth(config_parser, mode=mode, direction="downlink", connectiontype="wifi", 
+    
+    passivetimeseries_usingbandwidth(config_parser, section=section, mode=mode, direction="downlink", connectiontype="wifi", 
                                      ylim=ylim, server="cloud", bucketsize_microsec=bucketsize_micros, ncol=3, 
                                      legendypos=LEGENDYPOS_4LINE, logger=logger)
 
-    passivetimeseries(config_parser, mode=mode, direction="downlink", connectiontype="wifi", ylim=ylim, 
+    passivetimeseries(config_parser, section=section, mode=mode, direction="downlink", connectiontype="wifi", ylim=ylim, 
                       server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-    passivetimeseries(config_parser, mode=mode, direction="downlink", connectiontype="wifi", ylim=ylim, 
+    
+    passivetimeseries(config_parser, section=section, mode=mode, direction="downlink", connectiontype="wifi", ylim=ylim, 
                        server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
-def plottimeseries_ports(config_parser, mode):
-    passivetimeseries_usingclientports(config_parser, mode=mode, direction="downlink", connectiontype="wifi", 
+def plottimeseries_ports(config_parser, section, mode):
+    passivetimeseries_usingclientports(config_parser, section=section, mode=mode, direction="downlink", connectiontype="wifi", 
                                        ylim=5, server="edge", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)    
-    passivetimeseries_usingclientports(config_parser, mode=mode, direction="downlink", connectiontype="wifi", 
+    
+    passivetimeseries_usingclientports(config_parser, section=section, mode=mode, direction="downlink", connectiontype="wifi", 
                                        ylim=5, server="cloud", ncol=3, legendypos=LEGENDYPOS_4LINE, logger=logger)
 
+def getconfiguration(conffile):
+    config_parser = configparser.RawConfigParser()
+    config_parser.read(conffile)
 
+    print ("Available configurations:")
+    confsections = config_parser.sections()
+    for section in confsections:
+        if "plot_" in section:
+            print("\t" + section)
+
+    while True:
+        inputsection = raw_input("Choose a configuration:")
+        if inputsection in confsections:
+            break
+        
+        print(WARNING + "Invalid configuration" + RESET)
+
+    return config_parser, inputsection
 
 if __name__ == '__main__':
     #read configuration file
-    config_parser = configparser.RawConfigParser()
-    config_parser.read("experiments.conf")
- 
+    config_parser, inputsection = getconfiguration("experiments.conf")
+
     '''
     #activebandwidth_lineplot(config_parser, "TCPRTT", "Upstream", "wifi")
     #activebandwidth_lineplot(config_parser, "TCPRTT", "Downstream", "wifi")
@@ -350,21 +371,21 @@ if __name__ == '__main__':
     #activebandwidth_lineplot(config_parser, "UDPRTT", "Downstream", "wifi")
     #activebandwidth_lineplot(config_parser, "TCPBandwidth", "Upstream", "wifi")
     '''
-    #plotpassiveperclient(config_parser)
+    #plotpassiveperclient(config_parser, section=inputsection)
     
     
-    plottimeseries(config_parser)
-    plotselfbandwidth(config_parser)
+    plottimeseries(config_parser, section=inputsection)
+    #plotselfbandwidth(config_parser)
     #plotmimbandwidth(config_parser)
     #plotmimlatency(config_parser)
     
     
     #plotmimandselfbandwidth(config_parser)
     
-    plotactivelatency(config_parser)
+    #plotactivelatency(config_parser)
     
-    plotactiveandpassivelatency(config_parser)
-    plotactivebandwidth(config_parser)
+    #plotactiveandpassivelatency(config_parser)
+    #plotactivebandwidth(config_parser)
 
     
 
