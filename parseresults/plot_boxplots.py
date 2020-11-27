@@ -1337,11 +1337,11 @@ def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, le
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol)
 
 
-def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim, legendypos, server, ncol, 
-                            logger, legacy, bucketsize_microsec=None):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+def bandwidthplot_perclient(config_parser, section, direction, connectiontype, mode, ylim, legendypos, server, 
+                            ncol, logger, legacy, bucketsize_microsec=None):
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
 
     folderpath = "bandwidthplot/perclient/" + mode + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
@@ -1355,7 +1355,7 @@ def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim
 
             title  = mode + "-" + direction + "-" + connectiontype + "-bandwidth-" + dashfile + "-" + server 
             title += "-" + str(noise)
-            if not legacy:
+            if mode == "mim":
                 title += "bucketsize=" + str(bucketsize_microsec/1000000).replace(".", ",")
 
             print (title)
@@ -1365,8 +1365,8 @@ def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim
             
                 inputfilename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-"
                 inputfilename += connectiontype + "-" + str(clientnumber) + "clients-" + dashfile + "-noise"  
-                inputfilename += noise + "_" +config_parser.get("experiment_conf", "from_passive") + "-"
-                inputfilename += config_parser.get("experiment_conf", "to_passive")
+                inputfilename += noise + "_" +config_parser.get(section, "from_passive") + "-"
+                inputfilename += config_parser.get(section, "to_passive")
                 if mode == "mim" and legacy:
                     inputfilename += "_SORTED_LEGACY.csv"
                 else:
@@ -1375,12 +1375,12 @@ def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim
 
                 if mode == "mim":    
                     if legacy:        
-                        ret = (readbandwidthvalues_mim_perclient(config_parser=config_parser, 
+                        ret = (readbandwidthvalues_mim_perclient(config_parser=config_parser, section=section,
                                             inputfile=inputfilename, connectiontype=connectiontype, 
                                             segment=server, logger=logger, 
                                             bucketsize_microsec=bucketsize_microsec)) 
                     else:
-                        tmp, bytes_sent = (readbandwidthvalues_mim_perclient_usingfixbucket(config_parser=config_parser, 
+                        tmp, bytes_sent = (readbandwidthvalues_mim_perclient_usingfixbucket(config_parser=config_parser, section=section,
                                             inputfile=inputfilename, connectiontype=connectiontype, 
                                             segment=server, logger=logger, 
                                             bucketsize_microsec=bucketsize_microsec))   
@@ -1392,7 +1392,7 @@ def bandwidthplot_perclient(config_parser, direction, connectiontype, mode, ylim
                            
 
                 elif mode == "self":
-                    ret = (readbandwidthvalues_self_perclient(config_parser=config_parser, 
+                    ret = (readbandwidthvalues_self_perclient(config_parser=config_parser, section=section,
                                             inputfile=inputfilename, conntype=connectiontype, server=server, 
                                             logger=logger)) 
                 else:
