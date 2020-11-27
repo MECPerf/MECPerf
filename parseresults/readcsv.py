@@ -7,15 +7,15 @@ import datetime
 from collections import OrderedDict
 _MINROWNUMBER = 50
 
-def _get_subnetaddresses(config_parser, conntype, logger):
+def _get_subnetaddresses(config_parser, section, conntype, logger):
     if conntype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_wifi")
     elif conntype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type")
         logger.critical("unknown connection type " + str(conntype))
@@ -346,13 +346,13 @@ def readvalues_activebandwidthboxplot(inputfile, noise, segment):
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
 
     return ret
-def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+def readvalues_activebandwidthlineplot(config_parser, section, command, direction, conn):
+    noiselist = config_parser.get(section, "noise").split(",")
 
     if conn == "wifi":
-        dates_list = config_parser.get("experiment_conf", "dates_activewifi").split(",")
+        dates_list = config_parser.get(section, "dates_activewifi").split(",")
     elif conn == "lte":
-        dates_list = config_parser.get("experiment_conf", "dates_activelte").split(",")
+        dates_list = config_parser.get(section, "dates_activelte").split(",")
 
 
     legend = []
@@ -498,19 +498,19 @@ def readvalues_activebandwidthlineplot(config_parser, command, direction, conn):
     return clientNitos, clientUnipi, NitosUnipi
 
       
-def readbandwidthvalues_timeseries_self(config_parser, inputfile, edgeserver, conntype):
+def readbandwidthvalues_timeseries_self(config_parser, section, inputfile, edgeserver, conntype):
     assert "SORTED_LEGACY" in inputfile
     assert "self" in inputfile
     ret = []
 
     if conntype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_wifi")
+        remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_wifi")
     elif conntype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_lte")
+        remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type")
         sys.exit(0)
@@ -571,7 +571,7 @@ def readbandwidthvalues_timeseries_self(config_parser, inputfile, edgeserver, co
     return ret
 
 
-def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, logger):
+def readbandwidthvalues_mim(config_parser, section, inputfile, connectiontype, segment, logger):
     assert "SORTED_LEGACY" in inputfile
     assert "mim" in inputfile
     logger.debug("\n")
@@ -580,13 +580,13 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, l
     last_testID = ""
     
     if connectiontype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_wifi")
     elif connectiontype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type")
         logger.critical("unknown connection type")
@@ -738,7 +738,7 @@ def readbandwidthvalues_mim(config_parser, inputfile, connectiontype, segment, l
     
         
     return ret
-def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiontype, segment, logger, 
+def readbandwidthvalues_mim_usingfixbucket(config_parser, section, inputfile, connectiontype, segment, logger, 
                                            bucketsize_microsec):
     assert "SORTED" in inputfile
     assert "LEGACY" not in inputfile
@@ -750,7 +750,8 @@ def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiont
     pastclientIP = []
     
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
-                                        config_parser=config_parser, conntype=connectiontype, logger=logger)
+                                        config_parser=config_parser, section=section, conntype=connectiontype, 
+                                        logger=logger)
     
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("bucketsize_microsec = " + str(bucketsize_microsec))
@@ -878,7 +879,7 @@ def readbandwidthvalues_mim_usingfixbucket(config_parser, inputfile, connectiont
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
        
     return ret
-def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
+def readbandwidthvalues_self(config_parser, section, inputfile, edgeserver, conntype):
     assert "LEGACY" not in inputfile
     assert "SORTED" in inputfile
     assert "self" in inputfile
@@ -886,13 +887,13 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
     ret = []
 
     if conntype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_wifi")
+        remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_wifi")
     elif conntype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_lte")
+        remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type")
         sys.exit(0)
@@ -911,7 +912,7 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
                     assert row[2] == "ClientIP"
                     assert row[4] == "ServerIP"
                 except Exception as e:
-                    print("sdvb")
+                    
                     print (e)
                     print (row)
                     sys.exit(1)
@@ -948,7 +949,7 @@ def readbandwidthvalues_self(config_parser, inputfile, edgeserver, conntype):
     return ret
 
 #returns a dict
-def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, segment, logger):
+def readbandwidthvalues_mim_perclient(config_parser, section, inputfile, connectiontype, segment, logger):
     assert "SORTED_LEGACY" in inputfile
     assert "mim" in inputfile
     logger.debug("\n")
@@ -958,13 +959,13 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
     last_testID = ""
     
     if connectiontype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_wifi")
+        cloudserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_wifi")
     elif connectiontype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        cloudserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_lte")
+        cloudserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type")
         logger.critical("unknown connection type.")
@@ -1137,8 +1138,8 @@ def readbandwidthvalues_mim_perclient(config_parser, inputfile, connectiontype, 
         print ("read  kn" + str(linecount) + " from " + inputfile + "(including headers)")
 
     return ret
-def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, connectiontype, segment, 
-                                                     logger, bucketsize_microsec):
+def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, section, inputfile, connectiontype, 
+                                                     segment, logger, bucketsize_microsec):
     assert bucketsize_microsec != None
     assert "SORTED" in inputfile
     assert "LEGACY" not in inputfile
@@ -1152,7 +1153,8 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
     currentBytes = 0.0
     
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
-                                        config_parser=config_parser, conntype=connectiontype, logger=logger)
+                                        config_parser=config_parser, section=section, conntype=connectiontype, 
+                                        logger=logger)
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("connectiontype = " + str(connectiontype))
     logger.debug("segment = " + segment)
@@ -1287,7 +1289,7 @@ def readbandwidthvalues_mim_perclient_usingfixbucket(config_parser, inputfile, c
 
     return ret, totalbytes
 
-def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntype, logger):
+def readbandwidthvalues_self_perclient(config_parser, section, inputfile, server, conntype, logger):
     assert "LEGACY" not in inputfile
     assert "SORTED" in inputfile
     assert "self" in inputfile
@@ -1296,13 +1298,13 @@ def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntyp
     ret = OrderedDict()
 
     if conntype == "wifi":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_wifi")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_wifi")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_wifi")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_wifi")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_wifi")
+        remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_wifi")
     elif conntype == "lte":
-        client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_lte")
-        edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_lte")
-        remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_lte")
+        client_subnetaddr = config_parser.get(section, "client_subnetaddr_lte")
+        edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_lte")
+        remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_lte")
     else:
         print ("unknown connection type" + str(conntype))
         sys.exit(0)
@@ -1373,12 +1375,13 @@ def readbandwidthvalues_self_perclient(config_parser, inputfile, server, conntyp
     return ret
 
 
-def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntype, logger):
+def readbandwidthvalues_self_timeplot(config_parser, section, inputfile, segment, conntype, logger):
     assert "LEGACY" not in inputfile
     assert "SORTED" in inputfile
     assert "self" in inputfile
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
-                                        config_parser=config_parser, conntype=conntype, logger=logger)
+                                        config_parser=config_parser, section=section, conntype=conntype, 
+                                        logger=logger)
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("connectiontype = " + str(conntype))
     logger.debug("segment = " + segment)
@@ -1447,12 +1450,13 @@ def readbandwidthvalues_self_timeplot(config_parser, inputfile, segment, conntyp
         
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
-def readbandwidthvalues_mim_timeplot(config_parser, inputfile, segment, conntype, logger):
+def readbandwidthvalues_mim_timeplot(config_parser, section, inputfile, segment, conntype, logger):
     assert "LEGACY" not in inputfile
     assert "SORTED" in inputfile
     assert "mim" in inputfile
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
-                                        config_parser=config_parser, conntype=conntype, logger=logger)
+                                        config_parser=config_parser, section=section, conntype=conntype, 
+                                        logger=logger)
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("connectiontype = " + str(conntype))
     logger.debug("segment = " + segment)
@@ -1519,14 +1523,15 @@ def readbandwidthvalues_mim_timeplot(config_parser, inputfile, segment, conntype
         
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
-def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, segment, conntype, logger,
-                                                     bucketsize_microsec):
+def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, section, inputfile, segment, conntype, 
+                                                     logger, bucketsize_microsec):
     assert "LEGACY" not in inputfile
     assert "SORTED" in inputfile
     assert "mim" in inputfile
 
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
-                                        config_parser=config_parser, conntype=conntype, logger=logger)
+                                        config_parser=config_parser, section=section, conntype=conntype, 
+                                        logger=logger)
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("connectiontype = " + str(conntype))
     logger.debug("segment = " + segment)
@@ -1662,15 +1667,15 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, inputfile, s
 
 
 
-def readlatencyvalues_noisemim(config_parser, inputfile, connectiontype, segment, noise):
+def readlatencyvalues_noisemim(config_parser, section, inputfile, connectiontype, segment, noise):
     assert "SORTED_LEGACY" in inputfile
     assert "mim" in inputfile
     
     ret = []
     
-    client_subnetaddr = config_parser.get('experiment_conf', "client_subnetaddr_" + connectiontype)
-    edgeserver_subnetaddr = config_parser.get('experiment_conf', "edgeserver_subnetaddr_" + connectiontype)
-    remoteserver_subnetaddr = config_parser.get('experiment_conf', "remoteserver_subnetaddr_" + connectiontype)
+    client_subnetaddr = config_parser.get(section, "client_subnetaddr_" + connectiontype)
+    edgeserver_subnetaddr = config_parser.get(section, "edgeserver_subnetaddr_" + connectiontype)
+    remoteserver_subnetaddr = config_parser.get(section, "remoteserver_subnetaddr_" + connectiontype)
 
 
     with open (inputfile, "r") as csvinput:
