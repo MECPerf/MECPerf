@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
+import matplotlib as mpl
 import datetime
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
@@ -13,10 +14,10 @@ import math
 from readcsv import readbandwidthvalues_self_timeplot, readbandwidthvalues_mim_timeplot, \
                     readbandwidthvalues_mim_timeplot_usingfixbuckets
 
-_LABEL_SIZE = 20
-_TICK_SIZE = 20
-_XLABEL_SIZE = 25
-_YLABEL_SIZE = 25
+_TITLE_SIZE = 14
+_TICK_SIZE = 10
+_XLABEL_SIZE = 14
+_YLABEL_SIZE = 14
 
 _LEGENDYPOS_10LINE = 2.05
 
@@ -33,12 +34,12 @@ _TIMEPLOT_MARKERS = [".", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8", "s",
 
 
 
-def getclientnumberlist(config_parser, conntype):
-    return config_parser.get("experiment_conf", "clientnumber_passive" + conntype).split(",")
-def getdashfilelist(config_parser):
-    return config_parser.get("experiment_conf", "dashfiles").split(",")
-def getnoiselist(config_parser):
-    return config_parser.get("experiment_conf", "noise").split(",")
+def getclientnumberlist(config_parser, section, conntype):
+    return config_parser.get(section, "clientnumber_passive" + conntype).split(",")
+def getdashfilelist(config_parser, section):
+    return config_parser.get(section, "dashfiles").split(",")
+def getnoiselist(config_parser, section):
+    return config_parser.get(section, "noise").split(",")
 def createfolder(directoryname):
     try:
         os.makedirs(directoryname)
@@ -54,8 +55,8 @@ def passivetimeseries_createplot(plottitle, nclient):
     plt.grid(True, axis="y", color="#dedddc")
     ax = plt.gca()
     ax.tick_params(axis="both", labelsize=_TICK_SIZE)
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Bandwidth ()Mbps)")
+    ax.set_xlabel("Time", fontsize=_XLABEL_SIZE)
+    ax.set_ylabel("Bandwidth ()Mbps)", fontsize=_YLABEL_SIZE)
 
     plt.title(plottitle + "___" + str(datetime.datetime.now()))
     print("plotting " + plottitle + "___" + str(datetime.datetime.now()) + "...")
@@ -108,11 +109,11 @@ def passivetimeseries_plot(plt, results, title, folderpath):
 
     plt.savefig(folderpath + title + ".png", bbox_inches="tight")
     plt.close() 
-def passivetimeseries(config_parser, mode, direction, connectiontype, ylim, server, ncol, 
+def passivetimeseries(config_parser, section, mode, direction, connectiontype, ylim, server, ncol, 
                        legendypos, logger): #edgeserver=edge/cloud
-    clientnumberlist = getclientnumberlist(config_parser=config_parser, conntype=connectiontype)
-    dashfileslist = getdashfilelist(config_parser=config_parser)
-    noiselist = getnoiselist(config_parser=config_parser)
+    clientnumberlist = getclientnumberlist(config_parser=config_parser, section=section, conntype=connectiontype)
+    dashfileslist = getdashfilelist(config_parser=config_parser, section=section)
+    noiselist = getnoiselist(config_parser=config_parser, section=section)
 
     logger.debug("clientnumberlist" + str(clientnumberlist))
     logger.debug ("dashfileslist" + str(dashfileslist))
@@ -127,21 +128,21 @@ def passivetimeseries(config_parser, mode, direction, connectiontype, ylim, serv
 
                 filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-"
                 filename += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv" 
+                filename += config_parser.get(section, "from_passive") + "-" 
+                filename += config_parser.get(section, "to_passive") + "_SORTED.csv" 
 
                 folderpath = "time/bandwidth/" + str(connectiontype) + "/" 
 
                 plt = passivetimeseries_createplot(plottitle = title, nclient=int(clientnumber))
 
                 if mode == "self":
-                    ret = readbandwidthvalues_self_timeplot(config_parser=config_parser, inputfile=filename, 
-                                                            segment=server, conntype=connectiontype, 
-                                                            logger=logger)
+                    ret = readbandwidthvalues_self_timeplot(config_parser=config_parser, section=section, 
+                                                            inputfile=filename, segment=server, 
+                                                            conntype=connectiontype, logger=logger)
                 elif mode == "mim":
-                    ret = readbandwidthvalues_mim_timeplot(config_parser=config_parser, inputfile=filename, 
-                                                            segment=server, conntype=connectiontype, 
-                                                            logger=logger)
+                    ret = readbandwidthvalues_mim_timeplot(config_parser=config_parser, section=section, 
+                                                           inputfile=filename, segment=server, 
+                                                           conntype=connectiontype, logger=logger)
                 else:
                     print("unknown mode " + mode)
                     print("exiting")
@@ -155,10 +156,10 @@ def passivetimeseries(config_parser, mode, direction, connectiontype, ylim, serv
 
 def passivetimeseries_usingbandwidth_createplot(colsnumber, rowsnumber, plottitle):
     fig, ax = plt.subplots(ncols = colsnumber, nrows = rowsnumber, squeeze=False)
-    fig.set_size_inches(8.3 * colsnumber, 1.6 * rowsnumber)
-    fig.tight_layout()
+    fig.set_size_inches(8.3 * colsnumber, 1.6 * rowsnumber + 0.5)
+    #fig.tight_layout()
     
-    plt.title(plottitle + "___" + str(datetime.datetime.now()))
+    plt.title(plottitle + "___" + str(datetime.datetime.now()), fontsize=_TITLE_SIZE)
     plt.grid(True, axis="y", color="#dedddc")
     plt.gcf().autofmt_xdate()
 
@@ -176,6 +177,9 @@ def passivetimeseries_usingbandwidth_plot(plt, ax, xfmt, results, title, folderp
     xvalues=[]
     yvalues = []
     titles =[]
+
+    #ax.tick_params(axis='both', which='major', labelsize=10)
+    
     for clientIP, clientresults in results.items():
         times = []
         bandwidths = []
@@ -200,20 +204,22 @@ def passivetimeseries_usingbandwidth_plot(plt, ax, xfmt, results, title, folderp
     for k in range(0, len(xvalues)): #for each sublot
         if len(xvalues[k]) != 0:
             ax[k, 0].tick_params(axis="both", labelsize=_TICK_SIZE)
-            ax[k, 0].set_xlabel("t")
-            ax[k, 0].set_ylabel("Mbps")
+            ax[k, 0].set_xlabel("t", fontsize=_XLABEL_SIZE)
+            ax[k, 0].set_ylabel("Mbps", fontsize=_YLABEL_SIZE)
             ax[k, 0].set_ylim(0,ylim)
             ax[k, 0].set_xlim(time_min,time_max)
             #ax[k, 0].set_title("client " + str(k + 1) + "- with IP = " + titles[k] + "___" + \
             #                   str(datetime.datetime.now()) + title2)
             if title2 != "":
                 title2 = "_" + title2
-            ax[k, 0].set_title("client " + str(k + 1) + " with IP = " + titles[k] + title2)
+            ax[k, 0].set_title("client " + str(k + 1) + " with IP = " + titles[k] + title2, fontsize=_TITLE_SIZE)
             ax[k, 0].xaxis.set_major_formatter(xfmt)
             ax[k, 0].plot(xvalues[k], yvalues[k], marker =_TIMEPLOT_MARKERS[k], markersize=3, 
                         label=titles[k], color=_TIMEPLOT_COLORS[k], linestyle="None")           
 
     createfolder(folderpath)
+
+    plt.tight_layout()
 
     pdfpage = PdfPages(folderpath + title + ".pdf")
     pdfpage.savefig( bbox_inches="tight")
@@ -273,8 +279,8 @@ def passivetimeseries_usingbandwidthseparatedflows_plot(results, title, folderpa
           
             if len(times[key]) != 0:
                 ax[x, y].tick_params(axis="both", labelsize=_TICK_SIZE)
-                ax[x, y].set_xlabel("t")
-                ax[x, y].set_ylabel("Mbps")
+                ax[x, y].set_xlabel("t", fontsize=_XLABEL_SIZE)
+                ax[x, y].set_ylabel("Mbps", fontsize=_YLABEL_SIZE)
                 ax[x, y].set_ylim(0,ylim)
                 ax[x, y].set_xlim(time_min,time_max)
                 #ax[x, y].set_title(str(counter) + " of " + str(len(times)) + " with IP = " + clientIP + " and port = " + \
@@ -282,7 +288,7 @@ def passivetimeseries_usingbandwidthseparatedflows_plot(results, title, folderpa
                 if title2 != "":
                     title2 = "_" + title2
                 ax[x, y].set_title(str(counter) + " of " + str(len(times)) + " with IP = " + clientIP + " and port = " + \
-                                   str(key)  + title2)
+                                   str(key)  + title2, fontsize=_TITLE_SIZE)
                 ax[x, y].xaxis.set_major_formatter(xfmt)
                 ax[x, y].plot(times[key], bandwidths[key], marker =_TIMEPLOT_MARKERS[x+y], markersize=3, 
                               color=_TIMEPLOT_COLORS[x+y], linestyle="None")   
@@ -311,6 +317,8 @@ def passivetimeseries_usingbandwidthseparatedflows_plot(results, title, folderpa
 
         createfolder(folderpath)
 
+        plt.tight_layout()
+
         pdfpage = PdfPages(folderpath + title + "-" + str(clientnum) + ".pdf")
         pdfpage.savefig( bbox_inches="tight")
         pdfpage.close()
@@ -321,12 +329,12 @@ def passivetimeseries_usingbandwidthseparatedflows_plot(results, title, folderpa
         plt.close()
     return
 
-def passivetimeseries_usingbandwidth(config_parser, mode, direction, connectiontype, ylim, server, ncol, 
+def passivetimeseries_usingbandwidth(config_parser, section, mode, direction, connectiontype, ylim, server, ncol, 
                                       legendypos, logger, bucketsize_microsec=None): #edgeserver=edge/cloud
     assert mode == "self" or mode == "mim"
-    clientnumberlist = getclientnumberlist(config_parser=config_parser, conntype=connectiontype)
-    dashfileslist = getdashfilelist(config_parser=config_parser)
-    noiselist = getnoiselist(config_parser=config_parser)
+    clientnumberlist = getclientnumberlist(config_parser=config_parser, section=section, conntype=connectiontype)
+    dashfileslist = getdashfilelist(config_parser=config_parser, section=section)
+    noiselist = getnoiselist(config_parser=config_parser, section=section)
 
     logger.debug("clientnumberlist " + str(clientnumberlist))
     logger.debug("dashfileslist " + str(dashfileslist))
@@ -342,14 +350,15 @@ def passivetimeseries_usingbandwidth(config_parser, mode, direction, connectiont
 
                 filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-"
                 filename += str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
+                filename += config_parser.get(section, "from_passive") + "-" 
+                filename += config_parser.get(section, "to_passive") + "_SORTED.csv"
 
                 folderpath = "time/bandwidth/" + str(connectiontype) + "/"
                 
                 if mode == "self":
-                    ret = readbandwidthvalues_self_timeplot(config_parser=config_parser, inputfile=filename, 
-                                                            segment=server, conntype=connectiontype, logger=logger)
+                    ret = readbandwidthvalues_self_timeplot(config_parser=config_parser, section=section,
+                                                            inputfile=filename,  segment=server, 
+                                                            conntype=connectiontype, logger=logger)
                     
                     plt, ax, xfmt = passivetimeseries_usingbandwidth_createplot(colsnumber=1, plottitle=title, 
                                                                                 rowsnumber=len(ret))
@@ -362,11 +371,12 @@ def passivetimeseries_usingbandwidth(config_parser, mode, direction, connectiont
                 else: 
                     title2 = "_" + str(1.0 * bucketsize_microsec / 1000000) + "s"
                     ret = readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser=config_parser, 
-                                                           inputfile=filename, segment=server, 
+                                                           section=section, inputfile=filename, segment=server, 
                                                            conntype=connectiontype, logger=logger,
                                                            bucketsize_microsec=bucketsize_microsec)
-                    plt, ax, xfmt = passivetimeseries_usingbandwidth_createplot(colsnumber=1, plottitle=title + "_" + str(1.0 * bucketsize_microsec / 1000000) + "s", 
-                                                                                rowsnumber=len(ret))
+                    plt, ax, xfmt = passivetimeseries_usingbandwidth_createplot(colsnumber=1, 
+                                        plottitle=title + "_" + str(1.0 * bucketsize_microsec / 1000000) + "s", 
+                                        rowsnumber=len(ret))
                     passivetimeseries_usingbandwidth_plot(plt=plt, ax=ax, xfmt=xfmt, results=ret, title=title, 
                                                         folderpath=folderpath, ylim=ylim, title2=title2)
 
@@ -427,18 +437,20 @@ def passivetimeseries_usingclientports_plot(plt, ax, xfmt, results, title, folde
     for k in range(0, len(xvalues)): #for each sublot
         if len(xvalues[k]) != 0:
             ax[k, 0].tick_params(axis="both", labelsize=_TICK_SIZE)
-            ax[k, 0].set_xlabel("t")
-            ax[k, 0].set_ylabel("Mbps")
+            ax[k, 0].set_xlabel("t", fontsize=_XLABEL_SIZE)
+            ax[k, 0].set_ylabel("Mbps", fontsize=_YLABEL_SIZE)
             ax[k, 0].set_ylim(0,ylim)
             ax[k, 0].set_xlim(time_min,time_max)
             #ax[k, 0].set_title("client " + str(k + 1) + "- with IP = " + titles[k] + "___" + \
             #                   str(datetime.datetime.now()))
-            ax[k, 0].set_title("client " + str(k + 1) + "- with IP = " + titles[k])
+            ax[k, 0].set_title("client " + str(k + 1) + "- with IP = " + titles[k], fontsize=_TITLE_SIZE)
             ax[k, 0].xaxis.set_major_formatter(xfmt)
             ax[k, 0].plot(xvalues[k], yvalues[k], marker =_TIMEPLOT_MARKERS[k], markersize=3, 
                         label=titles[k], color=_TIMEPLOT_COLORS[k], linestyle="None")           
 
     createfolder(folderpath)
+
+    plt.tight_layout()
 
     pdfpage = PdfPages(folderpath + title + ".pdf")
     pdfpage.savefig( bbox_inches="tight")
@@ -447,12 +459,12 @@ def passivetimeseries_usingclientports_plot(plt, ax, xfmt, results, title, folde
     plt.savefig(folderpath + title + ".png", bbox_inches="tight") 
     return
 
-def passivetimeseries_usingclientports(config_parser, mode, direction, connectiontype, ylim, server, ncol, 
+def passivetimeseries_usingclientports(config_parser, section, mode, direction, connectiontype, ylim, server, ncol, 
                                        legendypos, logger): #edgeserver=edge/cloud
     assert mode == "self"
-    clientnumberlist = getclientnumberlist(config_parser=config_parser, conntype=connectiontype)
-    dashfileslist = getdashfilelist(config_parser=config_parser)
-    noiselist = getnoiselist(config_parser=config_parser)
+    clientnumberlist = getclientnumberlist(config_parser=config_parser, section=section, conntype=connectiontype)
+    dashfileslist = getdashfilelist(config_parser=config_parser, section=section)
+    noiselist = getnoiselist(config_parser=config_parser, section=section)
 
     logger.debug("clientnumberlist" + str(clientnumberlist))
     logger.debug ("dashfileslist" + str(dashfileslist))
