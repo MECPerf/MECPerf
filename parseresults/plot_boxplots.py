@@ -52,10 +52,10 @@ _ACTIVELATENCY_CONNTYPEANDGROUPED_BASEFILEPATH= "latencyplot/contypeandnoisegrou
 
 
 #ACTIVE BANDWIDTH PLOTS
-def bandwidthboxplot_active_conntypegrouped(config_parser, command, direction, ncol, legendypos, ylim):
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    dateslist_wifi = config_parser.get("experiment_conf", "dates_activewifi").split(",")
-    dateslist_lte = config_parser.get("experiment_conf", "dates_activelte").split(",")
+def bandwidthboxplot_active_conntypegrouped(config_parser, section, command, direction, ncol, legendypos, ylim):
+    noiselist = config_parser.get(section, "noise").split(",")
+    dateslist_wifi = config_parser.get(section, "dates_activewifi").split(",")
+    dateslist_lte = config_parser.get(section, "dates_activelte").split(",")
      
     values = OrderedDict()
     title = command + "-" + direction
@@ -200,12 +200,12 @@ def bandwidthboxplot_active_conntypegrouped(config_parser, command, direction, n
     ylim += 300
     drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers=True,  
                 numcolumn = ncol, legendpos=legendypos)
-def bandwidthboxplot_active(config_parser, command, direction, connectiontype, ylim, legendypos):
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+def bandwidthboxplot_active(config_parser, section, command, direction, connectiontype, ylim, legendypos):
+    noiselist = config_parser.get(section, "noise").split(",")
     if connectiontype == "wifi":
-        dateslist = config_parser.get("experiment_conf", "dates_activewifi").split(",")
+        dateslist = config_parser.get(section, "dates_activewifi").split(",")
     elif connectiontype == "lte":
-        dateslist = config_parser.get("experiment_conf", "dates_activelte").split(",")
+        dateslist = config_parser.get(section, "dates_activelte").split(",")
 
     values = OrderedDict()
     title = command + "-" + direction + "-" + connectiontype
@@ -265,10 +265,10 @@ def bandwidthboxplot_active(config_parser, command, direction, connectiontype, y
 
 
 #ACTIVE LATENCY PLOTS
-def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontype, ylim, legendypos):
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    dateslist_wifi = config_parser.get("experiment_conf", "dates_activewifi").split(",")
-    dateslist_lte = config_parser.get("experiment_conf", "dates_activelte").split(",")
+def latencyboxplot_active_commandgrouped(config_parser, section, direction, connectiontype, ylim, legendypos):
+    noiselist = config_parser.get(section, "noise").split(",")
+    dateslist_wifi = config_parser.get(section, "dates_activewifi").split(",")
+    dateslist_lte = config_parser.get(section, "dates_activelte").split(",")
     if connectiontype == "wifi":
         dateslist = dateslist_wifi
     elif connectiontype == "lte":
@@ -417,12 +417,12 @@ def latencyboxplot_active_commandgrouped(config_parser, direction, connectiontyp
     ylim += 300
     show_fliers = True
     drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers, legendpos=legendypos)
-def latencyboxplot_active(config_parser, command, direction, connectiontype, ylim, legendypos):
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+def latencyboxplot_active(config_parser, section, command, direction, connectiontype, ylim, legendypos):
+    noiselist = config_parser.get(section, "noise").split(",")
     if connectiontype == "wifi":
-        dateslist = config_parser.get("experiment_conf", "dates_activewifi").split(",")
+        dateslist = config_parser.get(section, "dates_activewifi").split(",")
     elif connectiontype == "lte":
-        dateslist = config_parser.get("experiment_conf", "dates_activelte").split(",")
+        dateslist = config_parser.get(section, "dates_activelte").split(",")
      
      
     values = OrderedDict()
@@ -472,10 +472,10 @@ def latencyboxplot_active(config_parser, command, direction, connectiontype, yli
     show_fliers = True
     drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers, ncolumn, 
                 legendypos)
-def latencyboxplot_active_conntypegrouped(config_parser, command, direction, ncol, legendypos, ylim):
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    dateslist_wifi = config_parser.get("experiment_conf", "dates_activewifi").split(",")
-    dateslist_lte = config_parser.get("experiment_conf", "dates_activelte").split(",")
+def latencyboxplot_active_conntypegrouped(config_parser, section, command, direction, ncol, legendypos, ylim):
+    noiselist = config_parser.get(section, "noise").split(",")
+    dateslist_wifi = config_parser.get(section, "dates_activewifi").split(",")
+    dateslist_lte = config_parser.get(section, "dates_activelte").split(",")
 
     values = OrderedDict()
     title = command + "-" + direction
@@ -615,13 +615,13 @@ def latencyboxplot_active_conntypegrouped(config_parser, command, direction, nco
 
 
 #PASSIVE BANDWIDTH
-def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped, ncol, legendypos):
+def bandwidthboxplot_noisegrouped(config_parser, section, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped, ncol, legendypos):
     assert mode == "self"
 
     
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
      
     values = OrderedDict()
 
@@ -641,31 +641,31 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
                 for clientnumber in clientnumberlist:
                     filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype
                     filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                    filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                    filename += config_parser.get("experiment_conf", "to_passive")
+                    filename += config_parser.get(section, "from_passive") + "-" 
+                    filename += config_parser.get(section, "to_passive")
                     if mode == "mim":
                         filename += "_SORTED_LEGACY.csv"
                     elif mode == "self":
                         filename += "_SORTED.csv"
 
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                 inputfile=filename, edgeserver=edgeserver, 
                                                 conntype=connectiontype)) 
             elif segmentgrouped:
                 for clientnumber in clientnumberlist:
                     filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype 
                     filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                    filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                    filename += config_parser.get("experiment_conf", "to_passive")
+                    filename += config_parser.get(section, "from_passive") + "-" 
+                    filename += config_parser.get(section, "to_passive")
                     if mode == "mim":
                         filename += "_SORTED_LEGACY.csv"
                     elif mode == "self":
                         filename += "_SORTED.csv"
                 
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                 inputfile=filename, edgeserver=True, 
                                                 conntype=connectiontype))
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                 inputfile=filename, edgeserver=False, 
                                                 conntype=connectiontype))
                 
@@ -697,14 +697,14 @@ def bandwidthboxplot_noisegrouped(config_parser, mode, direction, connectiontype
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
 
 
-def mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser, direction,  
+def mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser, section, direction,  
                                                          connectiontype, ylim, edgecloudserver, ncol, 
                                                          legendypos, logger, bucketsize_microsec, legacy=False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
-    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
+    fromtimestamp_passive = config_parser.get(section, "from_passive")
+    totimestamp_passive = config_parser.get(section, "to_passive")
 
     folderpath =  _SELFMIMBANDWIDTH_CONNTYPEFILESERVERPOS_XNOISE_BASEFILEPATH
     legendlabels = []
@@ -755,52 +755,52 @@ def mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser, directio
             
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
-                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                             inputfile=filename_self, edgeserver=True, conntype=connectiontype))
                         if legacy:
-                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                             inputfile=filename_mim, segment="edge", 
                                                             connectiontype=connectiontype, logger=logger)) 
                         else:
                             values[noise].append(readbandwidthvalues_mim_usingfixbucket(
-                                                            config_parser=config_parser,  
+                                                            config_parser=config_parser, section=section,  
                                                             inputfile=filename_mim, segment="edge", 
                                                             connectiontype=connectiontype, logger=logger, 
                                                             bucketsize_microsec=bucketsize_microsec))
 
                     elif edgecloudserver == "cloud":
-                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                             inputfile=filename_self, edgeserver=False, conntype=connectiontype))
                         if legacy:
-                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section, 
                                                             inputfile=filename_mim, segment="remote", 
                                                             connectiontype=connectiontype, logger=logger))  
                         else:
                             values[noise].append(readbandwidthvalues_mim_usingfixbucket(
-                                                            config_parser=config_parser, 
+                                                            config_parser=config_parser, section=section, 
                                                             inputfile=filename_mim, segment="remote", 
                                                             connectiontype=connectiontype, logger=logger, 
                                                             bucketsize_microsec=bucketsize_microsec)) 
                 else:
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section, 
                                         inputfile=filename_self, edgeserver=True, conntype=connectiontype))
                     if legacy:
-                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section, 
                                         inputfile=filename_mim, segment="edge", connectiontype=connectiontype, 
                                         logger=logger))  
                     else:
-                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, section=section, 
                                         inputfile=filename_mim, segment="edge", connectiontype=connectiontype, 
                                         logger=logger, bucketsize_microsec=bucketsize_microsec))  
 
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section, 
                                         inputfile=filename_self, edgeserver=False, conntype=connectiontype))
                     if legacy:
-                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                         inputfile=filename_mim, segment="remote", 
                                         connectiontype=connectiontype, logger=logger)) 
                     else:
-                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, section=section, 
                                         inputfile=filename_mim, segment="remote", 
                                         connectiontype=connectiontype, logger=logger, 
                                         bucketsize_microsec=bucketsize_microsec)) 
@@ -815,14 +815,14 @@ def mimselfbandwidthboxplot_conntypefileserverpos_xnoise(config_parser, directio
         xlabel = "CrossTraffic (Mbps)"
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
-def mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser, direction, connectiontype, ylim, 
+def mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser, section, direction, connectiontype, ylim, 
                                                            edgecloudserver, ncol, legendypos, logger, 
                                                            bucketsize_microsec, legacy = False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
-    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
+    fromtimestamp_passive = config_parser.get(section, "from_passive")
+    totimestamp_passive = config_parser.get(section, "to_passive")
 
     folderpath =  _SELFMIMBANDWIDTH_CONNTYPEFILESERVERPOS_XCLIENTS_BASEFILEPATH
     legendlabels = []
@@ -867,58 +867,58 @@ def mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser, direct
 
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
-                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=True, 
                                                                 conntype=connectiontype))
                         if legacy:                                  
-                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                         else:
                             values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec)) 
                     elif edgecloudserver == "cloud":
-                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=False, 
                                                                 conntype=connectiontype))
                         if legacy:
-                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger))  
                         else:
                             values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec))
                 else:
-                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=True, 
                                                                 conntype=connectiontype))
                     if legacy:
-                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                     else:
                         values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec))  
                     
-                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=False, 
                                                                 conntype=connectiontype))
                     if legacy:
-                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger))
                     else:
                         values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger, 
                                                                 bucketsize_microsec=bucketsize_microsec))
@@ -933,14 +933,14 @@ def mimselfbandwidthboxplot_conntypefileserverpos_xclients(config_parser, direct
         xlabel = "Number of clients"
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
-def mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser, direction, connectiontype, ylim, 
+def mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser, section, direction, connectiontype, ylim, 
                                                        edgecloudserver, ncol, legendypos, logger, 
                                                        bucketsize_microsec, legacy=False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
-    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
+    fromtimestamp_passive = config_parser.get(section, "from_passive")
+    totimestamp_passive = config_parser.get(section, "to_passive")
 
     folderpath =  _SELFMIMBANDWIDTH_CONNTYPESERVERPOSNUMCLIENT_BASEFILEPATH
     legendlabels = []
@@ -986,55 +986,55 @@ def mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser, direction,
 
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
-                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=True, 
                                                                 conntype=connectiontype))
                         if legacy:
-                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                         else:
                             values[noise].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec))  
                     elif edgecloudserver == "cloud":
-                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=False, 
                                                                 conntype=connectiontype))
                         if legacy:
-                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                         else:
                             values[noise].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger, 
                                                                 bucketsize_microsec=bucketsize_microsec)) 
                 else:
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=True, 
                                                                 conntype=connectiontype))
                     if legacy:
-                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger))
                     else:
-                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec))   
-                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[noise].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=False, 
                                                                 conntype=connectiontype))
                     if legacy:
-                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                     else:
-                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, 
+                        values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec)) 
@@ -1049,14 +1049,14 @@ def mimselfbandwidthboxplot_conntypeserverposnumclient(config_parser, direction,
         xlabel = "Cross traffic (Mbps)"
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
-def mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser, direction, connectiontype, ylim, 
+def mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser, section, direction, connectiontype, ylim, 
                                                           edgecloudserver, ncol, legendypos, logger, 
                                                           bucketsize_microsec, legacy=False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
-    fromtimestamp_passive = config_parser.get("experiment_conf", "from_passive")
-    totimestamp_passive = config_parser.get("experiment_conf", "to_passive")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
+    fromtimestamp_passive = config_parser.get(section, "from_passive")
+    totimestamp_passive = config_parser.get(section, "to_passive")
 
     folderpath =  _SELFMIMBANDWIDTH_CONNTYPESERVERPOSCROSSTRAFFIC_BASEFILEPATH
     legendlabels = []
@@ -1101,57 +1101,57 @@ def mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser, directi
 
                 if edgecloudserver != "both":
                     if edgecloudserver == "edge":
-                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=True, 
                                                                 conntype=connectiontype))
                         if legacy:
-                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger))  
                         else:
                             values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec)) 
                     elif edgecloudserver == "cloud":
-                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=False, 
                                                                 conntype=connectiontype))
                         if legacy:
-                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                            values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                         else:
                             values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger, 
                                                                 bucketsize_microsec=bucketsize_microsec)) 
                 else:
-                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=True, 
                                                                 conntype=connectiontype))
                     if legacy:
-                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger))  
                     else:
                         values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="edge", 
                                                                 connectiontype=connectiontype, logger=logger,
                                                                 bucketsize_microsec=bucketsize_microsec))
-                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, 
+                    values[clientnumber].append(readbandwidthvalues_self(config_parser=config_parser, section=section,
                                                                 inputfile=filename_self, edgeserver=False, 
                                                                 conntype=connectiontype))
                     if legacy:
-                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, 
+                        values[clientnumber].append(readbandwidthvalues_mim(config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger)) 
                     else:
                         values[clientnumber].append(readbandwidthvalues_mim_usingfixbucket(
-                                                                config_parser=config_parser, 
+                                                                config_parser=config_parser, section=section,
                                                                 inputfile=filename_mim, segment="remote", 
                                                                 connectiontype=connectiontype, logger=logger, 
                                                                 bucketsize_microsec=bucketsize_microsec))
@@ -1168,15 +1168,15 @@ def mimselfbandwidthboxplot_conntypeserverposcrosstraffic(config_parser, directi
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
 
 
-def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connectiontype, ncol, legendypos, ylim = 50):
+def bandwidthplot_fileandsegmentgrouped(config_parser, section, mode, direction, connectiontype, ncol, legendypos, ylim = 50):
     try:
         assert mode == "self"
     except:
         print("bandwidthplot_fileandsegmentgrouped(): not implemented for mode == " + str(mode))
 
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
     folderpath = "bandwidthplot/fileandsegmentgrouped/" + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
     xlabel = "CrossTraffic (Mbps)"
@@ -1196,13 +1196,15 @@ def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connecti
             for clientnumber in clientnumberlist:
                 filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype
                 filename += "-" +  str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_"  
-                filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED.csv"
+                filename += config_parser.get(section, "from_passive") + "-" 
+                filename += config_parser.get(section, "to_passive") + "_SORTED.csv"
 
                 values[dashfile].append(readbandwidthvalues_self(config_parser=config_parser,  
-                                                inputfile=filename, edgeserver=True, conntype=connectiontype))
+                                                section=section, inputfile=filename, edgeserver=True, 
+                                                conntype=connectiontype))
                 values[dashfile].append(readbandwidthvalues_self(config_parser=config_parser,  
-                                                inputfile=filename, edgeserver=False, conntype=connectiontype))      
+                                                section=section, inputfile=filename, edgeserver=False, 
+                                                conntype=connectiontype))      
 
         for i in range (0, len(clientnumberlist)):
             if i == 0:
@@ -1222,12 +1224,12 @@ def bandwidthplot_fileandsegmentgrouped(config_parser, mode, direction, connecti
 
         print (ncol)
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
-def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectiontype, ncol, legendypos, logger, 
+def bandwidthplot_mimfileandsegment(config_parser, section, mode, direction, connectiontype, ncol, legendypos, logger, 
                                     bucketsize_microsec, legacy=False):
     assert mode == "mim"
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
     folderpath = _PASSIVEMIM_CLIENTFILEANDSEGMENTGROUPED_BASEFILEPATH + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
     xlabel = "CrossTraffic (Mbps)"
@@ -1248,22 +1250,22 @@ def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectionty
             for clientnumber in clientnumberlist:
                 filename = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype 
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_"  
-                filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED"
+                filename += config_parser.get(section, "from_passive") + "-" 
+                filename += config_parser.get(section, "to_passive") + "_SORTED"
                 if legacy:
                     filename += "_LEGACY.csv"
 
-                    values[dashfile].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                    values[dashfile].append(readbandwidthvalues_mim(config_parser, section, filename, connectiontype,
                                                             "edge", logger=logger))  
-                    values[dashfile].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                    values[dashfile].append(readbandwidthvalues_mim(config_parser, section, filename, connectiontype,
                                                             "remote", logger=logger)) 
                 else:
                     filename += ".csv"
 
-                    values[dashfile].append(readbandwidthvalues_mim_usingfixbucket(config_parser, filename, 
+                    values[dashfile].append(readbandwidthvalues_mim_usingfixbucket(config_parser, section, filename, 
                                                             connectiontype, "edge", logger=logger, 
                                                             bucketsize_microsec=bucketsize_microsec))  
-                    values[dashfile].append(readbandwidthvalues_mim_usingfixbucket(config_parser, filename, 
+                    values[dashfile].append(readbandwidthvalues_mim_usingfixbucket(config_parser, section, filename, 
                                                             connectiontype, "remote", logger=logger,
                                                             bucketsize_microsec=bucketsize_microsec)) 
                       
@@ -1283,11 +1285,11 @@ def bandwidthplot_mimfileandsegment(config_parser, mode, direction, connectionty
         showfliers = False
 
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, showfliers, ncol, legendypos)
-def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, legendypos, server, logger,
+def bandwidthboxplot_noisemim(config_parser, section, direction, connectiontype, ylim, legendypos, server, logger,
                               bucketsize_microsec, segmentgrouped=False, ncol=5, legacy=False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
     folderpath = "bandwidthplot/noisegrouped/mim" + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
     xlabel = "CrossTraffic (Mbps)"
@@ -1309,17 +1311,17 @@ def bandwidthboxplot_noisemim(config_parser, direction, connectiontype, ylim, le
             for clientnumber in clientnumberlist:
                 filename  = "csv/passive/sorted/mim-bandwidth-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") 
+                filename += config_parser.get(section, "from_passive") + "-" 
+                filename += config_parser.get(section, "to_passive") 
                 if legacy:
                     filename += "_SORTED_LEGACY.csv"
             
-                    values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                    values[noise].append(readbandwidthvalues_mim(config_parser, section, filename, connectiontype,
                                                             server, logger=logger)) 
                 else:
                     filename += "_SORTED.csv"
             
-                    values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser, filename, 
+                    values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser, section, filename, 
                                                     connectiontype, server, logger=logger, 
                                                     bucketsize_microsec=bucketsize_microsec))     
             
@@ -1417,11 +1419,11 @@ def bandwidthplot_perclient(config_parser, section, direction, connectiontype, m
             drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendpos=_LEGENDYPOS_10LINE)
 
 
-def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, ylim, legendypos, 
+def bandwidthboxplot_noiseandsegmentmim(config_parser, section, direction, connectiontype, ylim, legendypos, 
                                         bucketsize_microsec, logger, segmentgrouped = False, ncol = 2, legacy=False):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
     folderpath = "bandwidthplot/noiseandsegmentgrouped/mim" + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
     xlabel = "CrossTraffic (Mbps)"
@@ -1441,23 +1443,23 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype
             for clientnumber in clientnumberlist:
                 filename = "csv/passive/sorted/mim-bandwidth-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" 
-                filename += config_parser.get("experiment_conf", "from_passive") + "-" 
-                filename += config_parser.get("experiment_conf", "to_passive") + "_SORTED"
+                filename += config_parser.get(section, "from_passive") + "-" 
+                filename += config_parser.get(section, "to_passive") + "_SORTED"
                 if legacy:
                     filename += "_LEGACY.csv"
 
-                    values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                    values[noise].append(readbandwidthvalues_mim(config_parser, section, filename, connectiontype,
                                                              "edge", logger=logger))      
-                    values[noise].append(readbandwidthvalues_mim(config_parser, filename, connectiontype,
+                    values[noise].append(readbandwidthvalues_mim(config_parser, section, filename, connectiontype,
                                                              "remote", logger=logger)) 
 
                 else:
                     filename += ".csv"
 
-                    values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser, filename, 
+                    values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser, section, filename, 
                                                             connectiontype, "edge", logger=logger, 
                                                             bucketsize_microsec=bucketsize_microsec))      
-                    values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser, filename, 
+                    values[noise].append(readbandwidthvalues_mim_usingfixbucket(config_parser, section, filename, 
                                                             connectiontype, "remote", logger=logger, 
                                                             bucketsize_microsec=bucketsize_microsec)) 
 
@@ -1481,10 +1483,10 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, direction, connectiontype
 
 
 #MIM LATENCY
-def latencyboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, ylim, legendypos, ncol=2):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+def latencyboxplot_noiseandsegmentmim(config_parser, section, direction, connectiontype, ylim, legendypos, ncol=2):
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
     folderpath = "latency/mim/noiseandsegmentgrouped/" + connectiontype + "/"
     ylabel = "Latency (ms)"
     xlabel = "CrossTraffic (Mbps)"
@@ -1502,12 +1504,12 @@ def latencyboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, 
             for clientnumber in clientnumberlist:
                 filename = "csv/passive/sorted/mim-latency-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
-                            + config_parser.get("experiment_conf", "from_passive") + "-" \
-                            + config_parser.get("experiment_conf", "to_passive") + "_SORTED_LEGACY.csv"
+                            + config_parser.get(section, "from_passive") + "-" \
+                            + config_parser.get(section, "to_passive") + "_SORTED_LEGACY.csv"
             
-                values[noise].append(readlatencyvalues_noisemim(config_parser, filename, connectiontype,
+                values[noise].append(readlatencyvalues_noisemim(config_parser, section, filename, connectiontype,
                                                          "edge" , noise))      
-                values[noise].append(readlatencyvalues_noisemim(config_parser, filename, connectiontype,
+                values[noise].append(readlatencyvalues_noisemim(config_parser, section, filename, connectiontype,
                                                          "remote" , noise))   
 
             
@@ -1527,20 +1529,17 @@ def latencyboxplot_noiseandsegmentmim(config_parser, direction, connectiontype, 
         #print values       
         
         drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendypos)
-
-
-
-def latencyboxplot_noiseandsegmentactivemim(config_parser, direction, connectiontype, ylim, legendypos, logger, activecommand="TCPRTT", ncol=2):
-    clientnumberlist = config_parser.get("experiment_conf", "clientnumber_passive" + connectiontype).split(",")
-    dashfileslist = config_parser.get("experiment_conf", "dashfiles").split(",")
-    noiselist = config_parser.get("experiment_conf", "noise").split(",")
+def latencyboxplot_noiseandsegmentactivemim(config_parser, section, direction, connectiontype, ylim, legendypos, logger, activecommand="TCPRTT", ncol=2):
+    clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
+    dashfileslist = config_parser.get(section, "dashfiles").split(",")
+    noiselist = config_parser.get(section, "noise").split(",")
     folderpath = "latency/activemim/" + connectiontype + "/"
     ylabel = "Latency (ms)"
     xlabel = "CrossTraffic (Mbps)"
     if connectiontype == "wifi":
-        dateslist_active = config_parser.get("experiment_conf", "dates_activewifi").split(",")
+        dateslist_active = config_parser.get(section, "dates_activewifi").split(",")
     elif connectiontype == "lte":
-        dateslist_active = config_parser.get("experiment_conf", "dates_activelte").split(",")
+        dateslist_active = config_parser.get(section, "dates_activelte").split(",")
 
     if direction == "downlink":
         direction_active = "Downstream"
@@ -1569,10 +1568,10 @@ def latencyboxplot_noiseandsegmentactivemim(config_parser, direction, connection
             for clientnumber in clientnumberlist:
                 filenamepassive  = "csv/passive/sorted/mim-latency-" + direction + "-" + connectiontype
                 filenamepassive += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
-                                 + config_parser.get("experiment_conf", "from_passive") + "-" \
-                                 + config_parser.get("experiment_conf", "to_passive") + "_SORTED_LEGACY.csv"
+                                 + config_parser.get(section, "from_passive") + "-" \
+                                 + config_parser.get(section, "to_passive") + "_SORTED_LEGACY.csv"
             
-                values[noise].append(readlatencyvalues_noisemim(config_parser, filenamepassive, connectiontype,
+                values[noise].append(readlatencyvalues_noisemim(config_parser, section, filenamepassive, connectiontype,
                                                                 "edge" , noise))   
 
             #active cloud
@@ -1582,9 +1581,9 @@ def latencyboxplot_noiseandsegmentactivemim(config_parser, direction, connection
             for clientnumber in clientnumberlist:
                 filenamepassive  = "csv/passive/sorted/mim-latency-" + direction + "-" + connectiontype
                 filenamepassive += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
-                                 + config_parser.get("experiment_conf", "from_passive") + "-" \
-                                 + config_parser.get("experiment_conf", "to_passive") + "_SORTED_LEGACY.csv"
-                values[noise].append(readlatencyvalues_noisemim(config_parser, filenamepassive, connectiontype,
+                                 + config_parser.get(section, "from_passive") + "-" \
+                                 + config_parser.get(section, "to_passive") + "_SORTED_LEGACY.csv"
+                values[noise].append(readlatencyvalues_noisemim(config_parser, section, filenamepassive, connectiontype,
                                                                 "remote" , noise))   
         #active edge
         legendlabels.append("active MEC (1 client)")
