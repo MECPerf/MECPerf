@@ -323,7 +323,7 @@ def plottimeseries(config_parser, section):
     ylim_mimbandwidth = 20
     bucketsize_micros = 1.0 * 1000000 * 0.5 #0.5 sec
 
-    plottimeseries_bandwidth(config_parser, section=section, mode="self", ylim=ylim_selfbandwidth)
+    #plottimeseries_bandwidth(config_parser, section=section, mode="self", ylim=ylim_selfbandwidth)
     plottimeseries_bandwidth(config_parser, section=section, mode="mim", ylim=ylim_mimbandwidth, bucketsize_micros=bucketsize_micros)
     plottimeseries_ports(config_parser, section=section, mode="self")
 def plottimeseries_bandwidth(config_parser, section, mode, ylim, bucketsize_micros=None):
@@ -358,7 +358,7 @@ def getconfiguration(conffile):
             print("\t" + section)
 
     while True:
-        inputsection = raw_input("Choose a configuration:")
+        inputsection = input("Choose a configuration:")
         if inputsection in confsections:
             break
         
@@ -380,17 +380,17 @@ if __name__ == '__main__':
     #plotpassiveperclient(config_parser, section=inputsection)
     
     
-    #plottimeseries(config_parser, section=inputsection)
-    plotselfbandwidth(config_parser, section=inputsection)
-    plotmimbandwidth(config_parser, section=inputsection)
-    plotmimlatency(config_parser, section=inputsection)
+    plottimeseries(config_parser, section=inputsection)
+    #plotselfbandwidth(config_parser, section=inputsection)
+    #plotmimbandwidth(config_parser, section=inputsection)
+    #plotmimlatency(config_parser, section=inputsection)
     
     
-    plotmimandselfbandwidth(config_parser, section=inputsection)
+    #plotmimandselfbandwidth(config_parser, section=inputsection)
     
-    plotactivelatency(config_parser, section=inputsection)
+    #plotactivelatency(config_parser, section=inputsection)
     
-    plotactiveandpassivelatency(config_parser, section=inputsection)
+    #plotactiveandpassivelatency(config_parser, section=inputsection)
     plotactivebandwidth(config_parser, section=inputsection)
 
     

@@ -1382,12 +1382,14 @@ def readbandwidthvalues_self_timeplot(config_parser, section, inputfile, segment
     client_subnetaddr, edgeserver_subnetaddr, cloudserver_subnetaddr = _get_subnetaddresses(
                                         config_parser=config_parser, section=section, conntype=conntype, 
                                         logger=logger)
+    evaluate_fragmentquality=config_parser.getboolean(section, "evaluate_fragmentquality")
     logger.debug("inputfile = " + str(inputfile))
     logger.debug("connectiontype = " + str(conntype))
     logger.debug("segment = " + segment)
     logger.debug("client_subnetaddr = " + str(client_subnetaddr))
     logger.debug("edgeserver_subnetaddr = " + str(edgeserver_subnetaddr))
     logger.debug("cloudserver_subnetaddr = " + str(cloudserver_subnetaddr))
+    logger.debug("evaluate_fragmentquality = " + str(evaluate_fragmentquality))
     
     ret = OrderedDict()
     
@@ -1406,10 +1408,10 @@ def readbandwidthvalues_self_timeplot(config_parser, section, inputfile, segment
             if linecount == 2:
                 try:
                     assert row[13] == "Bytes"
-                    assert row[6] == "Keyword"
-                    assert row[2] == "ClientIP"
-                    assert row[3] == "ClientPort"
-                    assert row[4] == "ServerIP"
+                    assert row[6]  == "Keyword"
+                    assert row[2]  == "ClientIP"
+                    assert row[3]  == "ClientPort"
+                    assert row[4]  == "ServerIP"
                 except Exception as e:
                     logger.critical("unknown columns: " + str(row))
                     logger.critical("EXIT")
@@ -1446,8 +1448,11 @@ def readbandwidthvalues_self_timeplot(config_parser, section, inputfile, segment
                 bandwidthMbps = bandwidthkbps / 1000
                 date = datetime.datetime.fromtimestamp(float(timestamp_micros) / 1000000.0)
 
-                ret[clientIP].append({"bandwidthMbps": bandwidthMbps, "clientPort": clientPort, "timestamp": date})
-        
+                if evaluate_fragmentquality:
+                    ret[clientIP].append({"bandwidthMbps": bandwidthMbps, "clientPort": clientPort, "timestamp": date, "fragmentquality":row[14]})
+                else:
+                    ret[clientIP].append({"bandwidthMbps": bandwidthMbps, "clientPort": clientPort, "timestamp": date})
+
         print ("read " + str(linecount) + " from " + inputfile + "(including headers)")
     return ret
 def readbandwidthvalues_mim_timeplot(config_parser, section, inputfile, segment, conntype, logger):
