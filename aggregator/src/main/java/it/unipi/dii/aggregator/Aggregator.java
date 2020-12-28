@@ -5,6 +5,7 @@ This code was implemented by Enrico Alberti.
 The use of this code is permitted by BSD licenses
  */
 
+
 import java.io.*;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -18,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,26 +36,28 @@ public class Aggregator {
                           DBUSERNAME = null;
 
 
-    private static final String INSERT_TEST_TABLE = "INSERT INTO MECPerf.Test (TestNumber,Timestamp,"
+    private static final String INSERT_TEST_TABLE = "INSERT INTO Test (TestNumber,Timestamp,"
                                                     + " Direction, Command, SenderIdentity, "
                                                     + "ReceiverIdentity, SenderIPv4Address, "
                                                     + "ReceiverIPv4Address,  Keyword, PackSize, "
                                                     + "NumPack)  VALUES (?, CURRENT_TIMESTAMP, ?, ?,"
                                                     +                   "?, ?, ?, ?, ?, ?, ?)",
-                                INSERT_BANDWIDTH_TABLE = "INSERT INTO MECPerf.BandwidthMeasure "
+                                INSERT_BANDWIDTH_TABLE = "INSERT INTO BandwidthMeasure "
                                                          + " VALUES (?, ?, ?, ?)",
-                                INSERT_LATENCY_TABLE = "INSERT INTO MECPerf.RttMeasure (id, sub_id, latency)"
-                                                       + " VALUES (?, ?, ?)";
+                                INSERT_LATENCY_TABLE = "INSERT INTO RttMeasure (id, sub_id, latency, timestamp_millis)"
+                                                       + " VALUES (?, ?, ?, ?)",
+                                INSERT_METADATA_TABLE = "INSERT INTO ExperimentMETADATA (id, experiment_details)"
+                                                     + " VALUES (?, ?)";
 
 
     private static final String SELECT_AVG_MEASURE_BANDWIDTH_TABLE= "SELECT Test.Sender, "
             + "Test.Receiver, Test.Command, ((SUM(kBytes) / SUM(nanoTimes))*1000000000) as Bandwidth,"
             + " Keyword"
-            + " FROM MECPerf.BandwidthMeasure INNER JOIN MECPerf.Test ON(Test.ID=BandwidthMeasure.id) "
+            + " FROM BandwidthMeasure INNER JOIN Test ON(Test.ID=BandwidthMeasure.id) "
             + " WHERE DATE_FORMAT(Timestamp, '%Y-%m-%d %T') = ? AND Sender = ? "
             + " GROUP BY Test.ID, Test.Sender, Test.Receiver, Test.Command ";
 
-    private static final String SELECT_TEST_NUMBER= "SELECT ID, TestNumber FROM MECPerf.Test  "
+    private static final String SELECT_TEST_NUMBER= "SELECT ID, TestNumber FROM Test  "
                                                     + "ORDER BY ID desc " ;
 
 
@@ -93,15 +97,22 @@ public class Aggregator {
                         System.out.println("Comando: " + measure.getType());
 
                         Measure measureSecondSegment = (Measure) mapInputStream.readObject();
+                        HashMap<String, String> metadataFirstSegment = null;
+                        HashMap<String, String> metadataSecondSegment = null;
+
+                        if (measure.getType().equals("TCPRTT") || measure.getType().equals("UDPRTT") )
+                        {
+                            metadataFirstSegment = (HashMap<String, String> ) mapInputStream.readObject();
+                            metadataSecondSegment = (HashMap<String, String> ) mapInputStream.readObject();
+                        }
 
                         try(
                             Connection dbConnection = DriverManager.getConnection("jdbc:mysql://"
                                                      + DBADDRESS+":3306/"+ DBNAME + "?useSSL=false",
-                                                       DBUSERNAME, DBPASSWORD)
-                            ){
+                                                       DBUSERNAME, DBPASSWORD)){
                             dbConnection.setAutoCommit(false);
 
-                            long id = writeToDB(measure, measureSecondSegment, dbConnection);
+                            long id = writeToDB(measure, measureSecondSegment, metadataFirstSegment, metadataSecondSegment, dbConnection);
                             if(id == -1){
                                 System.out.println("Inserimento in Tabella Test Fallito");
                             }
@@ -149,7 +160,37 @@ public class Aggregator {
 
 
 
-    private static void writeToDB_Latency(Map<Integer, Long[]> latency, long id, Connection co) throws SQLException {
+    private static void writeToDB_Latency(Map<Integer, Long[]> latency, HashMap<String, String> metadataSegment, long id, Connection co) throws SQLException {
+
+        try (PreparedStatement ps = co.prepareStatement(INSERT_METADATA_TABLE);
+        ){
+            String json_string = "{";
+            int i = 0;
+            for (Map.Entry<String, String> entry : metadataSegment.entrySet()) {
+                if (i != 0)
+                    json_string = json_string + ",";
+                i++;
+
+                json_string = json_string +  "\"" + entry.getKey() + "\":\"" + entry.getValue() + "\"";
+            }
+            json_string = json_string + "}";
+
+            ps.setInt(1, (int)id);
+            ps.setString(2, json_string);
+            ps.executeUpdate();
+            System.out.println("rows affected: 1");
+
+        } catch (SQLException | NullPointerException e) {
+            e.printStackTrace();
+            if (co != null) {
+                try {
+                    System.out.print("Transaction is being rolled back");
+                    co.rollback();
+                } catch(SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
 
         try (PreparedStatement ps = co.prepareStatement(INSERT_LATENCY_TABLE);
         ){
@@ -157,21 +198,17 @@ public class Aggregator {
             Long meanLatency = (long)0;
 
             for (Map.Entry<Integer, Long[]> entry : latency.entrySet()) {
-                //"INSERT INTO MECPerf.RttMeasure (id, sub_id, latency)"
-
+                System.out.println(entry.getKey());
+                System.out.println(entry.getValue().toString());
                 meanLatency += entry.getValue()[0];
-
-                //System.out.println(entry.getValue()[0] +" -> " +meanLatency + "\t(" + entry.getKey() +")");
 
                 ps.setInt(1, (int)id);
                 ps.setInt(2, entry.getKey());
                 ps.setDouble(3, entry.getValue()[0] );
+                ps.setDouble(4, entry.getValue()[1] );
 
                 ps.executeUpdate();
-
             }
-
-
 
             System.out.println("rows affected: " + latency.size());
 
@@ -249,17 +286,19 @@ public class Aggregator {
 
 
     private static long writeToDB(Measure measureFirstSegment, Measure measureSecondSegment,
+                                  HashMap<String, String> metadataFirstSegment,
+                                  HashMap<String, String> metadataSecondSegment,
                                   Connection co) throws SQLException{
         int testNumber = readLastTestNumber() + 1;
 
-        long id = writeSegment(measureFirstSegment, co, testNumber);
+        long id = writeSegment(measureFirstSegment, metadataFirstSegment, co, testNumber);
         if(id == -1){
             System.out.println("Inserimento in Tabella Test Fallito");
 
             return -1;
         }
 
-        id = writeSegment(measureSecondSegment, co, testNumber);
+        id = writeSegment(measureSecondSegment, metadataSecondSegment, co, testNumber);
         if(id == -1){
             System.out.println("Inserimento in Tabella Test Fallito");
 
@@ -270,7 +309,8 @@ public class Aggregator {
         return id;
     }
 
-    private static long writeSegment(Measure measure, Connection co, int testNumber) throws SQLException{
+    private static long writeSegment(Measure measure, HashMap<String, String> metadataSegment,
+                                     Connection co, int testNumber) throws SQLException{
         long id = -1;
 
         try (PreparedStatement ps = co.prepareStatement(INSERT_TEST_TABLE,
@@ -331,7 +371,7 @@ public class Aggregator {
             }
             case "TCPRTT":
             case "UDPRTT": {
-                writeToDB_Latency(measure.getLatency(), id, co);
+                writeToDB_Latency(measure.getLatency(), metadataSegment, id, co);
                 System.out.println("Inserimento in Tabella Test, Latency effettuato con successo!");
 
                 break;
@@ -353,8 +393,6 @@ public class Aggregator {
 
             if (rs.next()) {
                 testNumber = Integer.parseInt(rs.getString("TestNumber"));
-                System.out.println(testNumber);
-
             }
         } catch (SQLException e) {
             e.printStackTrace();

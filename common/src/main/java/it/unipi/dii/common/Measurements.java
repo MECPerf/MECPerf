@@ -103,8 +103,9 @@ public class Measurements {
                 connectionSocket.receive(receivePacket);
                 long endTime = System.currentTimeMillis();
 
-                Long[] mapValue = new Long[1];
+                Long[] mapValue = new Long[2];
                 mapValue[0] = endTime - startTime;
+                mapValue[1] = endTime;
 
                 mappa.put(new Integer (receivedPkt), mapValue);
             }
@@ -160,8 +161,9 @@ public class Measurements {
                 }
                 lEnd = System.currentTimeMillis();
 
-                Long[] mapValue = new Long[1];
+                Long[] mapValue = new Long[2];
                 mapValue[0] = lEnd - lBegin;
+                mapValue[1] = lEnd;
 
                 mappa.put(new Integer (receivedPkt), mapValue);
             }

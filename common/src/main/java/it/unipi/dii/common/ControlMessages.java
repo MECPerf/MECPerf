@@ -24,7 +24,8 @@ public class ControlMessages {
         SUCCEDED,
         FAILED,
         MEASUREDBANDWIDTH,
-        MEASUREDLATENCY
+        MEASUREDLATENCY,
+        GETTESTMETADATA
     }
     private Socket controlSocket = null;
     private DataOutputStream dataOutputStream = null;

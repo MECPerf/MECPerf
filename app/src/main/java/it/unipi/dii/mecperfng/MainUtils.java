@@ -1,7 +1,6 @@
 package it.unipi.dii.mecperfng;
 
 
-
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -12,6 +11,7 @@ import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 
 import it.unipi.dii.common.Measurements;
@@ -47,6 +47,7 @@ public class MainUtils {
         }
         return null;
     }
+
 
 
     /*****
@@ -90,8 +91,7 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 controlSocketObserver.sendCMD("TCPBandwidthSender#" + keyword + "#" +
                         tcp_bandwidth_pktsize + "#" + tcp_bandwidth_num_pkt);
-                //System.out.println(controlSocketObserver);
-                //System.out.println(controlSocketObserver.getSocket());
+               
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
                         .toString()) != 0) {
                     System.out.println("Start measure with Observer FAILED");
@@ -232,7 +232,8 @@ public class MainUtils {
 
     public static int tcpRTTMeasure(String direction, String keyword, int commandPort,
                                     String observerAddress, int observerPort,
-                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack, String interfaceName) {
+                                    int tcp_rtt_pktsize, int tcp_rtt_num_pack, String interfaceName,
+                                    HashMap<String, String > testMetadata_client) {
 
         try {
             Socket communicationSocket = new Socket();
@@ -245,6 +246,8 @@ public class MainUtils {
                     System.out.println("Error: Interface not found");
                     return -1;
                 }
+                testMetadata_client.put("ClientAddress", sourceIPv4Address.toString());
+                System.out.println(testMetadata_client + "\n");
 
                 communicationSocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
                 controlSocketObserver = new ControlMessages(observerAddress, commandPort, sourceIPv4Address, 0);
@@ -254,9 +257,10 @@ public class MainUtils {
             communicationSocket.connect(new InetSocketAddress(InetAddress.getByName(observerAddress), observerPort));
 
 
-
             if (direction.equals("Sender")) {
                 // the client application starts a TCP RTT measure (as sender) with the observer
+                testMetadata_client.put("Sender-identity", "Client-application");
+
                 controlSocketObserver.sendCMD("TCPRTTSender#" + keyword + "#" + tcp_rtt_pktsize
                         + "#" + tcp_rtt_num_pack);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
@@ -279,12 +283,9 @@ public class MainUtils {
                     return -1;
                 }
 
-                //controlSocketObserver.sendCMD(ControlMessages.Messages.MEASUREDLATENCY
-                //                              .toString() + '#' + latency );
-
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                 objectOutputStream.writeObject(latency);
-
+                objectOutputStream.writeObject(testMetadata_client);
                 objectOutputStream.close();
 
                 controlSocketObserver.closeConnection();
@@ -292,10 +293,22 @@ public class MainUtils {
             } else {
                 //the observer starts a TCP RTT measure using the mobile application
                 // as receiver
+                testMetadata_client.put("Receiver-identity", "Client-application");
+
                 controlSocketObserver.sendCMD("TCPRTTReceiver#" + keyword + "#" +
                         tcp_rtt_pktsize + "#" + tcp_rtt_num_pack);
 
                 Measurements.TCPRTTReceiver(communicationSocket, tcp_rtt_pktsize, tcp_rtt_num_pack);
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.GETTESTMETADATA
+                        .toString()) != 0) {
+                    System.out.println("measure with Observer FAILED");
+
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
+                //sendmetadata to the Observer
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
+                objectOutputStream.writeObject(testMetadata_client);
 
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
                         .toString()) != 0) {
@@ -305,6 +318,7 @@ public class MainUtils {
                     return -1;
                 }
 
+                objectOutputStream.close();
                 controlSocketObserver.closeConnection();
                 return 0;
             }
@@ -317,7 +331,8 @@ public class MainUtils {
 
     public static int udpRTTMeasure(String direction, String keyword, int commandPort,
                                     String observerAddress, int observerPort,
-                                    int udp_rtt_pktsize, int udp_rtt_num_pack, String interfaceName) {
+                                    int udp_rtt_pktsize, int udp_rtt_num_pack, String interfaceName,
+                                    HashMap<String, String> testMetadata_client) {
 
         try {
             ControlMessages controlSocketObserver;
@@ -331,6 +346,7 @@ public class MainUtils {
                     System.out.println("Error: Interface not found");
                     return -1;
                 }
+                testMetadata_client.put("ClientAddress", sourceIPv4Address.toString());
 
                 udpsocket =new DatagramSocket(null);
                 udpsocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
@@ -346,6 +362,8 @@ public class MainUtils {
             if (direction.equals("Sender")) {
                 // the client application starts a TCP RTT measure as sender. The observer is the
                 // receiver
+                testMetadata_client.put("Sender-identity", "Client-application");
+
                 controlSocketObserver.sendCMD("UDPRTTSender#" + keyword + "#" +
                         udp_rtt_pktsize + "#" + udp_rtt_num_pack);
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.START
@@ -376,6 +394,7 @@ public class MainUtils {
                 //                              .toString() + '#' + latency);
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
                 objectOutputStream.writeObject(latency);
+                objectOutputStream.writeObject(testMetadata_client);
                 objectOutputStream.close();
 
                 controlSocketObserver.closeConnection();
@@ -383,7 +402,7 @@ public class MainUtils {
             } else {
                 // the client application starts a TCP RTT measure with the observer as
                 //sender
-
+                testMetadata_client.put("Receiver-identity", "Client-application");
                 controlSocketObserver.sendCMD("UDPRTTReceiver#" + keyword + "#" + udp_rtt_pktsize +
                         "#" + udp_rtt_num_pack);
                 String outString = "DummyPacket";
@@ -395,6 +414,17 @@ public class MainUtils {
                     return -1;
                 }
 
+                if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.GETTESTMETADATA
+                        .toString()) != 0) {
+                    System.out.println("measure with Observer FAILED");
+
+                    controlSocketObserver.closeConnection();
+                    return -1;
+                }
+                //sendmetadata to the Observer
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(controlSocketObserver.getSocket().getOutputStream());
+                objectOutputStream.writeObject(testMetadata_client);
+
                 if (controlSocketObserver.receiveCMD().compareTo(ControlMessages.Messages.COMPLETED
                         .toString()) != 0) {
                     System.out.println("measure with Observer FAILED");
@@ -403,6 +433,7 @@ public class MainUtils {
                     return -1;
                 }
 
+                objectOutputStream.close();
                 controlSocketObserver.closeConnection();
                 return 0;
             }

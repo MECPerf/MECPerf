@@ -2,7 +2,6 @@ package it.unipi.dii.observer;
 
 
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -18,6 +17,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -92,7 +92,6 @@ public class Observer {
 
         return 0;
     }
-
 
 
     public static void main(String[] args) throws Exception{
@@ -219,7 +218,7 @@ public class Observer {
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                           .toString()), OBSERVERIP);
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, null, null);
 
 
                         //System.out.println("results sent to aggregator");
@@ -304,7 +303,7 @@ public class Observer {
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, null, null);
                         //System.out.println("results sent to aggregator");
                         //System.out.println("TCPBandwidthReceiver: completed");
                     } catch (Exception ex) {
@@ -410,7 +409,7 @@ public class Observer {
                                 udp_capacity_pktsize,2, cutAddress(controlSocketApp
                                 .getSocket().getRemoteSocketAddress().toString()), OBSERVERIP);
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, null, null);
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
 
@@ -516,7 +515,7 @@ public class Observer {
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()), OBSERVERIP);
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, null, null);
 
                         //System.out.println("results sent to aggregator");
                         //System.out.println("UDPCapacityPPReceiver: completed");
@@ -546,7 +545,7 @@ public class Observer {
                         udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
                     System.out.print("\t\t\t[Packet size : " + udp_rtt_pktsize);
-                    System.out.println(", Number of packes : " + udp_rtt_num_pack + "]");
+                    System.out.print(", Number of packes : " + udp_rtt_num_pack + " - " );
 
                     try {
                         controlSocketApp.sendCMD(ControlMessages.Messages.START.toString());
@@ -557,7 +556,6 @@ public class Observer {
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
                             System.out.println("closed");
-
 
                             System.out.println("Failed sent");
                             break;
@@ -591,10 +589,24 @@ public class Observer {
                         controlSocketRemote.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
 
-                        //String[] resultApp = controlSocketApp.receiveCMD().split(separator);
-                        //receive application latency
                         ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
                         Map<Integer, Long[]> resultApp = (Map<Integer, Long[]>) mapInputStream.readObject();
+                        HashMap<String, String> testMetadata_App = (HashMap<String, String>) mapInputStream.readObject();
+                        HashMap<String, String>  testMetadata_Server = new HashMap<String, String> (testMetadata_App);
+                        testMetadata_App.put("Receiver-identity", "Observer");
+                        testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("Receiver-identity", "RemoteServer");
+                        testMetadata_Server.put("Sender-identity", "Observer");
+
+
+                        System.out.println(testMetadata_App.get("nodeid_client") + "]");
+
+
+
+                        System.out.println("ApplicationMetadata: " + testMetadata_App);
+                        System.out.println("ServerMetadata: " + testMetadata_App);
                         mapInputStream.close();
 
 
@@ -612,7 +624,8 @@ public class Observer {
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()));
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, testMetadata_App,
+                                       testMetadata_Server);
 
 
                         //System.out.println("results sent to aggregator");
@@ -645,7 +658,7 @@ public class Observer {
                         udp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
                     System.out.print("\t\t[Packet size : " + udp_rtt_pktsize);
-                    System.out.println(", Number of packes : " + udp_rtt_num_pack + "]");
+                    System.out.print(", Number of packes : " + udp_rtt_num_pack + " - ");
 
                     try {
                         //MO has to receive a packet from the client to know Client's Address and Port
@@ -688,10 +701,26 @@ public class Observer {
                             break;
                         }
 
-                        //String[] resultRemote = controlSocketRemote.receiveCMD().split(separator);
                         ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketRemote.getSocket().getInputStream());
                         Map<Integer, Long[]> resultRemote = (Map<Integer, Long[]>) mapInputStream.readObject();
                         mapInputStream.close();
+
+                        controlSocketApp.sendCMD(ControlMessages.Messages.GETTESTMETADATA.toString());
+                        ObjectInputStream inputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
+                        HashMap<String, String> testMetadata_App = (HashMap<String, String>) inputStream.readObject();
+
+                        HashMap<String, String> testMetadata_Server = new HashMap<>(testMetadata_App);
+                        testMetadata_App.put("Sender-identity", "Observer");
+                        testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("Sender-identity", "RemoteServer");
+                        testMetadata_Server.put("Receiver-identity", "Observer");
+
+
+                        System.out.println(testMetadata_App.get("nodeid_client") + "]");
+                        System.out.println("ApplicationMetadata: " + testMetadata_App);
+                        System.out.println("ServerMetadata: " + testMetadata_Server);
 
                         //remote data
                         Measure measureSecondSegment = new Measure("UDPRTT",  "Server",
@@ -706,11 +735,11 @@ public class Observer {
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                         .toString()));
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, testMetadata_App,
+                                       testMetadata_Server);
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
-                        //System.out.println("results sent to aggregator");
-                        //System.out.println("UDPRTTReceiver: completed");
+                        inputStream.close();
                     } catch (Exception ex) {
                         ex.printStackTrace();
 
@@ -739,7 +768,7 @@ public class Observer {
                         tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
                     System.out.print("\t\t\t[Packet size : " + tcp_rtt_pktsize);
-                    System.out.println(", Number of packes : " + tcp_rtt_num_pack + "]");
+                    System.out.print(", Number of packes : " + tcp_rtt_num_pack + " - ");
 
                     try {
                         Socket tcpRTTClient = tcpListener.accept();
@@ -775,11 +804,25 @@ public class Observer {
                         controlSocketRemote.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
 
-                        //String[] resultApp = controlSocketApp.receiveCMD().split(separator);
-                        //receive latency from client application
+
                         ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
                         Map<Integer, Long[]> resultApp = (Map<Integer, Long[]>) mapInputStream.readObject();
+                        HashMap<String, String> testMetadata_App = (HashMap<String, String>) mapInputStream.readObject();
                         mapInputStream.close();
+                        HashMap<String, String>  testMetadata_Server = new HashMap<String, String> (testMetadata_App);
+                        testMetadata_App.put("Receiver-identity", "Observer");
+                        testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("Receiver-identity", "RemoteServer");
+                        testMetadata_Server.put("Sender-identity", "Observer");
+
+
+                        System.out.println(testMetadata_App.get("nodeid_client") + "]");
+
+                        System.out.println("ApplicationMetadata: " + testMetadata_App);
+                        System.out.println("ServerMetadata: " + testMetadata_Server);
+
 
                         //application data
                         Measure measureFirstSegment = new Measure("TCPRTT","Client",
@@ -794,7 +837,8 @@ public class Observer {
                                 cutAddress(controlSocketRemote.getSocket().getRemoteSocketAddress()
                                         .toString()));
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
+                        sendAggregator(measureFirstSegment, measureSecondSegment, testMetadata_App,
+                                       testMetadata_Server);
                         //System.out.println("results sent to aggregator");
                         //System.out.println("TCPRTTSender: completed");
                     } catch (Exception ex) {
@@ -825,7 +869,7 @@ public class Observer {
                         tcp_rtt_num_pack = Integer.parseInt(cmdSplitted[3]);
                     System.out.print("Received command : " + cmdSplitted[0]);
                     System.out.print("\t\t[Packet size : " + tcp_rtt_pktsize);
-                    System.out.println(", Number of packes : " + tcp_rtt_num_pack + "]");
+                    System.out.print(", Number of packes : " + tcp_rtt_num_pack + " - ");
 
                     try {
                         tcpRTT = tcpListener.accept();
@@ -846,14 +890,26 @@ public class Observer {
                             break;
                         }
 
-                        //System.out.println("Wait the remote-side latency");
 
-
-                        //String[] resultRemote = controlSocketRemote.receiveCMD().split(separator);
-                        //receive latency from remote
                         ObjectInputStream mapInputStream = new ObjectInputStream(controlSocketRemote.getSocket().getInputStream());
                         Map<Integer, Long[]> resultRemote = (Map<Integer, Long[]>) mapInputStream.readObject();
                         mapInputStream.close();
+
+                        controlSocketApp.sendCMD(ControlMessages.Messages.GETTESTMETADATA.toString());
+                        ObjectInputStream inputStream = new ObjectInputStream(controlSocketApp.getSocket().getInputStream());
+                        HashMap<String, String> testMetadata_App = (HashMap<String, String>) inputStream.readObject();
+
+                        HashMap<String, String> testMetadata_Server = new HashMap<>(testMetadata_App);
+                        testMetadata_App.put("Sender-identity", "Observer");
+                        testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
+                        testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("Sender-identity", "RemoteServer");
+                        testMetadata_Server.put("Receiver-identity", "Observer");
+
+                        System.out.println(testMetadata_App.get("nodeid_client") + "]");
+                        System.out.println("ApplicationMetadata: " + testMetadata_App);
+                        System.out.println("ServerMetadata: " + testMetadata_Server);
 
                         //remote data
                         Measure measureSecondSegment = new Measure("TCPRTT", "Server",
@@ -868,12 +924,12 @@ public class Observer {
                                 cutAddress(controlSocketApp.getSocket().getRemoteSocketAddress()
                                         .toString()));
 
-                        sendAggregator(measureFirstSegment, measureSecondSegment);
-
 
                         controlSocketApp.sendCMD(ControlMessages.Messages.COMPLETED.toString());
-                        //System.out.println("results sent to aggregator");
-                        //System.out.println("TCPRTTReceiver: completed");
+                        inputStream.close();
+                        sendAggregator(measureFirstSegment, measureSecondSegment, testMetadata_App,
+                                       testMetadata_Server);
+
 
                     } catch (Exception ex) {
                         //Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
@@ -1093,7 +1149,9 @@ public class Observer {
 
 
 
-    protected static void sendAggregator(Measure measureFirstSegment, Measure measureSecondSegment)
+    protected static void sendAggregator(Measure measureFirstSegment, Measure measureSecondSegment,
+                                         HashMap<String, String> metadataFirstSegment,
+                                         HashMap<String, String> metadataSecondSegment)
                                                                                    throws Exception{
         Socket socket = null;
         ObjectOutputStream objOutputStream = null;
@@ -1105,6 +1163,10 @@ public class Observer {
             // write the message we want to send
             objOutputStream.writeObject(measureFirstSegment);
             objOutputStream.writeObject(measureSecondSegment);
+            if (metadataFirstSegment != null) {
+                objOutputStream.writeObject(metadataFirstSegment);
+                objOutputStream.writeObject(metadataSecondSegment);
+            }
         }
         finally {
             if(objOutputStream != null)
