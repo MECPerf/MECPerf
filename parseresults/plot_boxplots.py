@@ -200,7 +200,7 @@ def bandwidthboxplot_active_conntypegrouped(config_parser, section, command, dir
     ylim += 300
     drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers=True,  
                 numcolumn = ncol, legendpos=legendypos)
-def bandwidthboxplot_active(config_parser, section, command, direction, connectiontype, ylim, legendypos):
+def bandwidthboxplot_active(config_parser, section, command, direction, connectiontype, ylim, legendypos, legendlabels=None):
     noiselist = config_parser.get(section, "noise").split(",")
     if connectiontype == "wifi":
         dateslist = config_parser.get(section, "dates_activewifi").split(",")
@@ -211,22 +211,21 @@ def bandwidthboxplot_active(config_parser, section, command, direction, connecti
     title = command + "-" + direction + "-" + connectiontype
     folderpath = "bandwidth/active/boxplot/" + connectiontype + "/"
     ylabel = "Bandwidth (Mbps)"
-    xlabel = "CrossTraffic (Mbps)"
+    xlabel = "Cross-traffic (Mbps)"
 
-
-    legendlabels = []
-    if direction == "Upstream":
-        legendlabels.append("Access -> MEC")
-        legendlabels.append("Access -> Cloud")
-        legendlabels.append("MEC -> Cloud")
-    elif direction == "Downstream":
-        legendlabels.append("MEC -> Access")
-        legendlabels.append("Cloud -> Access")
-        legendlabels.append("Cloud -> MEC")
-        
-    else:
-        print ("unknown direction")
-        sys.exti(0)
+    if legendlabels == None:
+        legendlabels = []
+        if direction == "Upstream":
+            legendlabels.append("Access -> MEC")
+            legendlabels.append("Access -> Cloud")
+            legendlabels.append("MEC -> Cloud")
+        elif direction == "Downstream":
+            legendlabels.append("MEC -> Access")
+            legendlabels.append("Cloud -> Access")
+            legendlabels.append("Cloud -> MEC")
+        else:
+            print ("unknown direction")
+            sys.exti(0)
 
 
     for noise in noiselist:
@@ -234,15 +233,12 @@ def bandwidthboxplot_active(config_parser, section, command, direction, connecti
 
         filename = "csv/active/" + command + "-" + direction + "-" + connectiontype + "-noise" + noise + "_"         
         filename +=  dateslist[0].strip() + "-" + dateslist[-1].strip() + ".csv"
-
-        
                             
         values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "clientNitos"))
         values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "clientUnipi"))
-        values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))   
-
-
-                   
+        if len(legendlabels) == 3:
+            values[noise].append(readvalues_activebandwidthboxplot(filename, int(noise.replace("M", "")), "NitosUnipi"))   
+             
     if len(values) == 0:
         print (_WARNING + "No data for file " + filename + _RESET)
         return
@@ -251,8 +247,7 @@ def bandwidthboxplot_active(config_parser, section, command, direction, connecti
 
     #draw plot without fliers
     show_fliers = False
-    ncol = 3
-    
+    ncol = len(legendlabels)
 
     drawboxplot(folderpath, title+"_2", values, legendlabels, ylim, ylabel, xlabel, show_fliers, ncol, legendypos)
 
@@ -618,7 +613,6 @@ def latencyboxplot_active_conntypegrouped(config_parser, section, command, direc
 def bandwidthboxplot_noisegrouped(config_parser, section, mode, direction, connectiontype, ylim, edgeserver, segmentgrouped, ncol, legendypos):
     assert mode == "self"
 
-    
     clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get(section, "dashfiles").split(",")
     noiselist = config_parser.get(section, "noise").split(",")
@@ -1340,7 +1334,7 @@ def bandwidthboxplot_noisemim(config_parser, section, direction, connectiontype,
 
 
 def bandwidthplot_perclient(config_parser, section, direction, connectiontype, mode, ylim, legendypos, server, 
-                            ncol, logger, legacy, bucketsize_microsec=None):
+                            ncol, logger, legacy, plotlegend, bucketsize_microsec=None):
     clientnumberlist = config_parser.get(section, "clientnumber_passive" + connectiontype).split(",")
     dashfileslist = config_parser.get(section, "dashfiles").split(",")
     noiselist = config_parser.get(section, "noise").split(",")
@@ -1360,7 +1354,6 @@ def bandwidthplot_perclient(config_parser, section, direction, connectiontype, m
             if mode == "mim":
                 title += "bucketsize=" + str(bucketsize_microsec/1000000).replace(".", ",")
 
-            print (title)
             legendlabels = []
             for clientnumber in clientnumberlist:
                 values[clientnumber] = []
@@ -1389,8 +1382,8 @@ def bandwidthplot_perclient(config_parser, section, direction, connectiontype, m
 
                         ret = OrderedDict()
                         for key in tmp:
-                            ret[key + " - " + str(bytes_sent[key] / 1000000) + "MB"] = tmp[key]
-                            del tmp[key]
+                            ret[key + " - " + str(bytes_sent[key] / 1000000) + "MB"] = tmp[key].copy()
+                        tmp.clear()
                            
 
                 elif mode == "self":
@@ -1406,7 +1399,8 @@ def bandwidthplot_perclient(config_parser, section, direction, connectiontype, m
                 for key, val in ret.items():
                     logger.debug (val)
                     boxplotvalues.append(val)
-                    legendlabels.append(str(clientnumber) + "-" + str(i) + ": " + str(key))
+                    if plotlegend == True:
+                        legendlabels.append(str(clientnumber) + "-" + str(i) + ": " + str(key))
                     i += 1
                 
                 values[clientnumber] = boxplotvalues
@@ -1415,9 +1409,11 @@ def bandwidthplot_perclient(config_parser, section, direction, connectiontype, m
                 print (_WARNING + "No data for file " + dashfile + "and cross_traffic " + noise + _RESET)
                 continue
         
-            #logger.debug(values)        
-            drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendpos=_LEGENDYPOS_10LINE)
-
+            #logger.debug(values) 
+            if plotlegend == True:       
+                drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendpos=_LEGENDYPOS_10LINE)
+            else:
+                drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, False, ncol, legendpos=0)
 
 def bandwidthboxplot_noiseandsegmentmim(config_parser, section, direction, connectiontype, ylim, legendypos, 
                                         bucketsize_microsec, logger, segmentgrouped = False, ncol = 2, legacy=False):
@@ -1697,7 +1693,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
                 j += 1
             
 
-            xlabels.append(key)
+            xlabels.append(key.replace("M", ""))
             xlabelspos.append(1.0* i + (1.0 * len(value)/2) - 0.5)
             i += k + 2
 
@@ -1722,7 +1718,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
     #plt.xlabel(xlabel)
     #plt.ylabel(ylabel)
 
-    plt.title(title + "___" + str(datetime.now()))
+    #plt.title(title + "___" + str(datetime.now()))
     #print (legendpos)
     leg = ax.legend(legendlabels, loc="upper center", bbox_to_anchor=(0.5, legendpos), ncol = 3, 
                     facecolor = "white", frameon=False, fontsize=_LABEL_SIZE) 
