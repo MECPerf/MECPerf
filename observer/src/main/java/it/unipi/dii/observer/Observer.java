@@ -34,7 +34,8 @@ import it.unipi.dii.common.ControlMessages;
 public class Observer {
     private static String REMOTEIP = null,
                           AGGREGATORIP = null,
-                          OBSERVERIP = null;
+                          OBSERVERIP = null,
+                          REMOTEID="NA";
 
     private static int REMOTECMDPORT = -1,
                        REMOTETCPPORT = -1,
@@ -43,7 +44,7 @@ public class Observer {
                        OBSCMDPORT = -1,
                        OBSTCPPORT = -1,
                        OBSUDPPORT = -1,
-                       timeout = 2 * 60 * 1000 ;
+                       timeout =  5 * 1000 ;
 
     private static ServerSocket cmdListener = null; //socket used to receive commands
     private static ServerSocket tcpListener = null; //socket used for tcp operations
@@ -571,6 +572,7 @@ public class Observer {
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
 
@@ -584,6 +586,7 @@ public class Observer {
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
                         controlSocketRemote.sendCMD(ControlMessages.Messages.SUCCEDED.toString());
@@ -597,19 +600,13 @@ public class Observer {
                         testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("nodeid_remoteserver", REMOTEID);
                         testMetadata_Server.put("Receiver-identity", "RemoteServer");
                         testMetadata_Server.put("Sender-identity", "Observer");
 
 
                         System.out.println(testMetadata_App.get("nodeid_client") + "]");
-
-
-
-                        System.out.println("ApplicationMetadata: " + testMetadata_App);
-                        System.out.println("ServerMetadata: " + testMetadata_App);
                         mapInputStream.close();
-
-
 
                         //application data
                         Measure measureFirstSegment = new Measure("UDPRTT", "Client",
@@ -626,11 +623,6 @@ public class Observer {
 
                         sendAggregator(measureFirstSegment, measureSecondSegment, testMetadata_App,
                                        testMetadata_Server);
-
-
-                        //System.out.println("results sent to aggregator");
-                        //System.out.println("UDPRTTSender: completed");
-
                     } catch (Exception ex) {
                         ex.printStackTrace();
 
@@ -678,6 +670,7 @@ public class Observer {
                             //controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
 
@@ -698,6 +691,7 @@ public class Observer {
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
 
@@ -714,13 +708,12 @@ public class Observer {
                         testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("nodeid_remoteserver", REMOTEID);
                         testMetadata_Server.put("Sender-identity", "RemoteServer");
                         testMetadata_Server.put("Receiver-identity", "Observer");
 
 
                         System.out.println(testMetadata_App.get("nodeid_client") + "]");
-                        System.out.println("ApplicationMetadata: " + testMetadata_App);
-                        System.out.println("ServerMetadata: " + testMetadata_Server);
 
                         //remote data
                         Measure measureSecondSegment = new Measure("UDPRTT",  "Server",
@@ -784,6 +777,7 @@ public class Observer {
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
 
@@ -797,6 +791,7 @@ public class Observer {
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
                         latency = Measurements.TCPRTTSender(new Socket(InetAddress.getByName(REMOTEIP),
@@ -814,14 +809,12 @@ public class Observer {
                         testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("nodeid_remoteserver", REMOTEID);
                         testMetadata_Server.put("Receiver-identity", "RemoteServer");
                         testMetadata_Server.put("Sender-identity", "Observer");
 
 
                         System.out.println(testMetadata_App.get("nodeid_client") + "]");
-
-                        System.out.println("ApplicationMetadata: " + testMetadata_App);
-                        System.out.println("ServerMetadata: " + testMetadata_Server);
 
 
                         //application data
@@ -839,8 +832,6 @@ public class Observer {
 
                         sendAggregator(measureFirstSegment, measureSecondSegment, testMetadata_App,
                                        testMetadata_Server);
-                        //System.out.println("results sent to aggregator");
-                        //System.out.println("TCPRTTSender: completed");
                     } catch (Exception ex) {
                         ex.printStackTrace();
 
@@ -882,11 +873,12 @@ public class Observer {
                                                     REMOTETCPPORT), tcp_rtt_pktsize, tcp_rtt_num_pack);
                         if (controlSocketRemote.receiveCMD().compareTo(ControlMessages.Messages
                                 .SUCCEDED.toString()) != 0) {
-                            System.out.println("Measure failed");
+                            System.out.println("Measure failedjb");
 
                             controlSocketApp.sendCMD(ControlMessages.Messages.FAILED.toString());
                             controlSocketRemote.closeConnection();
                             controlSocketApp.closeConnection();
+                            restartSockets();
                             break;
                         }
 
@@ -904,12 +896,11 @@ public class Observer {
                         testMetadata_App.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("AggregatorAddress", AGGREGATORIP);
                         testMetadata_Server.put("RemoteServerAddress", REMOTEIP);
+                        testMetadata_Server.put("nodeid_remoteserver", REMOTEID);
                         testMetadata_Server.put("Sender-identity", "RemoteServer");
                         testMetadata_Server.put("Receiver-identity", "Observer");
 
                         System.out.println(testMetadata_App.get("nodeid_client") + "]");
-                        System.out.println("ApplicationMetadata: " + testMetadata_App);
-                        System.out.println("ServerMetadata: " + testMetadata_Server);
 
                         //remote data
                         Measure measureSecondSegment = new Measure("TCPRTT", "Server",
@@ -1046,6 +1037,10 @@ public class Observer {
             }
             if (args[i].equals("-r") || args[i].equals("--remote-ip")) {
                 REMOTEIP = args[++i];
+                continue;
+            }
+            if (args[i].equals("-rid") || args[i].equals("--remote-id")) {
+                REMOTEID= args[++i];
                 continue;
             }
             if (args[i].equals("-ap") || args[i].equals("--aggregator-port")) {
