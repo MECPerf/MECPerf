@@ -36,17 +36,17 @@ public class Aggregator {
                           DBUSERNAME = null;
 
 
-    private static final String INSERT_TEST_TABLE = "INSERT INTO Test (TestNumber,Timestamp,"
+    private static final String INSERT_TEST_TABLE = "INSERT /*+ APPEND_VALUES */ INTO Test (TestNumber,Timestamp,"
                                                     + " Direction, Command, SenderIdentity, "
                                                     + "ReceiverIdentity, SenderIPv4Address, "
                                                     + "ReceiverIPv4Address,  Keyword, PackSize, "
                                                     + "NumPack)  VALUES (?, CURRENT_TIMESTAMP, ?, ?,"
                                                     +                   "?, ?, ?, ?, ?, ?, ?)",
-                                INSERT_BANDWIDTH_TABLE = "INSERT INTO BandwidthMeasure "
+                                INSERT_BANDWIDTH_TABLE = "INSERT /*+ APPEND_VALUES */ INTO BandwidthMeasure "
                                                          + " VALUES (?, ?, ?, ?)",
-                                INSERT_LATENCY_TABLE = "INSERT INTO RttMeasure (id, sub_id, latency, timestamp_millis)"
+                                INSERT_LATENCY_TABLE = "INSERT /*+ APPEND_VALUES */ INTO RttMeasure (id, sub_id, latency, timestamp_millis)"
                                                        + " VALUES (?, ?, ?, ?)",
-                                INSERT_METADATA_TABLE = "INSERT INTO ExperimentMETADATA (id, experiment_details)"
+                                INSERT_METADATA_TABLE = "INSERT /*+ APPEND_VALUES */ INTO ExperimentMETADATA (id, experiment_details)"
                                                      + " VALUES (?, ?)";
 
 
@@ -198,8 +198,8 @@ public class Aggregator {
             Long meanLatency = (long)0;
 
             for (Map.Entry<Integer, Long[]> entry : latency.entrySet()) {
-                System.out.println(entry.getKey());
-                System.out.println(entry.getValue().toString());
+                //System.out.println(entry.getKey());
+                //System.out.println(entry.getValue().toString());
                 meanLatency += entry.getValue()[0];
 
                 ps.setInt(1, (int)id);
