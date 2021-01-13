@@ -251,8 +251,8 @@ def passivetimeseries_usingbandwidth_plot(results, title, folderpath, ylim, titl
                     ax[k, 0].set_ylim(0,ylim)
                     ax[k, 0].set_xlim(time_min,time_max)
                     ax[k, 0].xaxis.set_major_formatter(xfmt)
-                    ax[k, 0].set_title("client " + str(k + 1) + " with IP = " + clientIP + " and quality = " + str(key) + title2 , fontsize=_TITLE_SIZE)
-                    #ax[k, 0].set_title("client " + str(clientrank) + " with fragment quality = " + str(key) , fontsize=_TITLE_SIZE)
+                    #ax[k, 0].set_title("client " + str(clientrank) + " with IP = " + clientIP + " and quality = " + str(key) + title2 , fontsize=_TITLE_SIZE)
+                    ax[k, 0].set_title("client " + str(clientrank) + " with fragment quality = " + str(key) , fontsize=_TITLE_SIZE)
                     ax[k, 0].plot(times[key], bandwidths[key], marker =_TIMEPLOT_MARKERS[k], markersize=1, 
                               label=clientIP, color=_FRAGMENTQUALITY_COLORS[key], linestyle="None")  
 
@@ -400,7 +400,7 @@ def passivetimeseries_usingbandwidth(config_parser, section, mode, direction, co
     print("dashfileslist " + str(dashfileslist))
     print("noiselist " +  str(noiselist))
     print("mode " + mode)
-    print(bucketsize_microsec)
+    print("bucket size: " + str(bucketsize_microsec))
     for clientnumber in clientnumberlist:
         for noise in noiselist:
             for dashfile in dashfileslist:        
