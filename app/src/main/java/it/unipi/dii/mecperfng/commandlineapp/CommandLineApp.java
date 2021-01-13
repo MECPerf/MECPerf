@@ -32,7 +32,8 @@ public class CommandLineApp {
                           client_nodeID = "NA",
                           crosstraffic = "NA",
                           observerposition = "NA",
-                          accesstechnology = "NA";
+                          accesstechnology = "NA",
+                          observerID="NA";
 
 
 
@@ -41,6 +42,7 @@ public class CommandLineApp {
 
         System.out.println("NodeID (client): " + client_nodeID);
         System.out.println("Observer address: " + observerAddress);
+        System.out.println("NodeID (observer): " + observerID);
         System.out.println("Command port: " + CMDPORT);
         System.out.println("TCP port: " + TCPPORT);
         System.out.println("UDP port: " + UDPPORT);
@@ -178,6 +180,10 @@ public class CommandLineApp {
                 accesstechnology = args[++i];
                 continue;
             }
+            if (args[i].equals("-obsid") || args[i].equals("--observer-id")) {
+                observerID = args[++i];
+                continue;
+            }
 
             System.out.println("Unknown command " + args[i]);
         }
@@ -197,7 +203,10 @@ public class CommandLineApp {
 
         testMetadata_client.put("observerposition", observerposition);
         testMetadata_client.put("ObserverAddress", observerAddress);
+        testMetadata_client.put("nodeid_observer", observerID);
         testMetadata_client.put("ObserverCMDPort", String.valueOf(CMDPORT));
+
+
 
 
         switch (measurementType){
@@ -521,7 +530,7 @@ public class CommandLineApp {
 
                     System.out.println("Type of measure: UDP RTT Receiver Receiver (" +
                                        numPktUDPLatency + "packets of " + pktSizeUDPLatency +
-                            "bytes)\t\t\t[Attempt #" + attemptnumber + "]");
+                            "bytes)\t\t\t\t[Attempt #" + attemptnumber + "]");
 
                     ret = MainUtils.udpRTTMeasure("Receiver", keyword, CMDPORT,
                                                   observerAddress, UDPPORT, pktSizeUDPLatency,
