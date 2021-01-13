@@ -1357,7 +1357,7 @@ def readbandwidthvalues_self_perclient(config_parser, section, inputfile, server
             if  (server == "edge" and serverIP[:len(edgeserver_subnetaddr)] == edgeserver_subnetaddr) or \
                 (server == "cloud" and serverIP[:len(remoteserver_subnetaddr)] == remoteserver_subnetaddr):
 
-                if not ret.has_key(clientIP):
+                if clientIP not in ret.keys():
                     print ("first " + str(clientIP))
                     ret[clientIP] = []
 
@@ -1421,16 +1421,18 @@ def readbandwidthvalues_self_timeplot(config_parser, section, inputfile, segment
                 #print row
                 continue
 
-            measuredbytes = row[13]
-            timestamp_micros = row[12]
-            keyword = row[6]
-            clientIP = row[2]
-            clientPort = row[3]
-            serverIP = row[4]
             try:
+                measuredbytes = row[13]
+                timestamp_micros = row[12]
+                keyword = row[6]
+                clientIP = row[2]
+                clientPort = row[3]
+                serverIP = row[4]
                 assert clientIP[:len(client_subnetaddr)].strip() == client_subnetaddr.strip()
                 assert conntype.strip() in inputfile
             except:
+                print (row)
+                print (inputfile)
                 logger.critical("conntype: " + str(conntype))
                 logger.critical("inputfile" + str(inputfile))
                 logger.critical(str(clientIP[:len(client_subnetaddr)]) + "!=" + str(client_subnetaddr))
