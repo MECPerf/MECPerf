@@ -22,7 +22,7 @@ import java.util.Random;
 
 public class Measurements {
     private static final long serialVersionUID = 3919700812200232178L;
-    private static final int timer= 30 * 1000;
+    private static final int timer= 3 * 1000;
 
 
 

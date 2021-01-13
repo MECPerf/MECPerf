@@ -30,7 +30,7 @@ public class Server {
     private static int REMOTECMDPORT = -1,
                        REMOTETCPPORT = -1,
                        REMOTEUDPPORT = -1,
-                       timeout = 5 * 60 * 1000 ;
+                       timeout = 5 * 1000 ;
 
     private static ServerSocket cmdListener = null; //socket used to receive commands
     private static ServerSocket tcpListener = null; //socket used for tcp operations
