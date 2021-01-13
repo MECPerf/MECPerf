@@ -247,7 +247,7 @@ public class MainUtils {
                     return -1;
                 }
                 testMetadata_client.put("ClientAddress", sourceIPv4Address.toString());
-                System.out.println(testMetadata_client + "\n");
+                //System.out.println(testMetadata_client + "\n");
 
                 communicationSocket.bind(new InetSocketAddress(sourceIPv4Address, 0));
                 controlSocketObserver = new ControlMessages(observerAddress, commandPort, sourceIPv4Address, 0);
