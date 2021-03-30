@@ -269,7 +269,7 @@ def update_bandwidth(test, mysql):
     elif test.type == "passive":
         return update_passive_bandwidth(test, mysql)
     else:
-        print "\n\n" + FAIL + "ERROR unknown test.type" + ENDC
+        print ("\n\n" + FAIL + "ERROR unknown test.type" + ENDC)
         return 501
 
                 
@@ -282,7 +282,7 @@ def update_latencies(test, mysql):
     elif test.type == "passive":
         return update_passive_latencies(test, mysql) 
     else:
-        print "\n\n" + FAIL + "ERROR unknown test.type" + ENDC    
+        print ("\n\n" + FAIL + "ERROR unknown test.type" + ENDC  )  
         return NOT_IMPLEMENTED
 
 
@@ -309,9 +309,11 @@ def update_active_bandwidth(test, mysql):
         cur.close()
     
     except mysql.connection.Error as e:
-        print FAIL + "Failed to update the database."
-        print e
-        print "Execute a roll back" + ENDC
+        print (test.test_info_first_segment)
+        print (test.test_info_second_segment)
+        print (FAIL + "Failed to update the database.")
+        print (e)
+        print ("Execute a roll back" + ENDC)
         mysql.connection.rollback()
         cur.close()
 
@@ -344,9 +346,9 @@ def update_active_latencies(test, mysql):
         cur.close()
     
     except mysql.connection.Error as e:
-        print "Failed to update the database."
-        print e
-        print "Execute a roll back"
+        print ("Failed to update the database.")
+        print (e)
+        print ("Execute a roll back")
         mysql.connection.rollback()
         cur.close()
         return INTERNAL_SERVER_ERROR
@@ -372,9 +374,9 @@ def update_passive_bandwidth(test, mysql):
         cur.close()
     
     except mysql.connection.Error as e:
-        print FAIL + "Failed to update the database."
-        print e
-        print "Execute a roll back" + ENDC
+        print (FAIL + "Failed to update the database.")
+        print (e)
+        print ("Execute a roll back" + ENDC)
         mysql.connection.rollback()
         cur.close()
 

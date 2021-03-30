@@ -8,6 +8,8 @@ from API_utils import print_command_list
 import json
 import Test
 
+NOT_IMPLEMENTED = 501
+
 
 
 def init_server(app):
@@ -50,7 +52,6 @@ def init_server(app):
 def create_app():
     app = Flask(__name__)
     mysql = init_server( app)
-
 
 
     @app.route('/')
@@ -117,6 +118,7 @@ def create_app():
 
 
     ############################################ POST QUERIES #########################################
+    #measure_type = one of "bandwidth_measure" or "bandwidth_measure""
     @app.route('/post_<test_type>_measures/insert_<measure_type>', methods=['POST'])
     def post_measures(test_type, measure_type):
         body = str(request.data)
@@ -132,9 +134,11 @@ def create_app():
         if measure_type == "bandwidth_measure":
             return_code = update_bandwidth(test, mysql)
         elif measure_type == "latency_measure":
-            return_code = update_latencies(test, mysql)   
+            return_code = update_latencies(test, mysql) 
+        else:
+            return_code = NOT_IMPLEMENTED
 
-        print return_code
+        print (return_code)
         return "", return_code
     
 
