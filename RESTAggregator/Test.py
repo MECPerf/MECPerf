@@ -1,6 +1,6 @@
 class Test:
     def __init__(self, request, test_type):
-        print request
+        #print (request)
         self.type = test_type
 
         if self.type == "active":
@@ -28,7 +28,7 @@ class Test:
                 self.uplink = []
 
 
-        print request
+        #print (request)
             
             
            
