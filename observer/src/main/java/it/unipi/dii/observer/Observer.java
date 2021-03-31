@@ -6,6 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.InputStreamReader;
+import java.io.DataOutputStream;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
@@ -16,6 +22,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.net.URLConnection;
+//import java.net.http.*;
+
+
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,9 +38,7 @@ import java.util.logging.Logger;
 import it.unipi.dii.common.Measurements;
 import it.unipi.dii.common.Measure;
 import it.unipi.dii.common.ControlMessages;
-
-
-
+import java.nio.charset.StandardCharsets;
 
 
 public class Observer {
@@ -44,7 +54,7 @@ public class Observer {
                        OBSCMDPORT = -1,
                        OBSTCPPORT = -1,
                        OBSUDPPORT = -1,
-                       timeout =  5 * 1000 ;
+                       timeout =  5 * 60 * 1000 ;
 
     private static ServerSocket cmdListener = null; //socket used to receive commands
     private static ServerSocket tcpListener = null; //socket used for tcp operations
@@ -103,25 +113,27 @@ public class Observer {
             System.exit(0);
         }
 
-
+        System.out.println("checkArguments() DONE");
         try {
             initializeSocket();
         } catch (NullPointerException e) {
             e.printStackTrace();
-
+            
            System.exit(1);
         }
+        System.out.println("Socket initialized");
 
 
         ControlMessages controlSocketRemote = new ControlMessages();
-
         while (true) {
             //System.out.println("\nWaiting for  a command...");
             ControlMessages controlSocketApp = null;
             String cmd=null;
             try {
                 controlSocketApp = new ControlMessages(cmdListener.accept());
+                //System.out.println("connection accepted");
                 cmd = Objects.requireNonNull(controlSocketApp).receiveCMD();
+                //System.out.println("command " + cmd);
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -1142,34 +1154,103 @@ public class Observer {
         return null;
     }
 
+    protected static String generate_metadataJSON(HashMap<String, String> metadata, String segment){
+        String Metadata_JSON = "\"metadata_" + segment + "_segment\":{";
+        int i = 0;
+        for (Map.Entry<String, String> entry : metadata.entrySet()) {
+            if (i != 0)
+                Metadata_JSON += ",";
+            Metadata_JSON += "\"" + entry.getKey() + "\":\"" + entry.getValue() + "\"";
+            i++;
+        }
+        return Metadata_JSON + "}"; 
+    }
+    protected static String generate_RequestJSONPayload(Measure measureFirstSegment, Measure measureSecondSegment,
+                                         HashMap<String, String> metadataFirstSegment,
+                                         HashMap<String, String> metadataSecondSegment){
+        
+        
+        String firstsegment_TestJSON = measureFirstSegment.getTestJSON("first");
+        String secondsegment_TestJSON = measureSecondSegment.getTestJSON("second");
+        String firstsegment_valuesJSON = measureFirstSegment.getValuesJSON("first");
+        String secondsegment_valuesJSON = measureSecondSegment.getValuesJSON("second");
+        if (firstsegment_TestJSON == null || secondsegment_TestJSON == null ||
+            firstsegment_valuesJSON == null || secondsegment_valuesJSON == null)
+            return null;
+        
+        String request_JSON = "{" + firstsegment_TestJSON + "," + secondsegment_TestJSON + "," + 
+                              firstsegment_valuesJSON + "," + secondsegment_valuesJSON;
+        
+        if (metadataFirstSegment != null && metadataSecondSegment != null){
+            if (metadataFirstSegment.size() == 0 || metadataSecondSegment.size() == 0)
+                return null;
+
+            String firstsegment_metadataJSON = generate_metadataJSON(metadataFirstSegment, "first");
+            String secondsegment_metadataJSON = generate_metadataJSON(metadataFirstSegment, "second");
+            
+            request_JSON +=  "," + firstsegment_metadataJSON + "," + secondsegment_metadataJSON;
+        }
+        
+        return request_JSON + "}";
+     }
+    protected static String generate_RequestURL(Measure measureFirstSegment){
+        String measurementType = null;
+        if (measureFirstSegment.getType().equals("UDPBandwidth") || 
+            measureFirstSegment.getType().equals("TCPBandwidth"))
+            measurementType = "bandwidth";
+        else if (measureFirstSegment.getType().equals("UDPRTT") || 
+                 measureFirstSegment.getType().equals("TCPRTT"))
+            measurementType = "latency";
+        else
+            return null;
+    
+        return "http://" + AGGREGATORIP + ":" + AGGRPORT + "/post_active_measures/insert_" + measurementType + "_measure";
+     }
+    protected static void sendPOSTRequest(String payloadPOST, String serverURL){
+        try {
+            URL url = new URL(serverURL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+            writer.write(payloadPOST);
+            writer.close();
+            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuffer jsonString = new StringBuffer();
+            String line;
+            while ((line = br.readLine()) != null) {
+                jsonString.append(line);
+            }
+            br.close();
+            connection.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
     protected static void sendAggregator(Measure measureFirstSegment, Measure measureSecondSegment,
                                          HashMap<String, String> metadataFirstSegment,
-                                         HashMap<String, String> metadataSecondSegment)
-                                                                                   throws Exception{
-        Socket socket = null;
-        ObjectOutputStream objOutputStream = null;
-        try {
-            socket = new Socket(InetAddress.getByName(AGGREGATORIP), AGGRPORT);
-            objOutputStream = new ObjectOutputStream(socket.getOutputStream());
-
-
-            // write the message we want to send
-            objOutputStream.writeObject(measureFirstSegment);
-            objOutputStream.writeObject(measureSecondSegment);
-            if (metadataFirstSegment != null) {
-                objOutputStream.writeObject(metadataFirstSegment);
-                objOutputStream.writeObject(metadataSecondSegment);
-            }
-        }
-        finally {
-            if(objOutputStream != null)
-                objOutputStream.close(); // close the output stream when we're done.
-            if (socket != null)
-                socket.close();
+                                         HashMap<String, String> metadataSecondSegment){        
+        String payloadPOST = generate_RequestJSONPayload(measureFirstSegment, measureSecondSegment,
+                                                metadataFirstSegment, metadataSecondSegment);
+        if (payloadPOST == null){
+            System.out.println("empty POST paylod. Returning");
+            return;
         }
 
+        String serverURL = generate_RequestURL(measureFirstSegment);
+        if (serverURL == null) {
+            System.out.println("empty destination URL. Returning");
+            return;
+        }
+
+        //System.out.println("Sending to " + serverURL);
+        sendPOSTRequest(payloadPOST, serverURL);
     }
 }
 

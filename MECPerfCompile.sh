@@ -14,18 +14,19 @@ echo "start compiling..."
 javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $COMMON_PATH/it/unipi/dii/common/Measure.java 
 javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $COMMON_PATH/it/unipi/dii/common/Measurements.java
 javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $COMMON_PATH/it/unipi/dii/common/ControlMessages.java
-echo "      Common compiled"
+echo "      Commons compiled"
 javac -target 7 -source 7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $APPCOMMANDLINE_PATH/it/unipi/dii/mecperfng/MainUtils.java
 echo "      MainUtils compiled"
 
 javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $AGGREGATOR_PATH/it/unipi/dii/aggregator/Aggregator.java
 echo "      Aggregator compiled"
 javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH  $OBSERVER_PATH/it/unipi/dii/observer/Observer.java
+#javac --add-modules=jdk.incubator.httpclient-cp $COMMON_PATH  $OBSERVER_PATH/it/unipi/dii/observer/Observer.java
 echo "      Observer compiled"
 javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH $REMOTESERVER_PATH/it/unipi/dii/remoteserver/Server.java
 echo "      RemoteServer compiled"
 
-javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH:$APPCOMMANDLINE_PATH $APPCOMMANDLINE_PATH/it/unipi/dii/mecperfng/commandlineapp/CommandLineApp.java
+javac -target 7 -source 1.7 -bootclasspath /usr/lib/jdk-7u80-linux-x64/jdk1.7.0_80/jre/lib/rt.jar -cp $COMMON_PATH:$APPCOMMANDLINE_PATH -Xlint:unchecked  $APPCOMMANDLINE_PATH/it/unipi/dii/mecperfng/commandlineapp/CommandLineApp.java
 echo "      App for linux compiled"
 
        

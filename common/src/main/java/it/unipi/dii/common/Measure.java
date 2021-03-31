@@ -169,5 +169,92 @@ public class Measure implements Serializable {
     public void setReceiverAddress(String receiverAddress) {
         this.receiverAddress = receiverAddress;
     }
+
+
+    public String getTestJSON(String segment){
+        String direction = null;
+
+        if (this.getSender().equals("Client") && this.getReceiver().equals("Observer") || 
+            this.getSender().equals("Observer") && this.getReceiver().equals("Server"))
+            direction = "Upstream";
+        else if (this.getSender().equals("Server") && this.getReceiver().equals("Observer") || 
+                 this.getSender().equals("Observer") && this.getReceiver().equals("Client"))
+            direction = "Downstream";
+        else
+            return null;
+
+
+        return "\"test_info_" + segment + "_segment\":{\"Direction\":\"" + direction+"\"," +
+               "\"Command\":\"" + this.getType()+"\", \"ReceiverIdentity\":\"" + this.getReceiver()+ "\","+
+               "\"SenderIdentity\":\"" + this.getSender() + "\","+
+               "\"SenderIPv4Address\":\"" + this.getSenderAddress() + "\","+
+               "\"ReceiverIPv4Address\":\"" + this.getReceiverAddress() + "\","+
+               "\"Keyword\":\"" + this.getExtra() + "\", \"PackSize\":\"" + this.getLen_pack() + "\","+
+               "\"NumPack\":\"" + this.getNum_pack() +"\" }";
+    }
+
+    public String getValuesJSON(String segment){
+        if (this.getType().equals("TCPBandwidth") || this.getType().equals("UDPBandwidth"))
+            return this.getBandwidthValuesJSON(segment);
+        else if (this.getType().equals("TCPRTT") || this.getType().equals("UDPRTT"))
+            return this.getRTTValuesJSON(segment);
+        else return null;
+
+
+    }
+
+    private String getBandwidthValuesJSON(String segment){
+        String bandwidthvalues_JSON = "\"bandwidth_values_" + segment + "_segment\": [";
+        int i = 0;
+        long previous = 0;
+        Boolean isTCP = this.getType().equals("TCPBandwidth");
+        //System.out.println("Command: " + this.getType() + " MAP_SIZE: " + this.getBandwidth().size());
+        for (Map.Entry<Integer, Long[]> entry : this.getBandwidth().entrySet()) { // per UDP ha un solo elemento
+            long actualTime = entry.getValue()[0];
+            long diff = actualTime - previous;
+            previous = actualTime;
+            i++;
+
+            if (Long.MAX_VALUE < actualTime)
+                return null;
+            
+            
+            if (i == 1 && isTCP)
+                continue;
+
+            if ((i > 2) || (i> 1 && !isTCP))
+                bandwidthvalues_JSON += ",";
+            bandwidthvalues_JSON += "{\"sub_id\":\"" + entry.getKey() + "\"";
+            if (this.getType().equals("TCPBandwidth"))
+                bandwidthvalues_JSON += ",\"nanoTimes\":\"" + diff + "\"";
+            else if (this.getType().equals("UDPBandwidth"))
+                bandwidthvalues_JSON += ",\"nanoTimes\":\"" + actualTime + "\"";
+            else return null;
+
+            bandwidthvalues_JSON += ",\"kBytes\":\"" + ((double)entry.getValue()[1] / 1024) + "\"}";
+        }
+
+        bandwidthvalues_JSON += "]";
+
+        return bandwidthvalues_JSON;   
+    
+      
+    }
+
+    private String getRTTValuesJSON(String segment) {
+        String latencyValues_JSON = "\"latency_values_" + segment + "_segment\":[";
+        int i = 0;
+       
+        for (Map.Entry<Integer, Long[]> entry : this.getLatency().entrySet()) {
+            if (i > 0)
+                latencyValues_JSON += ",";
+            
+            latencyValues_JSON += "{\"sub_id\":" + entry.getKey() + ",\"latency\":" + entry.getValue()[0] + 
+                                  ",\"timestamp_millis\":" + entry.getValue()[1] + "}";
+            i++;
+        }
+
+        return latencyValues_JSON + "]";
+    }
 }
 
