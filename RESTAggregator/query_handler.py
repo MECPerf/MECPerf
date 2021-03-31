@@ -1,3 +1,5 @@
+import json 
+
 
 HEADER = '\033[95m'
 OKBLUE = '\033[94m'
@@ -155,12 +157,12 @@ def build_passive_bandwidth_query(mode, json, keyword, likeKeyword, fromInterval
         params.append("%" + likeKeyword + "%")
 
     if (dashfilename != None):
-        print dashfilename
+        print (dashfilename)
         query += "AND Keyword LIKE %s "
         params.append("%" + dashfilename + "%")
 
     if (numberofclients != None):
-        print numberofclients
+        print (numberofclients)
         query += "AND Keyword LIKE %s "
         params.append("%" + numberofclients + "client%")
 
@@ -177,17 +179,17 @@ def build_passive_bandwidth_query(mode, json, keyword, likeKeyword, fromInterval
         params.append(direction)
     
     if limit != None:
-        print type(limit)
+        print (type(limit))
         query += "LIMIT %s "
         params.append(int(limit))
         
         if offset != None:
-            print type(offset)
+            print (type(offset))
             query += "OFFSET %s "
             params.append(int(offset))
 
 
-    print query
+    print (query)
     return json, query, params
 
 
@@ -236,32 +238,41 @@ def insert_bandwidth_table(cur, rowID, test_type, test_values):
 
     if test_type == "active":
         for i in range(0, len(test_values)):
-            args = [rowID, i + 1,  long(test_values[i]['nanoTimes']), long(test_values[i]['kBytes'])]
+            args = [rowID, i + 1,  int(test_values[i]['nanoTimes']), round(float(test_values[i]['kBytes']), 4)]
                     
             cur.execute(insert_BandwidthMeasure_table_active, args)
 
     if test_type == "passive":
         for timestamp in test_values:
-            args = [rowID, long(timestamp), int(test_values[timestamp])]           
+            args = [rowID, int(timestamp), int(test_values[timestamp])]           
             cur.execute(insert_BandwidthMeasure_table_passive, args)
 
 
 def insert_latency_table(cur, rowID, test_type, test_values):
-    insert_latency_query_active = "INSERT INTO MECPerf.RttMeasure (id, sub_id, latency) VALUES (%s, %s, %s)"
+    insert_latency_query_active = "INSERT INTO MECPerf.RttMeasure (id, sub_id, latency, timestamp_millis) VALUES (%s, %s, %s, %s)"
     insert_latency_query_passive = "INSERT INTO MECPerf.PassiveRttMeasure (ID, Timestamp, latency) VALUES (%s, %s, %s)"
 
     if test_type == "active":
         for i in range(0, len(test_values)):
-            args = [rowID, i + 1,  long(test_values[i]['latency'])]
+            args = [rowID, int(test_values[i]['sub_id']), float(test_values[i]['latency']), 
+                    int(test_values[i]['timestamp_millis'])]
             cur.execute(insert_latency_query_active, args)
 
     if test_type == "passive":
         for timestamp in test_values:
-            args = [rowID, long(timestamp),  long(test_values[timestamp])]
+            args = [rowID, long(timestamp),  float(test_values[timestamp])]
             cur.execute(insert_latency_query_passive, args)
 
 
+def insert_metadata_table(cur, rowID, test_type, test_metadata, key):
+    assert test_type == "active"
 
+    insert_metadata_query_active = "INSERT INTO ExperimentMETADATA (id, experiment_details) VALUES (%s, %s)"
+    #print(json.dumps(test_metadata))
+    args = [rowID, json.dumps(test_metadata)]
+
+    cur.execute(insert_metadata_query_active, args)
+    
 
 def update_bandwidth(test, mysql):
     if test.type == "active":
@@ -286,8 +297,6 @@ def update_latencies(test, mysql):
         return NOT_IMPLEMENTED
 
 
-
-
 def update_active_bandwidth(test, mysql):
     actual_test_number = read_last_test_number(mysql)
     
@@ -297,11 +306,17 @@ def update_active_bandwidth(test, mysql):
 
         #store first segment measures
         insert_test_table(cur, actual_test_number, test.type, test.test_info_first_segment)
-        insert_bandwidth_table(cur, cur.lastrowid, test.type, test.test_values_first_segment)
+        last_rowID = int(cur.lastrowid)
+        insert_bandwidth_table(cur, last_rowID, test.type, test.test_values_first_segment)
+        if (test.metadata_first_segment != None):
+            insert_metadata_table(cur, last_rowID, test.type, test.metadata_first_segment, "metadata_first_segment")
 
         #update second segment measures
         insert_test_table(cur, actual_test_number, test.type, test.test_info_second_segment)
-        insert_bandwidth_table(cur, cur.lastrowid, test.type, test.test_values_second_segment)
+        last_rowID = int(cur.lastrowid)
+        insert_bandwidth_table(cur, last_rowID, test.type, test.test_values_second_segment)
+        if (test.metadata_second_segment != None):
+            insert_metadata_table(cur, last_rowID, test.type, test.metadata_first_segment, "metadata_second_segment")
 
 
         mysql.connection.commit()
@@ -324,9 +339,7 @@ def update_active_bandwidth(test, mysql):
 
 
 def update_active_latencies(test, mysql):
-    
     actual_test_number = read_last_test_number(mysql)
-
     
     mysql.connection.autocommit = False
     try:
@@ -334,11 +347,17 @@ def update_active_latencies(test, mysql):
 
         #store first segment measures
         insert_test_table(cur, actual_test_number, test.type, test.test_info_first_segment)
-        insert_latency_table(cur, cur.lastrowid, test.type, test.test_values_first_segment)
+        last_rowID = int(cur.lastrowid)
+        insert_latency_table(cur, last_rowID , test.type, test.test_values_first_segment)
+        if (test.metadata_first_segment != None):
+            insert_metadata_table(cur, last_rowID, test.type, test.metadata_first_segment, "metadata_first_segment")
 
         #update second segment measures
         insert_test_table(cur, actual_test_number, test.type, test.test_info_second_segment)
-        insert_latency_table(cur, cur.lastrowid, test.type, test.test_values_second_segment)
+        last_rowID = int(cur.lastrowid)
+        insert_latency_table(cur, last_rowID, test.type, test.test_values_second_segment)
+        if (test.metadata_second_segment != None):
+            insert_metadata_table(cur, last_rowID, test.type, test.metadata_second_segment, "metadata_second_segment")
 
 
         mysql.connection.commit()
@@ -403,9 +422,9 @@ def update_passive_latencies(test, mysql):
         cur.close()
     
     except mysql.connection.Error as e:
-        print "Failed to update the database."
-        print e
-        print "Execute a roll back"
+        print ("Failed to update the database.")
+        print (e)
+        print ("Execute a roll back")
         mysql.connection.rollback()
         cur.close()
         return INTERNAL_SERVER_ERROR

@@ -16,7 +16,7 @@ def init_server(app):
     with open('opt.txt') as json_file:
         opt_json = json.load(json_file)
 
-        print "REST server info:"
+        print ("REST server info:")
         for p in opt_json['RestServer']:
             print('address: ' + p['address'] + ":" + p['port'])
 
@@ -24,7 +24,7 @@ def init_server(app):
             port = p['port']
             print('\n')
 
-        print "DB info:"
+        print ("DB info:")
         for q in opt_json['Database']:
             print('address: ' + q['address'] + ":" + q['port'])
             print('DB name: ' + q['db_name'])
@@ -84,13 +84,13 @@ def create_app():
         queryRes = cur.fetchall()
         cur.close()
         
-        print "asked compact " + str(queryparameters["compact"])
-        print "json output = " + str(json)
-        print "keyword " + str(queryparameters["keyword"])
-        print "keyword LIKE " + str(queryparameters["likeKeyword"])
-        print "fromInterval " + str(queryparameters["fromInterval"])
-        print "toInterval " + str(queryparameters["toInterval"])
-        print "group_by " + str(queryparameters["group_by"])
+        print ("asked compact " + str(queryparameters["compact"]))
+        print ("json output = " + str(json))
+        print ("keyword " + str(queryparameters["keyword"]))
+        print ("keyword LIKE " + str(queryparameters["likeKeyword"]))
+        print ("fromInterval " + str(queryparameters["fromInterval"]))
+        print ("toInterval " + str(queryparameters["toInterval"]))
+        print ("group_by " + str(queryparameters["group_by"]))
 
         if (queryparameters["compact"] != "True"):
             result += "<b>" + str(query) + "</b><br><br>"
@@ -121,14 +121,15 @@ def create_app():
     #measure_type = one of "bandwidth_measure" or "bandwidth_measure""
     @app.route('/post_<test_type>_measures/insert_<measure_type>', methods=['POST'])
     def post_measures(test_type, measure_type):
-        body = str(request.data)
-        #print "req"
-        #print request
-        #print "req data"
-        #print len( request.data)
-        #print request.data
+        body = request.data.decode('ascii')
+
+        #print (request)
+        #print(len(request.data))
+        #print (request.data)
+
 
         request_body_list = json.loads(body)
+        #print(json.dumps(request_body_list, indent=3, sort_keys=True))
         test = Test.Test(request_body_list, test_type)
 
         if measure_type == "bandwidth_measure":
@@ -137,8 +138,6 @@ def create_app():
             return_code = update_latencies(test, mysql) 
         else:
             return_code = NOT_IMPLEMENTED
-
-        print (return_code)
         return "", return_code
     
 
