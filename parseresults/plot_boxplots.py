@@ -28,8 +28,8 @@ _RESET = '\033[0m'
     
 _LEGENDYPOS_1LINE = 1.15
 _LEGENDYPOS_2LINE = 1.25
-_LEGENDYPOS_4LINE = 1.40
-_LEGENDYPOS_10LINE = 2.05
+_LEGENDYPOS_4LINE = 2.80
+_LEGENDYPOS_10LINE = 2.55
 _LABEL_SIZE = 20
 _TICK_SIZE = 20
 _XLABEL_SIZE = 25
@@ -620,7 +620,7 @@ def bandwidthboxplot_noisegrouped(config_parser, section, mode, direction, conne
     values = OrderedDict()
 
     for dashfile in dashfileslist:
-        title = mode + "-" + direction + "-" + connectiontype + "-" + connectiontype + "-bandwidth-" + dashfile 
+        title = "Noise_" + mode + "-" + direction + "-" + connectiontype + "-bandwidth-" + dashfile 
         legendlabels = []
 
         if edgeserver and not segmentgrouped:
@@ -672,11 +672,11 @@ def bandwidthboxplot_noisegrouped(config_parser, section, mode, direction, conne
             folderpath = _PASSIVEBANDWIDTH_CLIENTNOISEANDSEGMENTGROUPED_BASEFILEPATH + connectiontype + "/"
             for i in range (0, len(clientnumberlist)):
                 if i == 0:
-                    legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
-                    legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+                    legendlabels.append("Edge: " + str(clientnumberlist[i]) + " client")
+                    legendlabels.append("Cloud: " + str(clientnumberlist[i]) + " client")
                 else:
-                    legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
-                    legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
+                    legendlabels.append("Edge: " + str(clientnumberlist[i]) + " clients")
+                    legendlabels.append("Cloud: " + str(clientnumberlist[i]) + " clients")
 
                    
         if len(values) == 0:
@@ -1349,7 +1349,7 @@ def bandwidthplot_perclient(config_parser, section, direction, connectiontype, m
         for noise in noiselist:
             values = OrderedDict()
 
-            title  = mode + "-" + direction + "-" + connectiontype + "-bandwidth-" + dashfile + "-" + server 
+            title  = "perclient_" + mode + "-" + direction + "-" + connectiontype + "-bandwidth-" + dashfile + "-" + server 
             title += "-" + str(noise)
             if mode == "mim":
                 title += "bucketsize=" + str(bucketsize_microsec/1000000).replace(".", ",")
@@ -1427,7 +1427,7 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, section, direction, conne
     createfolder(folderpath)
 
     for dashfile in dashfileslist:
-        title = "mim-" + direction + "-" + connectiontype + "-" + connectiontype + "-bandwidth-" + dashfile+"-"
+        title = "Noise_mim-" + direction + "-" + connectiontype + "-bandwidth-" + dashfile+"-"
         if not legacy:
             title += "bucketsize=" + str(bucketsize_microsec/1000000).replace(".", ",")
         values = OrderedDict()
@@ -1461,11 +1461,11 @@ def bandwidthboxplot_noiseandsegmentmim(config_parser, section, direction, conne
 
         for i in range (0, len(clientnumberlist)):
             if i == 0:
-                legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
-                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Edge: " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Cloud: " + str(clientnumberlist[i]) + " client")
             else:
-                legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
-                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Edge: " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Cloud: " + str(clientnumberlist[i]) + " clients")
 
 
         if len(values) == 0:
@@ -1491,7 +1491,7 @@ def latencyboxplot_noiseandsegmentmim(config_parser, section, direction, connect
     values = OrderedDict()
 
     for dashfile in dashfileslist:
-        title = "mim-" + direction + "-" + connectiontype + "-latency-" + dashfile
+        title = "Noise_mim-" + direction + "-" + connectiontype + "-latency-" + dashfile
         legendlabels = []
 
         for noise in noiselist:
@@ -1501,7 +1501,7 @@ def latencyboxplot_noiseandsegmentmim(config_parser, section, direction, connect
                 filename = "csv/passive/sorted/mim-latency-" + direction + "-" + connectiontype
                 filename += "-" + str(clientnumber) + "clients-" + dashfile + "-noise" + noise + "_" \
                             + config_parser.get(section, "from_passive") + "-" \
-                            + config_parser.get(section, "to_passive") + "_SORTED_LEGACY.csv"
+                            + config_parser.get(section, "to_passive") +"_SORTED.csv" # "_SORTED_LEGACY.csv"
             
                 values[noise].append(readlatencyvalues_noisemim(config_parser, section, filename, connectiontype,
                                                          "edge" , noise))      
@@ -1511,11 +1511,11 @@ def latencyboxplot_noiseandsegmentmim(config_parser, section, direction, connect
             
         for i in range (0, len(clientnumberlist)):
             if i == 0:
-                legendlabels.append("MEC " + str(clientnumberlist[i]) + " client")
-                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Edge: " + str(clientnumberlist[i]) + " client")
+                legendlabels.append("Cloud: " + str(clientnumberlist[i]) + " client")
             else:
-                legendlabels.append("MEC " + str(clientnumberlist[i]) + " clients")
-                legendlabels.append("Cloud " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Edge: " + str(clientnumberlist[i]) + " clients")
+                legendlabels.append("Cloud: " + str(clientnumberlist[i]) + " clients")
 
 
         if len(values) == 0:
@@ -1642,8 +1642,8 @@ def writelogfile_boxplot(noise, logfile,  bp, clients, values):
         logfile.write("\n")
 def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, show_fliers=False, 
                 numcolumn = 3, legendpos = 1.12):
-    fig = plt.figure(figsize=(15,6))
-    
+    fig = plt.figure(figsize=(26,6.5))
+    #fig = plt.figure(figsize=(26,5))
     ax = plt.axes()
     ax.tick_params(axis="both", labelsize=_TICK_SIZE)
     plt.grid(True, axis="y", color="#dedddc")
@@ -1684,7 +1684,7 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
             #print (value)
             
             bp = ax.boxplot(value, positions = boxplotpos, widths = 0.6, patch_artist=True, showfliers=show_fliers,
-                            medianprops={"color":"black"}, showmeans=True)
+                            medianprops={"color":"black"}, showmeans=False)
 
             j=0
             for box in bp["boxes"]:
@@ -1710,17 +1710,18 @@ def drawboxplot(folderpath, title, values, legendlabels, ylim, ylabel, xlabel, s
         plt.yticks(np.arange(0, ylim, step = 50))
     elif ylim < 3000:
         plt.yticks(np.arange(0, ylim, step = 200))
-    ax.set_xticklabels(xlabels)
     ax.set_xticks(xlabelspos)
+    ax.set_xticklabels(xlabels)
+    print(xlabels)
 
     ax.set_xlabel(xlabel, fontsize=_XLABEL_SIZE)
     ax.set_ylabel(ylabel, fontsize=_YLABEL_SIZE)
-    #plt.xlabel(xlabel)
-    #plt.ylabel(ylabel)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
 
     #plt.title(title + "___" + str(datetime.now()))
-    #print (legendpos)
-    leg = ax.legend(legendlabels, loc="upper center", bbox_to_anchor=(0.5, legendpos), ncol = 3, 
+    print (legendpos)
+    leg = ax.legend(legendlabels, loc="upper center", bbox_to_anchor=(0.5, legendpos), ncol = 6, 
                     facecolor = "white", frameon=False, fontsize=_LABEL_SIZE) 
 
     i=0
