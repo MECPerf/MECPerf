@@ -224,7 +224,7 @@ def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,  obse
 
     for i in range (start_noise, stop_noise + 1, step_noise):
         if len(clientT_observerT) != 0:
-            ylim = 11000
+            ylim = 2000
             xlim = 2000
             bandwidth_histogram(clientT_observerT, str(i) + "M",  
                             "client-observer(nitos)" + title + str(i) + "M Noise", 
@@ -232,8 +232,8 @@ def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,  obse
         else:
             colors.WARNING + "len(clientT_observerT) is 0"
         if len(clientT_observerR) != 0:
-            ylim = 11000
-            xlim = 3400
+            ylim = 2000
+            xlim = 2000
 
             '''
             if direction == "Upstream":
@@ -251,8 +251,8 @@ def bandwidth_raw(clientT_observerT, clientT_observerR, observerT_remoteR,  obse
         else:
             colors.WARNING + "len(clientT_observerR) is 0"
         if len(observerT_remoteR) != 0:
-            ylim = 11000
-            xlim = 3400
+            ylim = 2000
+            xlim = 2000
             '''
             if direction == "Upstream":
                 xlim = 3000
