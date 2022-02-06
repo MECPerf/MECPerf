@@ -157,10 +157,10 @@ def passivetimeseries(config_parser, section, mode, direction, connectiontype, y
 
 def passivetimeseries_usingbandwidth_createplot(colsnumber, rowsnumber, plottitle):
     fig, ax = plt.subplots(ncols = colsnumber, nrows = rowsnumber, squeeze=False)
-    fig.set_size_inches(8.3 * colsnumber, 1.6 * rowsnumber + 0.5)
+    fig.set_size_inches(11 * colsnumber, 1.6 * rowsnumber + 0.5)
     #fig.tight_layout()
     
-    plt.title(plottitle + "___" + str(datetime.datetime.now()), fontsize=_TITLE_SIZE)
+    plt.title(plottitle )#+ "___" + str(datetime.datetime.now()), fontsize=_TITLE_SIZE)
     plt.gcf().autofmt_xdate()
 
     formatter = "%H:%M:%S"
@@ -228,8 +228,8 @@ def passivetimeseries_usingbandwidth_plot(results, title, folderpath, ylim, titl
                 ax[k, 0].set_ylim(0,ylim)
                 ax[k, 0].set_xlim(time_min,time_max)
                 ax[k, 0].xaxis.set_major_formatter(xfmt)
-                ax[k, 0].set_title("client " + str(k + 1) + " with IP = " + clientIP + title2, fontsize=_TITLE_SIZE)
-                #ax[k, 0].set_title("client " + str(k + 1), fontsize=_TITLE_SIZE)
+                #ax[k, 0].set_title("client " + str(k + 1) + " with IP = " + clientIP + title2, fontsize=_TITLE_SIZE)
+                ax[k, 0].set_title("client " + str(k + 1), fontsize=_TITLE_SIZE)
                 ax[k, 0].plot(times, bandwidths, marker =_TIMEPLOT_MARKERS[k], markersize=3, 
                               label=clientIP, color=_TIMEPLOT_COLORS[k], linestyle="None")     
                 k += 1      
@@ -252,7 +252,7 @@ def passivetimeseries_usingbandwidth_plot(results, title, folderpath, ylim, titl
                     ax[k, 0].set_xlim(time_min,time_max)
                     ax[k, 0].xaxis.set_major_formatter(xfmt)
                     #ax[k, 0].set_title("client " + str(clientrank) + " with IP = " + clientIP + " and quality = " + str(key) + title2 , fontsize=_TITLE_SIZE)
-                    ax[k, 0].set_title("client " + str(clientrank) + " with fragment quality = " + str(key) , fontsize=_TITLE_SIZE)
+                    ax[k, 0].set_title("fragment quality = " + str(key) , fontsize=_TITLE_SIZE)
                     ax[k, 0].plot(times[key], bandwidths[key], marker =_TIMEPLOT_MARKERS[k], markersize=1, 
                               label=clientIP, color=_FRAGMENTQUALITY_COLORS[key], linestyle="None")  
 
@@ -404,7 +404,7 @@ def passivetimeseries_usingbandwidth(config_parser, section, mode, direction, co
     for clientnumber in clientnumberlist:
         for noise in noiselist:
             for dashfile in dashfileslist:        
-                title  = str(mode) + "-" + str(direction) + "-" + str(dashfile) + str(clientnumber) + "-" 
+                title  = "timeseries_" + str(mode) + "-" + str(direction) + "-" + str(dashfile) + str(clientnumber) + "-" 
                 title += str(noise) + "-" + str(server) + "_plot2"
 
                 filename  = "csv/passive/sorted/" + mode + "-bandwidth-" + direction + "-" + connectiontype + "-"
