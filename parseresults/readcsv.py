@@ -1675,7 +1675,7 @@ def readbandwidthvalues_mim_timeplot_usingfixbuckets(config_parser, section, inp
 
 
 def readlatencyvalues_noisemim(config_parser, section, inputfile, connectiontype, segment, noise):
-    assert "SORTED_LEGACY" in inputfile
+    #assert "SORTED_LEGACY" in inputfile
     assert "mim" in inputfile
     
     ret = []
