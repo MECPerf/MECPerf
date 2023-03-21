@@ -199,7 +199,7 @@ def read_last_test_number(mysql):
     cur = mysql.connection.cursor()
     cur.execute(query, [])
     query_res = cur.fetchone()
-    if len(query_res) == 0:
+    if (query_res is None or len(query_res) == 0 ) :
         cur.close()
         return 1
 
